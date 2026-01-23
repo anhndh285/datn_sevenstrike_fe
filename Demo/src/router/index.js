@@ -29,7 +29,9 @@ const routes = [
       { path: "hoa-don", component: SimplePage("HÓA ĐƠN") },
 
       { path: "giam-gia/phieu", component: SimplePage("PHIẾU GIẢM GIÁ") },
-      { path: "giam-gia/dot", component: SimplePage("ĐỢT GIẢM GIÁ") },
+      { path: "giam-gia/dot", name: "admin-discount", component: () => import("@/views/admin/DiscountPage.vue") },
+      { path: "giam-gia/dot/new", name: "admin-discount-create", component: () => import("@/views/admin/AddDiscountPage.vue") },
+      { path: "giam-gia/dot/:id", name: "admin-discount-detail", component: () => import("@/views/admin/DetailDiscountPage.vue") },
 
       // ===== SẢN PHẨM =====
       { path: "san-pham", name: "admin-san-pham", component: ProductManagePage },
