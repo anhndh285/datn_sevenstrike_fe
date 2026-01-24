@@ -57,9 +57,38 @@ const routes = [
       { path: "kich-thuoc", component: SimplePage("KÍCH THƯỚC") },
       { path: "form-chan", component: SimplePage("FORM CHÂN") },
       { path: "loai-san", component: SimplePage("LOẠI SÂN") },
-
-      { path: "khach-hang", component: SimplePage("KHÁCH HÀNG") },
-      { path: "nhan-vien", component: SimplePage("NHÂN VIÊN") },
+      {
+          path: 'nhan-vien',
+          component: () => import('@/views/admin/tai_khoan/taikhoan_nhanvien.vue'),
+          children: [
+            {
+              path: 'add',
+              name: 'nv-add',
+              component: () => import('@/views/admin/tai_khoan/them_nhanvien.vue'),
+            },
+            {
+              path: 'update/:id',
+              name: 'nv-update',
+              component: () => import('@/views/admin/tai_khoan/capnhat_nhanvien.vue'),
+            }
+          ],
+        },
+        {
+          path: 'khach-hang',
+          component: () => import('@/views/admin/tai_khoan/taikhoan_khachhang.vue'),
+          children: [
+            {
+              path: 'add',
+              name: 'kh-add',
+              component: () => import('@/views/admin/tai_khoan/them_khachhang.vue'),
+            },
+            {
+              path: 'update/:id',
+              name: 'kh-update',
+              component: () => import('@/views/admin/tai_khoan/capnhat_khachhang.vue'),
+            }
+          ],
+        }
     ],
   },
 

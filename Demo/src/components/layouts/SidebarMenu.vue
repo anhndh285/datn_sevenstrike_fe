@@ -95,8 +95,8 @@
         </button>
 
         <div v-show="openGroup.account" class="ss-submenu">
-          <RouterLink class="ss-sub-link" to="/admin/khach-hang">Khách hàng</RouterLink>
-          <RouterLink class="ss-sub-link" to="/admin/nhan-vien">Nhân viên</RouterLink>
+          <RouterLink class="ss-sub-link" to="/khach-hang">Khách hàng</RouterLink>
+          <RouterLink class="ss-sub-link" to="/nhan-vien">Nhân viên</RouterLink>
         </div>
       </div>
     </nav>
