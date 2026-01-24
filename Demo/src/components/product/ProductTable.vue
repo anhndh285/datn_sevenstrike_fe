@@ -23,7 +23,6 @@
             <th class="text-start th-stt">STT</th>
             <th class="text-start th-ma">Mã</th>
             <th class="text-start">Tên</th>
-            <th class="text-start th-gia">Giá</th>
             <th class="text-start th-sl">Số lượng</th>
             <th class="text-start th-tt">Trạng thái</th>
             <th class="text-start th-hd">Hành động</th>
@@ -41,20 +40,16 @@
               <div class="text-muted small">{{ row.moTaNgan ?? row.moTa ?? "" }}</div>
             </td>
 
-            <td class="text-start fw-semibold">
-              {{ formatMoney(row.gia ?? row.giaBan ?? row.donGia ?? 0) }}
-            </td>
-
-            <td class="text-start">{{ Number(row.soLuong ?? row.tonKho ?? 0) }}</td>
+            <td class="text-start">{{ formatNumber(row.soLuong ?? row.tongSoLuong ?? row.tonKho ?? 0) }}</td>
 
             <td class="text-start">
-              <span class="ss-badge" :class="normalizeKinhDoanh(row.trangThai ?? row.kinhDoanh) ? 'ss-badge-on' : 'ss-badge-off'">
-                {{ normalizeKinhDoanh(row.trangThai ?? row.kinhDoanh) ? "Kinh doanh" : "Ngừng" }}
+              <span class="ss-badge" :class="isOn(row) ? 'ss-badge--on' : 'ss-badge--off'">
+                {{ isOn(row) ? "Kinh doanh" : "Ngừng kinh doanh" }}
               </span>
             </td>
 
             <td class="text-start">
-              <button class="btn btn-sm ss-icon-btn" title="Xem chi tiết" @click="$emit('view', row)">
+              <button class="btn btn-sm ss-icon-btn" title="Xem" @click="$emit('view', row)">
                 <span class="material-icons">visibility</span>
               </button>
             </td>
@@ -63,7 +58,7 @@
 
         <tbody v-else>
           <tr>
-            <td colspan="7" class="text-center py-4">
+            <td colspan="6" class="text-center py-4">
               <span v-if="loading">Đang tải...</span>
               <span v-else class="text-muted">Không có dữ liệu</span>
             </td>
@@ -107,14 +102,14 @@ function normalizeKinhDoanh(v) {
   if (s.includes("ngung")) return false;
   return true;
 }
+function isOn(row) {
+  const v = row?.trangThai ?? row?.kinhDoanh;
+  return normalizeKinhDoanh(v);
+}
 
-function formatMoney(v) {
-  const n = Number(v || 0);
-  try {
-    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(n);
-  } catch {
-    return `${n} đ`;
-  }
+function formatNumber(val) {
+  const n = Number(val ?? 0);
+  return new Intl.NumberFormat("vi-VN").format(Number.isNaN(n) ? 0 : n);
 }
 </script>
 
@@ -134,28 +129,22 @@ function formatMoney(v) {
   font-weight: 800;
   font-size: 13px;
   white-space: nowrap;
-
-  /* ✅ khoảng cách cột chỉnh ở đây */
   padding: 14px 18px;
-
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 .ss-table thead th + th {
   border-left: 1px solid rgba(0, 0, 0, 0.08);
 }
-
-/* ✅ BODY không kẻ dọc */
 .ss-table tbody td {
-  padding: 14px 18px; /* ✅ khoảng cách cột */
+  padding: 14px 18px;
   border-left: none !important;
   border-right: none !important;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-/* (tuỳ chọn) set width để giống YouTube hơn */
+/* width */
 .th-stt { width: 70px; }
-.th-ma { width: 140px; }
-.th-gia { width: 140px; }
+.th-ma { width: 160px; }
 .th-sl { width: 140px; }
 .th-tt { width: 170px; }
 .th-hd { width: 140px; }
@@ -165,25 +154,26 @@ function formatMoney(v) {
   border: 1px solid rgba(0,0,0,0.12);
   background: #fff;
 }
-.ss-icon-btn .material-icons {
-  font-size: 18px;
-}
+.ss-icon-btn .material-icons { font-size: 18px; }
 
+/* Badge theo màu chủ đạo đỏ/đen */
 .ss-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 800;
-  border: 1px solid rgba(0,0,0,0.08);
+  border: 1px solid transparent;
 }
-.ss-badge-on {
-  background: rgba(16,185,129,0.08);
-  color: #0f766e;
-}
-.ss-badge-off {
-  background: rgba(239,68,68,0.08);
+.ss-badge--on {
+  background: rgba(255, 77, 79, 0.10);
   color: #b91c1c;
+  border-color: rgba(255, 77, 79, 0.25);
+}
+.ss-badge--off {
+  background: rgba(17, 24, 39, 0.06);
+  color: #111827;
+  border-color: rgba(17, 24, 39, 0.16);
 }
 </style>

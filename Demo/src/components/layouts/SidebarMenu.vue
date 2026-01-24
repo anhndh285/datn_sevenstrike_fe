@@ -68,6 +68,11 @@
             Sản phẩm
           </RouterLink>
 
+          <!-- ✅ NEW: Chi tiết sản phẩm -->
+          <RouterLink class="ss-sub-link" to="/admin/chi-tiet-san-pham">
+            Chi tiết sản phẩm
+          </RouterLink>
+
           <!-- Thuộc tính (phần riêng) -->
           <div class="ss-subtitle">Thuộc tính</div>
 
@@ -109,7 +114,7 @@ import { RouterLink } from "vue-router";
 
 const openGroup = reactive({
   discount: false,
-  product: true, // mở sẵn để demo
+  product: true,
   account: false,
 });
 
@@ -120,7 +125,7 @@ function toggle(key) {
 
 <style scoped>
 .ss-sidebar {
-  box-shadow: 14px 0 28px -12px rgba(0, 0, 0, 0.18); /* shadow rõ hơn */
+  box-shadow: 14px 0 28px -12px rgba(0, 0, 0, 0.18);
 }
 
 .ss-nav-link {

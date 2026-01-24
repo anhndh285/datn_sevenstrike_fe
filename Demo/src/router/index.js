@@ -3,12 +3,11 @@ import { createRouter, createWebHistory } from "vue-router";
 import AdminLayout from "@/views/admin/AdminLayout.vue";
 
 import ProductManagePage from "@/pages/product/ProductManagePage.vue";
-import ProductFormPage from "@/pages/product/ProductFormPage.vue";
-
 import ProductDetailListPage from "@/pages/product/ProductDetailListPage.vue";
 import ProductDetailFormPage from "@/pages/product/ProductDetailFormPage.vue";
+import ProductFormPage from "@/pages/product/ProductFormPage.vue";
 
-// Thuộc tính - Cổ giày
+// ✅ CỔ GIÀY đúng cây thư mục của bạn
 import CoGiayPage from "@/pages/product/thuoc_tinh/co_giay/CoGiayPage.vue";
 
 const SimplePage = (title) => ({
@@ -31,26 +30,28 @@ const routes = [
       { path: "giam-gia/phieu", component: SimplePage("PHIẾU GIẢM GIÁ") },
       { path: "giam-gia/dot", component: SimplePage("ĐỢT GIẢM GIÁ") },
 
-      // ===== SẢN PHẨM =====
+      // ✅ Sản phẩm
       { path: "san-pham", name: "admin-san-pham", component: ProductManagePage },
-
-      // Thêm / sửa sản phẩm: chuyển sang PAGE (không dùng modal)
       { path: "san-pham/new", name: "admin-san-pham-new", component: ProductFormPage },
+
+      // ✅ THÊM MỚI: trang sửa sản phẩm riêng (icon mắt sẽ dùng route này)
+      { path: "san-pham/:id", name: "admin-san-pham-one", component: ProductFormPage, props: true },
+
+      // ✅ giữ nguyên route cũ để không ảnh hưởng code hiện tại
       { path: "san-pham/:id/edit", name: "admin-san-pham-edit", component: ProductFormPage, props: true },
 
-      // ===== CHI TIẾT SẢN PHẨM =====
-      // List: có thể nhận query ?productId=
+      // ✅ Chi tiết sản phẩm
       { path: "chi-tiet-san-pham", name: "admin-ctsp", component: ProductDetailListPage },
       { path: "chi-tiet-san-pham/new", name: "admin-ctsp-new", component: ProductDetailFormPage },
       { path: "chi-tiet-san-pham/:id", name: "admin-ctsp-one", component: ProductDetailFormPage, props: true },
 
-      // ===== THUỘC TÍNH =====
+      // ✅ Thuộc tính
       { path: "xuat-xu", component: SimplePage("XUẤT XỨ") },
       { path: "thuong-hieu", component: SimplePage("THƯƠNG HIỆU") },
       { path: "vi-tri-thi-dau", component: SimplePage("VỊ TRÍ THI ĐẤU") },
       { path: "phong-cach-choi", component: SimplePage("PHONG CÁCH CHƠI") },
 
-      { path: "co-giay", name: "admin-co-giay", component: CoGiayPage },
+      { path: "co-giay", component: CoGiayPage },
 
       { path: "chat-lieu", component: SimplePage("CHẤT LIỆU") },
       { path: "mau-sac", component: SimplePage("MÀU SẮC") },
