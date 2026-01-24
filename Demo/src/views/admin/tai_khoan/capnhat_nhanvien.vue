@@ -101,8 +101,9 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { detailNhanVien, removeNhanVien, updateNhanVien } from "@/services/thuoc_tinh_tai_khoan/nhan_vienService";
-import { getAllQuyenHan } from "@/services/thuoc_tinh_tai_khoan/quyen_hanService";
+import { detailNhanVien, removeNhanVien, updateNhanVien } from "@/services/tai_khoan/nhan_vien/nhan_vienService";
+import { getAllQuyenHan } from "@/services/tai_khoan/nhan_vien/quyen_nhanService";
+
 
 const router = useRouter();
 const route = useRoute();

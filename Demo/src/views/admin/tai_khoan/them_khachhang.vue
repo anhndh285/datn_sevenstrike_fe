@@ -11,23 +11,22 @@
 
             <div class="mb-3">
               <label class="form-label">Họ và tên *</label>
-              <input class="form-control" v-model.trim="kh.tenKhachHang" placeholder="Nhập họ và tên" required />
+              <input class="form-control" v-model.trim="kh.tenKhachHang" placeholder="Nhập họ và tên"/>
             </div>
 
             <div class="mb-3">
               <label class="form-label">Tên tài khoản *</label>
-              <input class="form-control" v-model.trim="kh.tenTaiKhoan" placeholder="Nhập tên tài khoản" required />
+              <input class="form-control" v-model.trim="kh.tenTaiKhoan" placeholder="Nhập tên tài khoản"/>
             </div>
 
             <div class="mb-3">
               <label class="form-label">Số điện thoại *</label>
-              <input class="form-control" v-model.trim="kh.soDienThoai" placeholder="Nhập số điện thoại" required />
+              <input class="form-control" v-model.trim="kh.soDienThoai" placeholder="Nhập số điện thoại"/>
             </div>
 
             <div class="mb-3">
               <label class="form-label">Email *</label>
-              <input class="form-control" type="email" v-model.trim="kh.email" placeholder="example@email.com"
-                required />
+              <input class="form-control" type="email" v-model.trim="kh.email" placeholder="example@email.com"/>
             </div>
 
           </div>
@@ -37,14 +36,14 @@
 
             <div class="mb-3">
               <label class="form-label">Mật khẩu *</label>
-              <input class="form-control" type="password" v-model="kh.matKhau" placeholder="Nhập mật khẩu" required />
+              <input class="form-control" type="password" v-model="kh.matKhau" placeholder="Nhập mật khẩu"/>
             </div>
 
             <div class="mb-3">
               <label class="form-label">Giới tính *</label>
               <div>
                 <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" :value="true" v-model="kh.gioiTinh" required />
+                  <input class="form-check-input" type="radio" :value="true" v-model="kh.gioiTinh"/>
                   <label class="form-check-label">Nam</label>
                 </div>
 
@@ -58,7 +57,7 @@
 
             <div class="mb-3">
               <label class="form-label">Ngày sinh *</label>
-              <input class="form-control" type="date" v-model="kh.ngaySinh" :max="today" required />
+              <input class="form-control" type="date" v-model="kh.ngaySinh" :max="today"/>
             </div>
 
           </div>
@@ -81,8 +80,8 @@
 
 
 <script setup>
-import router from "@/router/router";
-import { addKhachHang } from "@/services/thuoc_tinh_tai_khoan/khach_hangService";
+import router from "@/router/index";
+import { addKhachHang } from "@/services/tai_khoan/khach_hang/khach_hangService";
 import { ref } from "vue";
 import Swal from "sweetalert2";
 import emailjs from "@emailjs/browser";
@@ -105,6 +104,12 @@ const kh = ref({
 
 const today = new Date().toISOString().split('T')[0];
 const loading = ref(false);
+
+// Email
+const emailvali = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// SĐT VN
+const phonevali = /^(03|05|07|08|09)\d{8}$/;
 
 const sendEmail = async () => {
   const templateParams = {
@@ -134,19 +139,68 @@ const sendEmail = async () => {
 const submit = async () => {
   if (loading.value) return;
   loading.value = true;
+
+  // VALIDATE RỖNG
+  if (
+    !kh.value.tenKhachHang ||
+    !kh.value.tenTaiKhoan ||
+    !kh.value.matKhau ||
+    !kh.value.email ||
+    !kh.value.soDienThoai ||
+    kh.value.gioiTinh === null ||
+    !kh.value.ngaySinh
+  ) {
+    Swal.fire(
+      "Thông báo",
+      "Vui lòng nhập đầy đủ thông tin bắt buộc",
+      "warning"
+    );
+    loading.value = false;
+    return;
+  }
+
+  // VALIDATE EMAIL
+  if (!emailvali.test(kh.value.email)) {
+    Swal.fire("Thông báo", "Email không đúng định dạng", "warning");
+    loading.value = false;
+    return;
+  }
+
+  // VALIDATE SỐ ĐIỆN THOẠI
+  if (!phonevali.test(kh.value.soDienThoai)) {
+    Swal.fire(
+      "Thông báo",
+      "Số điện thoại không hợp lệ (VD: 09xxxxxxxx)",
+      "warning"
+    );
+    loading.value = false;
+    return;
+  }
+
   try {
+    // gửi mail trước
     await sendEmail();
 
+    // lưu DB
     await addKhachHang(kh.value);
 
-    await Swal.fire("Thành công", "Thêm khách hàng và gửi email thành công!", "success");
+    await Swal.fire(
+      "Thành công",
+      "Thêm khách hàng và gửi email thành công!",
+      "success"
+    );
     router.push('/khachhang');
   } catch (e) {
-    Swal.fire("Lỗi", "Lỗi: " + (e.response?.data?.message || e.message), "error");
+    Swal.fire(
+      "Lỗi",
+      e.response?.data?.message || e.message || "Có lỗi xảy ra",
+      "error"
+    );
   } finally {
     loading.value = false;
   }
 };
+
 
 const cancel = () => {
   router.push('/khachhang');

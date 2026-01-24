@@ -78,7 +78,7 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { detailKhachHang, removeKhachHang, updateKhachHang } from "@/services/thuoc_tinh_tai_khoan/khach_hangService";
+import { detailKhachHang, removeKhachHang, updateKhachHang } from "@/services/tai_khoan/khach_hang/khach_hangService";
 
 const router = useRouter();
 const route = useRoute();

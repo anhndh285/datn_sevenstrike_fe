@@ -101,7 +101,7 @@
 
         <!-- ACTION -->
         <div class="text-end mt-4">
-          <button type="submit" class="btn btn-primary me-2" @click="submit">Thêm</button>
+          <button type="submit" class="btn btn-primary me-2">Thêm</button>
           <button type="button" class="btn btn-outline-secondary" @click="cancel">Hủy</button>
         </div>
       </form>
@@ -112,9 +112,9 @@
 
 
 <script setup>
-import router from "@/router/router";
-import { addNhanVien } from "@/services/thuoc_tinh_tai_khoan/nhan_vienService";
-import { getAllQuyenHan } from "@/services/thuoc_tinh_tai_khoan/quyen_hanService";
+import router from "@/router/index";
+import { addNhanVien } from "@/services/tai_khoan/nhan_vien/nhan_vienService";
+import { getAllQuyenHan } from "@/services/tai_khoan/nhan_vien/quyen_nhanService";
 import { onMounted, ref } from "vue";
 import Swal from "sweetalert2";
 
@@ -223,14 +223,14 @@ if (avatarFile.value) {
 await addNhanVien(formData);
 
     await Swal.fire("Thành công", "Thêm nhân viên thành công!", "success");
-    router.push("/nhanvien");
+    router.push('/admin/nhan-vien');
   } catch (error) {
     Swal.fire("Lỗi", error.message || "Có lỗi xảy ra khi thêm nhân viên", "error");
   }
 };
 
 const cancel = () => {
-  router.push('/nhanvien');
+  router.push('/admin/nhan-vien');
 };
 
 const onFileChange = (e) => {

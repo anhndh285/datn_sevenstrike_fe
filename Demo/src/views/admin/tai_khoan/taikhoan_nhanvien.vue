@@ -98,7 +98,7 @@
 </template>
 
 <script setup>
-import { searchNhanVien, pagingNhanVien } from '@/services/thuoc_tinh_tai_khoan/nhan_vienService';
+import { searchNhanVien, pagingNhanVien } from '@/services/tai_khoan/nhan_vien/nhan_vienService';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { watch } from 'vue';
@@ -127,7 +127,9 @@ const updatednv = (id) => {
   router.push({ name: 'nv-update', params: { id } });
 };
 
-const isPage = computed(() => route.path.includes('/nhanvien/add') || route.path.includes('/nhanvien/update'));
+const isPage = computed(() => 
+  route.name === 'nv-add' || route.name === 'nv-update'
+);
 
 const formatDate = (date) => {
   if (!date) return '';

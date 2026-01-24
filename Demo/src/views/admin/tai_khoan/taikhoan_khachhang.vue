@@ -90,7 +90,7 @@
 </template>
 
 <script setup>
-import { searchKhachHang, pagingKhachHang } from '@/services/thuoc_tinh_tai_khoan/khach_hangService';
+import { searchKhachHang, pagingKhachHang } from '@/services/tai_khoan/khach_hang/khach_hangService';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -116,7 +116,9 @@ const updatedkh = (id) => {
   router.push({ name: 'kh-update', params: { id } });
 };
 
-const isPage = computed(() => route.path.includes('/khachhang/add') || route.path.includes('/khachhang/update'));
+const isPage = computed(() => 
+  route.name === 'kh-add' || route.name === 'kh-update'
+);
 
 const formatDate = (date) => {
   if (!date) return '';
