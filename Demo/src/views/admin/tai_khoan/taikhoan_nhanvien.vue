@@ -4,7 +4,7 @@
       <div class="toolbar-left">
         <div class="search-wrapper">
           <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input v-model="filters.keyword" type="text" placeholder="Tìm kiếm" class="search-input"/>
+          <input v-model="filters.keyword" type="text" placeholder="Tìm kiếm" class="search-input" />
         </div>
 
       </div>
@@ -30,9 +30,12 @@
         <thead>
           <tr>
             <th>STT</th>
+            <th class="img-cell">Ảnh nhân viên</th>
             <th>Tên tài khoản</th>
             <th>Email</th>
             <th>Họ và tên</th>
+            <th>Chức vụ</th>
+            <th>Địa chỉ</th>
             <th>Ngày tạo</th>
             <th>Trạng thái</th>
             <th class="text-center">Thao tác</th>
@@ -45,6 +48,19 @@
               {{ pageNo * pageSize + index + 1 }}
             </td>
 
+            <td class="img-cell">
+  <div class="avatar-wrapper">
+    <img
+      v-if="item.anhNhanVien"
+      :src="getImageUrl(item.anhNhanVien)"
+      class="avatar-img"
+    />
+    <i v-else class="bi bi-person avatar-icon"></i>
+  </div>
+</td>
+
+
+
             <td class="text-bold text-gray">
               {{ item.tenTaiKhoan }}
             </td>
@@ -55,6 +71,15 @@
 
             <td class="text-bold text-gray">
               {{ item.tenNhanVien }}
+            </td>
+
+            <td class="text-gray">
+  {{ getTenChucVu(item.idQuyenHan) }}
+</td>
+
+
+            <td class="text-gray">
+              {{ [item.diaChiCuThe, item.phuong, item.quan, item.thanhPho].filter(Boolean).join(', ') || 'Chưa có' }}
             </td>
 
             <td>
@@ -82,7 +107,8 @@
     </div>
 
     <div class="pagination-container">
-      <button class="page-btn" :class="{ disabled: pageNo === 0 }" @click="pageNo--; handleFilter()" :disabled="pageNo === 0">
+      <button class="page-btn" :class="{ disabled: pageNo === 0 }" @click="pageNo--; handleFilter()"
+        :disabled="pageNo === 0">
         <i class="fa-solid fa-chevron-left"></i>
       </button>
       <button class="page-btn active">{{ pageNo + 1 }}</button>
@@ -102,6 +128,7 @@ import { searchNhanVien, pagingNhanVien } from '@/services/tai_khoan/nhan_vien/n
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { watch } from 'vue';
+import { getAllQuyenHan } from '@/services/tai_khoan/nhan_vien/quyen_nhanService';
 
 const router = useRouter();
 const route = useRoute();
@@ -112,11 +139,21 @@ const totalElements = ref(0)
 
 const nhanVienList = ref([])
 const nhanVienOrigin = ref([])
+const listQuyenHan = ref([])
+
+const BASE_URL = "http://localhost:8080";
 
 const filters = ref({
   keyword: '',
   status: ''
 });
+
+const getTenChucVu = (id) => {
+  if (!id) return 'Chưa có';
+
+  const qh = listQuyenHan.value.find(qh => qh.id === id);
+  return qh ? qh.tenQuyenHan : 'Chưa có';
+};
 
 
 const themnv = () => {
@@ -127,7 +164,7 @@ const updatednv = (id) => {
   router.push({ name: 'nv-update', params: { id } });
 };
 
-const isPage = computed(() => 
+const isPage = computed(() =>
   route.name === 'nv-add' || route.name === 'nv-update'
 );
 
@@ -136,15 +173,22 @@ const formatDate = (date) => {
   return new Date(date).toLocaleDateString('vi-VN');
 };
 
-const searchNV = async () => {
-  try {
-    const res = await searchNhanVien(filters.value.keyword);
-    nhanVienOrigin.value = res;
-    applyStatusFilter();
-  } catch (e) {
-    console.log("Lỗi tìm kiếm:", e);
+const getImageUrl = (imageData) => {
+  if (!imageData) return null;
+
+  // preview từ upload
+  if (imageData.startsWith("data:")) {
+    return imageData;
+  }
+
+  // đảm bảo luôn có dấu /
+  if (imageData.startsWith("/add/nhanvien/")) {
+    return BASE_URL + imageData;
+  } else {
+    return BASE_URL + "/add/nhanvien/" + imageData;
   }
 };
+
 
 const handleFilter = async () => {
   try {
@@ -205,8 +249,17 @@ watch(
   }
 );
 
+const getAllQH = async () => {
+  try {
+    listQuyenHan.value = await getAllQuyenHan();
+  } catch (error) {
+    console.log("Lỗi lấy danh sách quyền hạn:", error);
+  }
+};
+
 onMounted(() => {
   handleFilter();
+  getAllQH();
 });
 </script>
 
@@ -323,7 +376,11 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-/* ===== TABLE ===== */
+.table-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 .table-wrapper {
   overflow-x: auto;
 }
@@ -332,6 +389,19 @@ table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
+}
+
+.img-cell {
+  padding-left: 0px;
+  padding-right: 0px;
+  text-align: left;
+}
+
+.avatar-wrapper {
+  margin-left: 15px;
+  width: 48px;
+  height: 48px;
+  border-radius: 5;
 }
 
 th {
@@ -512,4 +582,27 @@ tbody tr:hover {
   background: #fff;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
+
+.avatar-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-icon {
+  font-size: 22px;
+  color: #9ca3af;
+}
+
 </style>
