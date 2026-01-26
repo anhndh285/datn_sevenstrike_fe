@@ -30,7 +30,7 @@
         <thead>
           <tr>
             <th>STT</th>
-            <th class="img-cell">Ảnh nhân viên</th>
+            <th>Ảnh</th>
             <th>Tên tài khoản</th>
             <th>Email</th>
             <th>Họ và tên</th>
@@ -49,15 +49,11 @@
             </td>
 
             <td class="img-cell">
-  <div class="avatar-wrapper">
-    <img
-      v-if="item.anhNhanVien"
-      :src="getImageUrl(item.anhNhanVien)"
-      class="avatar-img"
-    />
-    <i v-else class="bi bi-person avatar-icon"></i>
-  </div>
-</td>
+              <div class="avatar-wrapper">
+                <img v-if="item.anhNhanVien" :src="getImageUrl(item.anhNhanVien)" class="avatar-img" />
+                <i v-else class="bi bi-person avatar-icon"></i>
+              </div>
+            </td>
 
 
 
@@ -74,8 +70,8 @@
             </td>
 
             <td class="text-gray">
-  {{ getTenChucVu(item.idQuyenHan) }}
-</td>
+              {{ getTenChucVu(item.idQuyenHan) }}
+            </td>
 
 
             <td class="text-gray">
@@ -398,7 +394,7 @@ table {
 }
 
 .avatar-wrapper {
-  margin-left: 15px;
+  margin-left: 0px;
   width: 48px;
   height: 48px;
   border-radius: 5;
@@ -604,5 +600,4 @@ tbody tr:hover {
   font-size: 22px;
   color: #9ca3af;
 }
-
 </style>

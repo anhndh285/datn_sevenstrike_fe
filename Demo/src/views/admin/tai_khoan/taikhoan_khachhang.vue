@@ -30,6 +30,7 @@
             <th>Tên tài khoản</th>
             <th>Số điện thoại</th>
             <th>Email</th>
+            <th>Địa chỉ chi tiết</th>
             <th>Ngày tạo</th>
             <th class="text-center">Thao tác</th>
           </tr>
@@ -57,6 +58,10 @@
 
             <td class="text-gray">
               {{ item.email }}
+            </td>
+
+            <td class="text-gray">
+              {{ formatAddress(item.id) }}
             </td>
 
             <td>
@@ -90,6 +95,7 @@
 </template>
 
 <script setup>
+import { getAllDiaChi } from '@/services/tai_khoan/khach_hang/dia_chi_khach_hangService';
 import { searchKhachHang, pagingKhachHang } from '@/services/tai_khoan/khach_hang/khach_hangService';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -103,10 +109,23 @@ const totalPages = ref(0)
 const khachhangList = ref([])
 const khachhangOrigin = ref([])
 
+const diacchilist = ref([]);
+
 const filters = ref({
   keyword: '',
   status: ''
 });
+
+const getAllDC = async () => {
+  try {
+    const res = await getAllDiaChi();
+    diacchilist.value = res;
+  } catch (error) {
+    console.log("Lỗi lấy danh sách địa chỉ:", error);
+  }
+};
+
+
 
 const themkh = () => {
   router.push({ name: 'kh-add' });
@@ -124,6 +143,21 @@ const formatDate = (date) => {
   if (!date) return '';
   return new Date(date).toLocaleDateString('vi-VN');
 };
+
+const formatAddress = (id) => {
+  if (!id) return 'Chưa có';
+
+  const dc = diacchilist.value.find(dc => dc.idKhachHang === id);
+  if (!dc) return 'Chưa có';
+
+  return [
+    dc.diaChiCuThe,
+    dc.phuong,
+    dc.quan,
+    dc.thanhPho
+  ].filter(Boolean).join(', ');
+};
+
 
 const handleFilter = async () => {
   try {
@@ -185,6 +219,7 @@ watch(
 
 onMounted(() => {
   handleFilter();
+  getAllDC();
 });
 </script>
 
