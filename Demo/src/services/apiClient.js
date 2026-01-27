@@ -14,7 +14,7 @@ apiClient.interceptors.response.use(
     const status = err?.response?.status;
     const data = err?.response?.data;
 
-    console.error("API error:", status, data || err?.message);
+    console.error("API error:", status, data ? JSON.stringify(data) : err?.message);
 
     const msg =
       data?.message ||

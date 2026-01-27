@@ -143,15 +143,30 @@
               </td>
 
               <td class="text-center action-cell">
-                <!-- ✅ SS ONLY -->
-                <button
-                  class="ss-icon-btn-view"
-                  type="button"
-                  @click="viewDetail(item.id)"
-                  title="Xem chi tiết"
-                >
-                  <span class="material-icons-outlined">visibility</span>
-                </button>
+                <div class="d-flex align-items-center justify-content-center gap-2">
+                  <!-- Quick Status Toggle -->
+                  <div 
+                    class="form-check form-switch mb-0" 
+                    title="Dừng đợt giảm giá"
+                    v-if="item.statusKey !== 'ended'"
+                  >
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      :checked="item.trangThai"
+                      @click.prevent="toggleStatus(item)"
+                      style="cursor: pointer;"
+                    />
+                  </div>
+                  <button
+                    class="ss-icon-btn-view"
+                    type="button"
+                    @click="viewDetail(item.id)"
+                    title="Xem chi tiết"
+                  >
+                    <span class="material-icons-outlined">visibility</span>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -251,7 +266,11 @@ const fetchDiscounts = async () => {
       const start = parseDateBoundary(item.ngayBatDau, false);
       const end = parseDateBoundary(item.ngayKetThuc, true);
 
-      if (now < start) {
+      if (!item.trangThai) {
+        statusKey = "ended";
+        statusText = "Đã kết thúc";
+        statusClass = "status-ended";
+      } else if (now < start) {
         statusKey = "upcoming";
         statusText = "Sắp diễn ra";
         statusClass = "status-upcoming";
@@ -337,6 +356,37 @@ const goToAddPage = () => {
 
 const viewDetail = (id) => {
   router.push(`/admin/giam-gia/dot/${id}`);
+};
+
+const toggleStatus = async (item) => {
+  const newStatus = !item.trangThai;
+  const action = newStatus ? "kích hoạt" : "ngừng kích hoạt";
+  
+  if (!confirm(`Bạn có chắc muốn ${action} đợt giảm giá "${item.tenDotGiamGia}"?`)) {
+    return;
+  }
+
+  try {
+    // 1. Lấy thông tin chi tiết đầy đủ (để giữ nguyên danh sách sản phẩm)
+    const [fullInfo, details] = await Promise.all([
+      discountService.getOne(item.id),
+      discountService.getDiscountDetails(item.id)
+    ]);
+
+    // 2. Tạo payload cập nhật
+    const payload = {
+      ...fullInfo,
+      trangThai: newStatus,
+      idChiTietSanPhams: (details || []).map(d => d.idChiTietSanPham || d.id_chi_tiet_san_pham).filter(id => id)
+    };
+
+    // 3. Gọi API update
+    await discountService.update(item.id, payload);
+    await fetchDiscounts(); // Reload list
+  } catch (e) {
+    console.error(e);
+    alert("Lỗi cập nhật trạng thái: " + (e.response?.data?.message || e.message));
+  }
 };
 
 onMounted(() => {
@@ -643,5 +693,11 @@ onMounted(() => {
 .page-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Custom Switch Color */
+.form-check-input:checked {
+  background-color: #ff4d4f;
+  border-color: #ff4d4f;
 }
 </style>

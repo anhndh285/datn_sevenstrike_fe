@@ -130,28 +130,36 @@
           <div class="table-wrapper-mini">
             <table class="custom-table">
               <colgroup>
+                <col style="width: 40px" />
                 <col style="width: 50px" />
+                <col style="width: 60px" />
                 <col style="width: 150px" />
                 <col />
               </colgroup>
               <thead>
                 <tr>
+                  <th></th>
                   <th class="text-center">#</th>
+                  <th class="text-center">Ảnh</th>
                   <th class="text-center">Mã SP</th>
                   <th class="text-center">Tên sản phẩm</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="filteredParentProducts.length === 0">
-                  <td colspan="3" class="text-center text-muted py-4">
+                  <td colspan="5" class="text-center text-muted py-4">
                     Không tìm thấy dữ liệu
                   </td>
                 </tr>
 
-                <tr
-                  v-for="group in paginatedParentProducts"
-                  :key="group.idSanPham"
-                >
+                <template v-for="group in paginatedParentProducts" :key="group.idSanPham">
+                  <!-- Parent Row -->
+                  <tr class="parent-row">
+                    <td class="text-center">
+                      <button class="btn-expand" @click="toggleExpand(group.idSanPham)" type="button">
+                        <i class="fa-solid" :class="expandedGroupIds.includes(group.idSanPham) ? 'fa-minus' : 'fa-plus'"></i>
+                      </button>
+                    </td>
                   <td class="text-center">
                     <input
                       type="checkbox"
@@ -163,11 +171,28 @@
                       :disabled="isEnded"
                     />
                   </td>
+                    <td class="text-center">
+                      <img :src="group.variants[0]?.anh || 'https://via.placeholder.com/40'" class="product-thumb" />
+                    </td>
                   <td class="text-center">{{ group.maSanPham }}</td>
-                  <td class="font-weight-bold text-center">
+                    <td class="text-center">
                     {{ group.tenSanPham }}
                   </td>
                 </tr>
+
+                  <!-- Child Rows -->
+                  <tr v-if="expandedGroupIds.includes(group.idSanPham)" v-for="v in group.variants" :key="v.id" class="child-row">
+                    <td></td>
+                    <td class="text-center">
+                      <input type="checkbox" class="custom-checkbox" :value="v.id" v-model="selectedVariantIds" :disabled="isEnded" />
+                    </td>
+                    <td class="text-center">
+                      <img :src="v.anh || 'https://via.placeholder.com/40'" class="product-thumb-sm" />
+                    </td>
+                    <td class="text-center text-muted small">{{ v.maChiTietSanPham }}</td>
+                    <td class="small">{{ v.tenMauSac }} - {{ v.tenKichThuoc }} - {{ v.tenLoaiSan }}</td>
+                  </tr>
+                </template>
               </tbody>
             </table>
           </div>
@@ -281,6 +306,7 @@
                   />
                 </th>
                 <th class="text-center" width="50">STT</th>
+                <th class="text-center" width="60">Ảnh</th>
                 <th>Mã SP (CT)</th>
                 <th class="text-center">Tên sản phẩm</th>
                 <th class="text-center">Giá bán</th>
@@ -295,7 +321,7 @@
 
             <tbody>
               <tr v-if="variantsDisplay.length === 0">
-                <td colspan="11" class="text-center text-muted py-5">
+                <td colspan="12" class="text-center text-muted py-5">
                   <div class="empty-state">
                     <i class="fa-solid fa-box-open fa-2x mb-2"></i>
                     <p>Chưa có sản phẩm nào được chọn cho đợt giảm giá này.</p>
@@ -319,7 +345,10 @@
                 <td class="text-center">
                   {{ (currentDetailPage - 1) * detailItemsPerPage + index + 1 }}
                 </td>
-                <td class="font-weight-bold text-primary">
+                <td class="text-center">
+                  <img :src="item.anh || 'https://via.placeholder.com/40'" class="product-thumb-sm" />
+                </td>
+                <td class="text-primary">
                   {{ item.maChiTietSanPham }}
                 </td>
                 <td class="text-wrap-name text-center">
@@ -337,14 +366,14 @@
                       </span>
                     </div>
                   </div>
-                  <div v-else class="font-weight-bold">
+                  <div v-else>
                     {{ formatCurrency(item.giaNiemYet) }}
                   </div>
                 </td>
                 <td class="text-center">{{ item.tenThuongHieu }}</td>
                 <td class="text-center">{{ item.soLuong }}</td>
                 <td class="text-center">{{ item.tenChatLieu }}</td>
-                <td class="text-center font-weight-bold">
+                <td class="text-center">
                   {{ item.tenKichThuoc }}
                 </td>
                 <td class="text-center">
@@ -425,6 +454,7 @@ const selectedVariantIds = ref([]);
 const searchKeyword = ref("");
 
 const isLoading = ref(false);
+const expandedGroupIds = ref([]);
 
 const currentDetailPage = ref(1);
 const detailItemsPerPage = 5;
@@ -478,6 +508,9 @@ const paginatedParentProducts = computed(() => {
 });
 
 const isEnded = computed(() => {
+  // Nếu trạng thái là false (đã ngừng kích hoạt) thì coi như đã kết thúc -> Khóa sửa
+  if (formData.trangThai === false) return true;
+
   if (!formData.ngayKetThuc) return false;
   const parts = String(formData.ngayKetThuc).split("-");
   if (parts.length !== 3) return false;
@@ -591,6 +624,14 @@ const formatCurrency = (value) => {
     style: "currency",
     currency: "VND",
   }).format(value ?? 0);
+};
+
+const toggleExpand = (groupId) => {
+  if (expandedGroupIds.value.includes(groupId)) {
+    expandedGroupIds.value = expandedGroupIds.value.filter(id => id !== groupId);
+  } else {
+    expandedGroupIds.value.push(groupId);
+  }
 };
 
 // --- LOAD ---
@@ -1289,9 +1330,6 @@ onMounted(() => loadData());
 .text-center {
   text-align: center;
 }
-.font-weight-bold {
-  font-weight: 650; /* ✅ bớt đậm */
-}
 .text-primary {
   color: #ef4444; /* đỏ chủ đạo */
 }
@@ -1330,5 +1368,24 @@ onMounted(() => loadData());
   .content-wrapper {
     grid-template-columns: 1fr;
   }
+}
+
+/* Thumbnails */
+.product-thumb {
+  width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #eee;
+}
+.product-thumb-sm {
+  width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid #eee;
+}
+
+/* Expand button */
+.btn-expand {
+  background: none; border: none; cursor: pointer; color: #64748b; width: 24px; height: 24px;
+}
+.btn-expand:hover { color: #111827; }
+
+.child-row td {
+  background-color: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
 }
 </style>

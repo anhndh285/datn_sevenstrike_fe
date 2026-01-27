@@ -15,6 +15,7 @@ const API = {
   MATERIAL: `${BASE_URL}/chat-lieu`,
   CATEGORY: `${BASE_URL}/loai-san`,
   SOLE: `${BASE_URL}/co-giay`,
+  IMAGE: `/api/admin/anh-chi-tiet-san-pham`,
 };
 
 // Helper: lấy list an toàn từ axios response (Page/content/data/...)
@@ -69,6 +70,7 @@ export const discountService = {
         thuongHieuRes,
         chatLieuRes,
         loaiSanRes,
+        anhRes,
       ] = await Promise.all([
         apiClient.get(API.PRODUCT_DETAIL),
         apiClient.get(API.PRODUCT),
@@ -77,6 +79,7 @@ export const discountService = {
         apiClient.get(API.BRAND),
         apiClient.get(API.MATERIAL),
         apiClient.get(API.CATEGORY),
+        apiClient.get(API.IMAGE),
       ]);
 
       const ctsp = unwrapList(ctspRes);
@@ -86,6 +89,7 @@ export const discountService = {
       const thuongHieu = unwrapList(thuongHieuRes);
       const chatLieu = unwrapList(chatLieuRes);
       const loaiSan = unwrapList(loaiSanRes);
+      const anhList = unwrapList(anhRes);
 
       const toMap = (arr, nameField) =>
         (arr || []).reduce((acc, it) => {
@@ -101,6 +105,16 @@ export const discountService = {
       const loaiSanMap = toMap(loaiSan, "tenLoaiSan");
 
       const spById = (id) => sp.find((x) => String(x.id) === String(id)) || {};
+
+      // Map ảnh theo idChiTietSanPham (ưu tiên ảnh đại diện)
+      const anhMap = {};
+      anhList.forEach((a) => {
+        const pid = a.idChiTietSanPham || a.id_chi_tiet_san_pham;
+        if (!pid) return;
+        if (!anhMap[pid] || a.laAnhDaiDien) {
+          anhMap[pid] = a.duongDanAnh || a.url || a.urlAnh;
+        }
+      });
 
       return (ctsp || []).map((item) => {
         let idSanPham = item.idSanPham || item.id_san_pham;
@@ -131,10 +145,11 @@ export const discountService = {
 
           maChiTietSanPham:
             item.maChiTietSanPham || item.ma_chi_tiet_san_pham || `CTSP-${item.id}`,
+          anh: anhMap[item.id] || "",
         };
       });
     } catch (error) {
-      console.error("Lỗi khi tải dữ liệu sản phẩm từ DB:", error);
+      console.error(`Lỗi khi tải dữ liệu sản phẩm từ DB [${error?.config?.url}]:`, error);
       return [];
     }
   },

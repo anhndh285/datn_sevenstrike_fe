@@ -44,22 +44,11 @@
           <div class="form-group row-group">
             <label class="label" style="min-width: 120px">Loại giảm giá:</label>
             <div class="radio-group">
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  :value="false"
-                  v-model="formData.loaiGiamGia"
-                />
-                %
-              </label>
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  :value="true"
-                  v-model="formData.loaiGiamGia"
-                />
-                VNĐ
-              </label>
+              <!-- Chỉ cho phép % -->
+              <div class="d-flex align-items-center gap-2">
+                <input type="radio" :value="false" v-model="formData.loaiGiamGia" checked disabled />
+                <span class="font-weight-normal">% Phần trăm</span>
+              </div>
             </div>
           </div>
 
@@ -128,45 +117,84 @@
           <div class="table-wrapper-mini">
             <table class="custom-table">
               <colgroup>
+                <col style="width: 40px" />
                 <col style="width: 50px" />
+                <col style="width: 60px" />
                 <col style="width: 150px" />
                 <col />
               </colgroup>
               <thead>
                 <tr>
+                  <th></th>
                   <th class="text-center">#</th>
+                  <th class="text-center">Ảnh</th>
                   <th class="text-center">Mã SP</th>
                   <th class="text-center">Tên sản phẩm</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="filteredParentProducts.length === 0">
-                  <td colspan="3" class="text-center text-muted py-4">
+                  <td colspan="5" class="text-center text-muted py-4">
                     Không tìm thấy dữ liệu
                   </td>
                 </tr>
-                <tr
-                  v-for="group in paginatedParentProducts"
-                  :key="group.idSanPham"
-                >
+                
+                <!-- Loop Groups -->
+                <template v-for="group in paginatedParentProducts" :key="group.idSanPham">
+                  <!-- Parent Row -->
+                  <tr class="parent-row">
+                    <td class="text-center">
+                      <button 
+                        class="btn-expand" 
+                        @click="toggleExpand(group.idSanPham)"
+                        type="button"
+                      >
+                        <i class="fa-solid" :class="expandedGroupIds.includes(group.idSanPham) ? 'fa-minus' : 'fa-plus'"></i>
+                      </button>
+                    </td>
+                    <td class="text-center">
+                      <input
+                        type="checkbox"
+                        class="custom-checkbox"
+                        :checked="isGroupSelected(group.idSanPham)"
+                        @change="handleParentCheck(group.idSanPham, $event.target.checked)"
+                      />
+                    </td>
+                    <td class="text-center">
+                      <img 
+                        :src="group.variants[0]?.anh || 'https://via.placeholder.com/40'" 
+                        class="product-thumb" 
+                      />
+                    </td>
+                    <td class="text-center">{{ group.maSanPham }}</td>
+                    <td class="text-center">{{ group.tenSanPham }}</td>
+                  </tr>
+
+                  <!-- Child Rows (Variants) -->
+                  <tr 
+                    v-if="expandedGroupIds.includes(group.idSanPham)" 
+                    v-for="v in group.variants" 
+                    :key="v.id"
+                    class="child-row"
+                  >
+                    <td></td>
                   <td class="text-center">
                     <input
                       type="checkbox"
                       class="custom-checkbox"
-                      :checked="isGroupSelected(group.idSanPham)"
-                      @change="
-                        handleParentCheck(
-                          group.idSanPham,
-                          $event.target.checked
-                        )
-                      "
+                        :value="v.id"
+                        v-model="selectedVariantIds"
                     />
                   </td>
-                  <td class="text-center">{{ group.maSanPham }}</td>
-                  <td class="font-weight-bold text-center">
-                    {{ group.tenSanPham }}
+                    <td class="text-center">
+                      <img :src="v.anh || 'https://via.placeholder.com/40'" class="product-thumb-sm" />
+                    </td>
+                    <td class="text-center text-muted small">{{ v.maChiTietSanPham }}</td>
+                    <td class="small">
+                      {{ v.tenMauSac }} - {{ v.tenKichThuoc }} - {{ v.tenLoaiSan }}
                   </td>
                 </tr>
+                </template>
               </tbody>
             </table>
           </div>
@@ -211,6 +239,43 @@
           </button>
         </div>
 
+        <!-- Filters for Detail Table -->
+        <div class="filter-grid mb-3" v-if="selectedVariantIds.length > 0">
+          <select v-model="detailFilters.brand" class="form-select-sm">
+            <option value="">-- Thương hiệu --</option>
+            <option v-for="opt in filterOptions.brands" :key="opt" :value="opt">{{ opt }}</option>
+          </select>
+
+          <select v-model="detailFilters.material" class="form-select-sm">
+            <option value="">-- Chất liệu --</option>
+            <option v-for="opt in filterOptions.materials" :key="opt" :value="opt">{{ opt }}</option>
+          </select>
+
+          <select v-model="detailFilters.size" class="form-select-sm">
+            <option value="">-- Kích cỡ --</option>
+            <option v-for="opt in filterOptions.sizes" :key="opt" :value="opt">{{ opt }}</option>
+          </select>
+
+          <select v-model="detailFilters.color" class="form-select-sm">
+            <option value="">-- Màu sắc --</option>
+            <option v-for="opt in filterOptions.colors" :key="opt" :value="opt">{{ opt }}</option>
+          </select>
+
+          <select v-model="detailFilters.sole" class="form-select-sm">
+            <option value="">-- Đế giày --</option>
+            <option v-for="opt in filterOptions.soles" :key="opt" :value="opt">{{ opt }}</option>
+          </select>
+
+          <button
+            class="btn-clear-filter"
+            type="button"
+            @click="clearDetailFilters"
+            title="Xóa bộ lọc"
+          >
+            <i class="fa-solid fa-filter-circle-xmark"></i>
+          </button>
+        </div>
+
         <div class="table-responsive">
           <table class="custom-table">
             <thead>
@@ -224,6 +289,7 @@
                   />
                 </th>
                 <th class="text-center" width="50">STT</th>
+                <th class="text-center" width="60">Ảnh</th>
                 <th>Mã SP (CT)</th>
                 <th class="text-center">Tên sản phẩm</th>
                 <th class="text-center">Giá bán</th>
@@ -236,7 +302,7 @@
             </thead>
             <tbody>
               <tr v-if="variantsDisplay.length === 0">
-                <td colspan="10" class="text-center text-muted py-5">
+                <td colspan="11" class="text-center text-muted py-5">
                   <div class="empty-state">
                     <i class="fa-solid fa-box-open fa-2x mb-2"></i>
                     <p>Chưa có sản phẩm nào được chọn.</p>
@@ -258,18 +324,21 @@
                 <td class="text-center">
                   {{ (currentDetailPage - 1) * detailItemsPerPage + index + 1 }}
                 </td>
-                <td class="font-weight-bold text-primary">
+                <td class="text-center">
+                  <img :src="item.anh || 'https://via.placeholder.com/40'" class="product-thumb-sm" />
+                </td>
+                <td class="text-primary">
                   {{ item.maChiTietSanPham }}
                 </td>
                 <td class="text-wrap-name text-center">
                   {{ item.tenSanPham }}
                 </td>
-                <td class="text-center font-weight-bold">
+                <td class="text-center">
                   {{ formatCurrency(item.giaNiemYet) }}
                 </td>
                 <td class="text-center">{{ item.tenThuongHieu }}</td>
                 <td class="text-center">{{ item.tenChatLieu }}</td>
-                <td class="text-center font-weight-bold">
+                <td class="text-center">
                   {{ item.tenKichThuoc }}
                 </td>
                 <td class="text-center">
@@ -335,6 +404,7 @@ const isLoading = ref(false);
 
 const currentDetailPage = ref(1);
 const detailItemsPerPage = 5;
+const expandedGroupIds = ref([]);
 
 // --- COMPUTED ---
 const productGroups = computed(() => {
@@ -386,7 +456,39 @@ const allSelectedVariants = computed(() =>
   rawVariants.value.filter((v) => selectedVariantIds.value.includes(v.id))
 );
 
-const variantsDisplay = computed(() => allSelectedVariants.value);
+// --- FILTERS LOGIC ---
+const detailFilters = reactive({
+  brand: "", material: "", color: "", size: "", sole: "",
+});
+
+const filterOptions = computed(() => {
+  const data = allSelectedVariants.value;
+  const getOptions = (key) => [...new Set(data.map((item) => item[key]))].filter(Boolean).sort();
+  return {
+    brands: getOptions("tenThuongHieu"),
+    materials: getOptions("tenChatLieu"),
+    colors: getOptions("tenMauSac"),
+    sizes: getOptions("tenKichThuoc"),
+    soles: getOptions("tenLoaiSan"),
+  };
+});
+
+const variantsDisplay = computed(() => {
+  let list = allSelectedVariants.value;
+  if (detailFilters.brand) list = list.filter((v) => v.tenThuongHieu === detailFilters.brand);
+  if (detailFilters.material) list = list.filter((v) => v.tenChatLieu === detailFilters.material);
+  if (detailFilters.color) list = list.filter((v) => v.tenMauSac === detailFilters.color);
+  if (detailFilters.size) list = list.filter((v) => v.tenKichThuoc === detailFilters.size);
+  if (detailFilters.sole) list = list.filter((v) => v.tenLoaiSan === detailFilters.sole);
+  return list;
+});
+
+const clearDetailFilters = () => {
+  Object.keys(detailFilters).forEach((k) => (detailFilters[k] = ""));
+};
+
+watch(detailFilters, () => { currentDetailPage.value = 1; }, { deep: true });
+// ---------------------
 
 const totalDetailPages = computed(() =>
   Math.ceil(variantsDisplay.value.length / detailItemsPerPage)
@@ -437,6 +539,14 @@ const formatCurrency = (value) => {
     style: "currency",
     currency: "VND",
   }).format(value ?? 0);
+};
+
+const toggleExpand = (groupId) => {
+  if (expandedGroupIds.value.includes(groupId)) {
+    expandedGroupIds.value = expandedGroupIds.value.filter(id => id !== groupId);
+  } else {
+    expandedGroupIds.value.push(groupId);
+  }
 };
 
 const isGroupSelected = (parentId) => {
@@ -711,7 +821,7 @@ onMounted(() => {
   justify-content: center;
 }
 .btn-update {
-  background: #16a34a;
+  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -725,10 +835,10 @@ onMounted(() => {
   justify-content: center;
 }
 .btn-update:hover {
-  background: #15803d;
+  filter: brightness(0.98);
 }
 .btn-update:disabled {
-  background: #86efac;
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
@@ -863,15 +973,44 @@ onMounted(() => {
 .text-center {
   text-align: center;
 }
-.font-weight-bold {
-  font-weight: 600;
-}
 .text-primary {
   color: #2563eb;
 }
 .text-muted {
   color: #94a3b8;
 }
+
+/* Thumbnails */
+.product-thumb {
+  width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #eee;
+}
+.product-thumb-sm {
+  width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid #eee;
+}
+
+/* Expand button */
+.btn-expand {
+  background: none; border: none; cursor: pointer; color: #64748b; width: 24px; height: 24px;
+}
+.btn-expand:hover { color: #0f172a; }
+
+/* Child row style */
+.child-row td {
+  background-color: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* Filter grid */
+.filter-grid { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.form-select-sm {
+  padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; outline: none; min-width: 120px;
+}
+.btn-clear-filter {
+  background: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; width: 34px; height: 34px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.btn-clear-filter:hover { color: #ef4444; border-color: #ef4444; }
+
+.font-weight-normal { font-weight: 400 !important; }
 .color-dot {
   display: inline-block;
   width: 10px;

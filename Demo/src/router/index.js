@@ -46,10 +46,55 @@ const routes = [
 
       { path: "dashboard", component: SimplePage("THỐNG KÊ") },
       { path: "pos", component: SimplePage("BÁN HÀNG TẠI QUẦY") },
-      { path: "hoa-don", component: SimplePage("HÓA ĐƠN") },
 
-      { path: "giam-gia/phieu", component: SimplePage("PHIẾU GIẢM GIÁ") },
-      { path: "giam-gia/dot", component: SimplePage("ĐỢT GIẢM GIÁ") },
+      // ✅ Hóa đơn
+      { path: "hoa-don", name: "admin-hoa-don", component: HoaDonList },
+      {
+        path: "hoa-don/:id",
+        name: "admin-hoa-don-detail",
+        component: HoaDonDetail,
+        props: true,
+      },
+
+      // =========================================================
+      // ✅ KHUYẾN MẠI
+      // =========================================================
+
+      // ✅ Phiếu giảm giá
+      {
+        path: "giam-gia/phieu",
+        name: "admin-voucher",
+        component: VoucherManagePage,
+      },
+      {
+        path: "giam-gia/phieu/them",
+        name: "admin-voucher-new",
+        component: VoucherFormPage,
+      },
+      // ✅ chi tiết phải đứng TRƯỚC :id để tránh match nhầm
+      {
+        path: "giam-gia/phieu/chi-tiet/:id",
+        name: "admin-voucher-detail",
+        component: VoucherFormPage,
+        props: true,
+      },
+      // ✅ sửa (giữ theo dạng :id như bạn đang làm)
+      {
+        path: "giam-gia/phieu/:id",
+        name: "admin-voucher-edit",
+        component: VoucherFormPage,
+        props: true,
+      },
+
+      // ✅ Đợt giảm giá
+      { path: "giam-gia/dot", name: "admin-discount", component: DiscountPage },
+      { path: "giam-gia/dot/new", name: "admin-discount-new", component: AddDiscountPage },
+      {
+        path: "giam-gia/dot/:id",
+        name: "admin-discount-detail",
+        component: DetailDiscountPage,
+        props: true,
+      },
 
       // =========================================================
       // ✅ SẢN PHẨM
