@@ -1,3 +1,4 @@
+/* File: src/assets/styles/admin.css */
 :root {
   --admin-font: system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans",
     "Helvetica Neue", sans-serif;
@@ -15,12 +16,26 @@
 
   /* Shadow header mảnh */
   --ss-header-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+
+  /* =========================
+     ✅ ICON SYSTEM (mắt/view) - SS ONLY
+     ========================= */
+  --ss-icon: rgba(17, 24, 39, 0.88); /* đen dịu mắt (không xám) */
+  --ss-icon-border: rgba(17, 24, 39, 0.14);
+  --ss-icon-border-hover: rgba(17, 24, 39, 0.20);
+  --ss-icon-bg-hover: rgba(17, 24, 39, 0.04);
+  --ss-icon-radius: 10px;
+  --ss-icon-size: 36px;
+
+  /* text chung (đỡ nhạt) */
+  --ss-text: rgba(17, 24, 39, 0.88);
+  --ss-text-muted: rgba(17, 24, 39, 0.72);
 }
 
 html,
 body {
   font-family: var(--admin-font) !important;
-  color: #212529;
+  color: var(--ss-text);
   font-size: 14px;
   background: #f5f6f8;
 }
@@ -137,4 +152,53 @@ body {
   background: rgba(255, 77, 79, 0.08);
   border-color: var(--ss-border);
   color: var(--ss-accent);
+}
+
+/* =========================================================
+   ✅ GLOBAL (SS ONLY): ICON MẮT / XEM
+   DÙNG DUY NHẤT: .ss-icon-btn-view
+   ========================================================= */
+.ss-icon-btn-view {
+  width: var(--ss-icon-size) !important;
+  height: var(--ss-icon-size) !important;
+  border-radius: var(--ss-icon-radius) !important;
+
+  border: 1px solid var(--ss-icon-border) !important;
+  background: #fff !important;
+
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  color: var(--ss-icon) !important; /* ✅ đen dịu mắt */
+  padding: 0 !important;
+  transition: 0.2s ease !important;
+
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+.ss-icon-btn-view:hover {
+  background: var(--ss-icon-bg-hover) !important;
+  border-color: var(--ss-icon-border-hover) !important;
+}
+
+.ss-icon-btn-view:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.10) !important;
+}
+
+/* Material icons trong nút mắt */
+.ss-icon-btn-view .material-icons-outlined {
+  color: currentColor !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+}
+
+/* (Optional) nếu có SVG icon mắt về sau */
+.ss-icon-btn-view svg {
+  width: 18px !important;
+  height: 18px !important;
+  fill: currentColor !important;
 }

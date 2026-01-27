@@ -1,15 +1,35 @@
+// File: src/router/index.js
 import { createRouter, createWebHistory } from "vue-router";
 
 import AdminLayout from "@/views/admin/AdminLayout.vue";
 
 import ProductManagePage from "@/pages/product/ProductManagePage.vue";
-import ProductFormPage from "@/pages/product/ProductFormPage.vue";
-
 import ProductDetailListPage from "@/pages/product/ProductDetailListPage.vue";
 import ProductDetailFormPage from "@/pages/product/ProductDetailFormPage.vue";
+import ProductFormPage from "@/pages/product/ProductFormPage.vue";
 
-// Thuộc tính - Cổ giày
 import CoGiayPage from "@/pages/product/thuoc_tinh/co_giay/CoGiayPage.vue";
+
+import DiscountPage from "@/pages/khuyen_mai/dot_giam_gia/DiscountPage.vue";
+import AddDiscountPage from "@/pages/khuyen_mai/dot_giam_gia/AddDiscountPage.vue";
+import DetailDiscountPage from "@/pages/khuyen_mai/dot_giam_gia/DetailDiscountPage.vue";
+
+// ✅ Phiếu giảm giá
+import VoucherManagePage from "@/pages/khuyen_mai/phieu_giam_gia/VoucherManagePage.vue";
+import VoucherFormPage from "@/pages/khuyen_mai/phieu_giam_gia/VoucherFormPage.vue";
+
+// ✅ Tài khoản (nhân viên / khách hàng)
+import TaiKhoanNhanVienPage from "@/pages/tai_khoan/taikhoan_nhanvien.vue";
+import ThemNhanVienPage from "@/pages/tai_khoan/them_nhanvien.vue";
+import CapNhatNhanVienPage from "@/pages/tai_khoan/capnhat_nhanvien.vue";
+
+import TaiKhoanKhachHangPage from "@/pages/tai_khoan/taikhoan_khachhang.vue";
+import ThemKhachHangPage from "@/pages/tai_khoan/them_khachhang.vue";
+import CapNhatKhachHangPage from "@/pages/tai_khoan/capnhat_khachhang.vue";
+
+// ✅ Hóa đơn
+import HoaDonList from "@/pages/hoa_don/HoaDonList.vue";
+import HoaDonDetail from "@/pages/hoa_don/HoaDonDetail.vue";
 
 const SimplePage = (title) => ({
   template: `<div class="p-4"><h3 style="font-weight:800">${title}</h3><div class="text-muted">Demo page</div></div>`,
@@ -29,39 +49,70 @@ const routes = [
       { path: "hoa-don", component: SimplePage("HÓA ĐƠN") },
 
       { path: "giam-gia/phieu", component: SimplePage("PHIẾU GIẢM GIÁ") },
-      { path: "giam-gia/dot", name: "admin-discount", component: () => import("@/views/admin/DiscountPage.vue") },
-      { path: "giam-gia/dot/new", name: "admin-discount-create", component: () => import("@/views/admin/AddDiscountPage.vue") },
-      { path: "giam-gia/dot/:id", name: "admin-discount-detail", component: () => import("@/views/admin/DetailDiscountPage.vue") },
+      { path: "giam-gia/dot", component: SimplePage("ĐỢT GIẢM GIÁ") },
 
-      // ===== SẢN PHẨM =====
+      // =========================================================
+      // ✅ SẢN PHẨM
+      // =========================================================
       { path: "san-pham", name: "admin-san-pham", component: ProductManagePage },
-
-      // Thêm / sửa sản phẩm: chuyển sang PAGE (không dùng modal)
       { path: "san-pham/new", name: "admin-san-pham-new", component: ProductFormPage },
+      { path: "san-pham/:id", name: "admin-san-pham-one", component: ProductFormPage, props: true },
       { path: "san-pham/:id/edit", name: "admin-san-pham-edit", component: ProductFormPage, props: true },
 
-      // ===== CHI TIẾT SẢN PHẨM =====
-      // List: có thể nhận query ?productId=
+      // ✅ Chi tiết sản phẩm
       { path: "chi-tiet-san-pham", name: "admin-ctsp", component: ProductDetailListPage },
       { path: "chi-tiet-san-pham/new", name: "admin-ctsp-new", component: ProductDetailFormPage },
       { path: "chi-tiet-san-pham/:id", name: "admin-ctsp-one", component: ProductDetailFormPage, props: true },
 
-      // ===== THUỘC TÍNH =====
+      // =========================================================
+      // ✅ THUỘC TÍNH
+      // =========================================================
       { path: "xuat-xu", component: SimplePage("XUẤT XỨ") },
       { path: "thuong-hieu", component: SimplePage("THƯƠNG HIỆU") },
       { path: "vi-tri-thi-dau", component: SimplePage("VỊ TRÍ THI ĐẤU") },
       { path: "phong-cach-choi", component: SimplePage("PHONG CÁCH CHƠI") },
-
-      { path: "co-giay", name: "admin-co-giay", component: CoGiayPage },
-
+      { path: "co-giay", component: CoGiayPage },
       { path: "chat-lieu", component: SimplePage("CHẤT LIỆU") },
       { path: "mau-sac", component: SimplePage("MÀU SẮC") },
       { path: "kich-thuoc", component: SimplePage("KÍCH THƯỚC") },
       { path: "form-chan", component: SimplePage("FORM CHÂN") },
       { path: "loai-san", component: SimplePage("LOẠI SÂN") },
 
-      { path: "khach-hang", component: SimplePage("KHÁCH HÀNG") },
-      { path: "nhan-vien", component: SimplePage("NHÂN VIÊN") },
+      // ✅ (giữ nguyên demo cũ nếu bạn còn dùng)
+      { path: "khach-hang", redirect: "/admin/tai-khoan/khach-hang" },
+      { path: "nhan-vien", redirect: "/admin/tai-khoan/nhan-vien" },
+
+      // =========================================================
+      // ✅ TÀI KHOẢN
+      // =========================================================
+      {
+        path: "tai-khoan/khach-hang",
+        name: "tai-khoan-khach-hang",
+        component: TaiKhoanKhachHangPage,
+        children: [
+          { path: "them", name: "tai-khoan-khach-hang-them", component: ThemKhachHangPage },
+          {
+            path: "cap-nhat/:id",
+            name: "tai-khoan-khach-hang-cap-nhat",
+            component: CapNhatKhachHangPage,
+            props: true,
+          },
+        ],
+      },
+      {
+        path: "tai-khoan/nhan-vien",
+        name: "tai-khoan-nhan-vien",
+        component: TaiKhoanNhanVienPage,
+        children: [
+          { path: "them", name: "tai-khoan-nhan-vien-them", component: ThemNhanVienPage },
+          {
+            path: "cap-nhat/:id",
+            name: "tai-khoan-nhan-vien-cap-nhat",
+            component: CapNhatNhanVienPage,
+            props: true,
+          },
+        ],
+      },
     ],
   },
 
