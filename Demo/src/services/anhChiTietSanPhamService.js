@@ -1,65 +1,74 @@
 // src/services/anhChiTietSanPhamService.js
-import apiClient from "@/services/apiClient";
+import axios from "axios";
 
-const BASE = "/api/admin/anh-chi-tiet-san-pham";
+const apiBase =
+  import.meta?.env?.VITE_API_URL ||
+  import.meta?.env?.VITE_API_BASE_URL ||
+  "http://localhost:8080";
 
-const unwrap = (res) => (res?.data ?? res);
+const http = axios.create({
+  baseURL: String(apiBase).replace(/\/+$/, ""),
+});
 
-// ✅ list unwrap (BE có thể trả List trực tiếp hoặc {data: []})
-const unwrapList = (v) => {
-  if (Array.isArray(v)) return v;
-  const d = v?.data ?? v;
-  if (Array.isArray(d)) return d;
-  if (Array.isArray(d?.data)) return d.data;
-  if (Array.isArray(d?.content)) return d.content;
-  return [];
+const base = "/api/admin/anh-chi-tiet-san-pham";
+
+function asFormData(file, extra = {}) {
+  const fd = new FormData();
+  // ✅ BẮT BUỘC key phải là "file" đúng như BE @RequestParam("file")
+  fd.append("file", file);
+
+  Object.keys(extra).forEach((k) => {
+    if (extra[k] === undefined || extra[k] === null) return;
+    fd.append(k, extra[k]);
+  });
+
+  return fd;
+}
+
+export default {
+  getAll() {
+    return http.get(base);
+  },
+
+  getOne(id) {
+    return http.get(`${base}/${id}`);
+  },
+
+  // ====== API GỐC ======
+  byChiTietSanPham(idChiTietSanPham) {
+    return http.get(`${base}/by-chi-tiet-san-pham/${idChiTietSanPham}`);
+  },
+
+  setDaiDien(id) {
+    return http.put(`${base}/${id}/set-dai-dien`);
+  },
+
+  delete(id) {
+    return http.delete(`${base}/${id}`);
+  },
+
+  // ✅ UPLOAD MỚI (tạo record ảnh mới)
+  // BE: POST /upload?idChiTietSanPham=...&laAnhDaiDien=...&moTa=...
+  uploadNew({ idChiTietSanPham, file, laAnhDaiDien = false, moTa = "" }) {
+    const fd = asFormData(file, { idChiTietSanPham, laAnhDaiDien, moTa });
+    return http.post(`${base}/upload`, fd); // axios tự set multipart
+  },
+
+  // ✅ UPDATE ẢNH THEO ID ẢNH (replace file)
+  // PUT /{id}/upload (multipart)
+  updateUpload({ id, file, laAnhDaiDien = false, moTa = "" }) {
+    const fd = asFormData(file, { laAnhDaiDien, moTa });
+    return http.put(`${base}/${id}/upload`, fd);
+  },
+
+  // ====== ✅ ALIAS (để code trang khác gọi "đúng tên mong đợi") ======
+  // ProductFormPage đang gọi getByChiTietSanPham(...)
+  getByChiTietSanPham(idChiTietSanPham) {
+    return this.byChiTietSanPham(idChiTietSanPham);
+  },
+
+  // ProductFormPage đang gọi upload(...)
+  upload({ idChiTietSanPham, file, laAnhDaiDien = false, moTa = "" }) {
+    return this.uploadNew({ idChiTietSanPham, file, laAnhDaiDien, moTa });
+  },
 };
-
-const anhChiTietSanPhamService = {
-  async getAll() {
-    return unwrap(await apiClient.get(BASE));
-  },
-
-  async getOne(id) {
-    return unwrap(await apiClient.get(`${BASE}/${id}`));
-  },
-
-  async create(payload) {
-    return unwrap(await apiClient.post(BASE, payload));
-  },
-
-  async update(id, payload) {
-    return unwrap(await apiClient.put(`${BASE}/${id}`, payload));
-  },
-
-  async remove(id) {
-    // BE soft delete
-    return unwrap(await apiClient.delete(`${BASE}/${id}`));
-  },
-
-  async getByChiTietSanPham(idChiTietSanPham) {
-    const res = await apiClient.get(`${BASE}/by-chi-tiet-san-pham/${idChiTietSanPham}`);
-    return unwrapList(res);
-  },
-
-  async setDaiDien(id) {
-    return unwrap(await apiClient.put(`${BASE}/${id}/set-dai-dien`));
-  },
-
-  // ✅ upload file ảnh trực tiếp
-  // params: { idChiTietSanPham, file, laAnhDaiDien=false, moTa="" }
-  async upload({ idChiTietSanPham, file, laAnhDaiDien = false, moTa = "" }) {
-    const fd = new FormData();
-    fd.append("idChiTietSanPham", idChiTietSanPham);
-    fd.append("file", file);
-    fd.append("laAnhDaiDien", String(laAnhDaiDien));
-    if (moTa !== undefined && moTa !== null) fd.append("moTa", moTa);
-
-    const res = await apiClient.post(`${BASE}/upload`, fd, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return unwrap(res);
-  },
-};
-
-export default anhChiTietSanPhamService;

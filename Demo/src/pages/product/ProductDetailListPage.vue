@@ -142,7 +142,14 @@
           <select v-model="filters.idViTriThiDau" class="form-select ss-select">
             <option value="">Tất cả</option>
             <option v-for="x in viTriThiDauOptions" :key="x.id" :value="String(x.id)">
-              {{ x.tenViTriThiDau ?? x.ten_vi_tri ?? x.ten ?? "-" }}
+              {{
+                x.tenViTriThiDau ??
+                x.tenViTri ??
+                x.ten_vi_tri_thi_dau ??
+                x.ten_vi_tri ??
+                x.ten ??
+                "-"
+              }}
             </option>
           </select>
         </div>
@@ -153,7 +160,14 @@
           <select v-model="filters.idPhongCachChoi" class="form-select ss-select">
             <option value="">Tất cả</option>
             <option v-for="x in phongCachChoiOptions" :key="x.id" :value="String(x.id)">
-              {{ x.tenPhongCachChoi ?? x.ten_phong_cach ?? x.ten ?? "-" }}
+              {{
+                x.tenPhongCachChoi ??
+                x.tenPhongCach ??
+                x.ten_phong_cach_choi ??
+                x.ten_phong_cach ??
+                x.ten ??
+                "-"
+              }}
             </option>
           </select>
         </div>
@@ -242,16 +256,13 @@
             <col style="width: 160px" />
             <col style="width: 150px" />
             <col style="width: 150px" />
-            <col style="width: 160px" />
-            <col style="width: 150px" />
-            <col style="width: 150px" />
             <col style="width: 140px" />
           </colgroup>
 
           <thead>
             <tr>
               <th>STT</th>
-              <th>Mã</th>
+              <th>Mã CTSP</th>
               <th>Ảnh</th>
               <th>Tên sản phẩm</th>
 
@@ -270,21 +281,19 @@
 
               <th>Số lượng</th>
               <th>Giá</th>
-              <th>Trạng thái</th>
-              <th>Ngày tạo</th>
               <th>Hành động</th>
             </tr>
           </thead>
 
           <tbody v-if="loading">
             <tr>
-              <td colspan="19" class="text-center text-muted py-4">Đang tải...</td>
+              <td colspan="17" class="text-center text-muted py-4">Đang tải...</td>
             </tr>
           </tbody>
 
           <tbody v-else-if="!pagedDetails.length">
             <tr>
-              <td colspan="19" class="text-center text-muted py-4">Không có dữ liệu</td>
+              <td colspan="17" class="text-center text-muted py-4">Không có dữ liệu</td>
             </tr>
           </tbody>
 
@@ -296,14 +305,14 @@
 
               <td>
                 <div class="ss-thumb">
-                  <img v-if="pickImageUrl(d)" :src="pickImageUrl(d)" alt="img" />
+                  <!-- ✅ cache-buster -->
+                  <img v-if="pickImageUrl(d)" :src="imgUrlWithVer(pickImageUrl(d))" alt="img" />
                   <span v-else class="text-muted small">-</span>
                 </div>
               </td>
 
               <td class="ss-name">
                 <div class="fw-semibold">{{ pickTenSanPham(d) }}</div>
-                <div class="text-muted small" v-if="pickMaSanPham(d)">{{ pickMaSanPham(d) }}</div>
               </td>
 
               <td>{{ pickTenThuongHieu(d) }}</td>
@@ -321,14 +330,6 @@
 
               <td class="fw-semibold">{{ Number(pickSoLuong(d) || 0) }}</td>
               <td class="fw-semibold">{{ formatMoney(pickGia(d)) }}</td>
-
-              <td>
-                <span class="ss-pill" :class="getTrangThai(d) ? 'ss-pill-active' : 'ss-pill-inactive'">
-                  {{ getTrangThai(d) ? "Kinh doanh" : "Ngừng kinh doanh" }}
-                </span>
-              </td>
-
-              <td class="text-muted">{{ formatDate(pickNgayTao(d)) }}</td>
 
               <td class="text-center">
                 <button class="btn ss-icon-btn-view" type="button" title="Xem" @click="viewDetail(d)">
@@ -349,9 +350,7 @@
             <span class="material-icons-outlined">chevron_left</span>
           </button>
 
-          <div class="ss-page-info">
-            Trang <b>{{ page }}</b> / <b>{{ totalPages }}</b>
-          </div>
+          <div class="ss-page-info">Trang <b>{{ page }}</b> / <b>{{ totalPages }}</b></div>
 
           <button class="btn ss-page-btn" :disabled="page >= totalPages" @click="page = page + 1">
             <span class="material-icons-outlined">chevron_right</span>
@@ -383,6 +382,18 @@ const page = ref(1);
 const pageSize = ref(10);
 
 const details = ref([]);
+
+// ✅ cache-buster ảnh (để update xong thấy ảnh mới ngay)
+const imgVerTick = ref(Date.now());
+function bumpImgVer() {
+  imgVerTick.value = Date.now();
+}
+function imgUrlWithVer(url) {
+  if (!url) return "";
+  const u = String(url);
+  const join = u.includes("?") ? "&" : "?";
+  return `${u}${join}v=${imgVerTick.value}`;
+}
 
 // options
 const productOptions = ref([]);
@@ -482,9 +493,6 @@ function pickSoLuong(d) {
 function pickGia(d) {
   return d?.giaBan ?? d?.gia_ban ?? d?.giaNiemYet ?? d?.gia_niem_yet ?? d?.gia ?? 0;
 }
-function pickNgayTao(d) {
-  return d?.ngayTao ?? d?.ngay_tao ?? d?.createdAt ?? d?.created_at ?? null;
-}
 function pickTenSanPham(d) {
   return (
     d?.tenSanPham ??
@@ -494,17 +502,6 @@ function pickTenSanPham(d) {
     d?.sanPham?.ten ??
     d?.san_pham?.ten_san_pham ??
     "-"
-  );
-}
-function pickMaSanPham(d) {
-  return (
-    d?.maSanPham ??
-    d?.sanPhamMa ??
-    d?.sanPham?.maSanPham ??
-    d?.sanPham?.ma_san_pham ??
-    d?.sanPham?.ma ??
-    d?.san_pham?.ma_san_pham ??
-    ""
   );
 }
 function pickTenThuongHieu(d) {
@@ -532,10 +529,32 @@ function pickTenChatLieu(d) {
   return d?.tenChatLieu ?? d?.ten_chat_lieu ?? d?.chatLieu?.tenChatLieu ?? d?.chatLieu?.ten_chat_lieu ?? d?.chatLieu?.ten ?? "-";
 }
 function pickTenViTriThiDau(d) {
-  return d?.tenViTriThiDau ?? d?.ten_vi_tri ?? d?.viTriThiDau?.tenViTriThiDau ?? d?.viTriThiDau?.ten_vi_tri ?? d?.viTriThiDau?.ten ?? "-";
+  return (
+    d?.tenViTriThiDau ??
+    d?.ten_vi_tri_thi_dau ??
+    d?.tenViTri ??
+    d?.ten_vi_tri ??
+    d?.viTriThiDau?.tenViTriThiDau ??
+    d?.viTriThiDau?.ten_vi_tri_thi_dau ??
+    d?.viTriThiDau?.tenViTri ??
+    d?.viTriThiDau?.ten_vi_tri ??
+    d?.viTriThiDau?.ten ??
+    "-"
+  );
 }
 function pickTenPhongCachChoi(d) {
-  return d?.tenPhongCachChoi ?? d?.ten_phong_cach ?? d?.phongCachChoi?.tenPhongCachChoi ?? d?.phongCachChoi?.ten_phong_cach ?? d?.phongCachChoi?.ten ?? "-";
+  return (
+    d?.tenPhongCachChoi ??
+    d?.ten_phong_cach_choi ??
+    d?.tenPhongCach ??
+    d?.ten_phong_cach ??
+    d?.phongCachChoi?.tenPhongCachChoi ??
+    d?.phongCachChoi?.ten_phong_cach_choi ??
+    d?.phongCachChoi?.tenPhongCach ??
+    d?.phongCachChoi?.ten_phong_cach ??
+    d?.phongCachChoi?.ten ??
+    "-"
+  );
 }
 
 /** ========= image ========= */
@@ -556,15 +575,6 @@ function pickImageUrl(d) {
 }
 
 /** ========= formatter ========= */
-function formatDate(v) {
-  if (!v) return "-";
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return "-";
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yy = d.getFullYear();
-  return `${dd}/${mm}/${yy}`;
-}
 function formatMoney(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return "0";
@@ -587,7 +597,6 @@ function pickTenFrom(obj, keys = []) {
   }
   return "";
 }
-
 function toIntOrNull(v) {
   if (v === "" || v === undefined || v === null) return null;
   const n = Number(v);
@@ -617,6 +626,7 @@ function enrichCtspList(ctspList) {
     const idXuatXu = toIntOrNull(p?.idXuatXu ?? p?.id_xuat_xu ?? p?.xuatXuId ?? p?.xuatXu?.id);
     const idCoGiay = toIntOrNull(p?.idCoGiay ?? p?.id_co_giay ?? p?.coGiayId ?? p?.coGiay?.id);
     const idChatLieu = toIntOrNull(p?.idChatLieu ?? p?.id_chat_lieu ?? p?.chatLieuId ?? p?.chatLieu?.id);
+
     const idViTriThiDau = toIntOrNull(p?.idViTriThiDau ?? p?.id_vi_tri_thi_dau ?? p?.viTriThiDauId ?? p?.viTriThiDau?.id);
     const idPhongCachChoi = toIntOrNull(p?.idPhongCachChoi ?? p?.id_phong_cach_choi ?? p?.phongCachChoiId ?? p?.phongCachChoi?.id);
 
@@ -645,14 +655,19 @@ function enrichCtspList(ctspList) {
     })();
 
     const tenSpTmp = x?.tenSanPham ?? pickTenFrom(p, ["tenSanPham", "ten_san_pham", "ten", "name"]);
-    const maSpTmp = x?.maSanPham ?? pickTenFrom(p, ["maSanPham", "ma_san_pham", "ma"]);
 
     const tenThuongHieuTmp = x?.tenThuongHieu ?? pickTenFrom(th, ["tenThuongHieu", "ten_thuong_hieu", "ten"]);
     const tenXuatXuTmp = x?.tenXuatXu ?? pickTenFrom(xx, ["tenXuatXu", "ten_xuat_xu", "ten"]);
     const tenCoGiayTmp = x?.tenCoGiay ?? pickTenFrom(cg, ["tenCoGiay", "ten_co_giay", "ten"]);
     const tenChatLieuTmp = x?.tenChatLieu ?? pickTenFrom(cl, ["tenChatLieu", "ten_chat_lieu", "ten"]);
-    const tenViTriTmp = x?.tenViTriThiDau ?? pickTenFrom(vt, ["tenViTriThiDau", "ten_vi_tri", "ten"]);
-    const tenPhongCachTmp = x?.tenPhongCachChoi ?? pickTenFrom(pc, ["tenPhongCachChoi", "ten_phong_cach", "ten"]);
+
+    const tenViTriTmp =
+      x?.tenViTriThiDau ??
+      pickTenFrom(vt, ["tenViTriThiDau", "tenViTri", "ten_vi_tri_thi_dau", "ten_vi_tri", "ten"]);
+
+    const tenPhongCachTmp =
+      x?.tenPhongCachChoi ??
+      pickTenFrom(pc, ["tenPhongCachChoi", "tenPhongCach", "ten_phong_cach_choi", "ten_phong_cach", "ten"]);
 
     const tenMauSacTmp = x?.tenMauSac ?? pickTenFrom(ms, ["tenMauSac", "ten_mau_sac", "ten"]);
     const tenKichThuocTmp = x?.tenKichThuoc ?? pickTenFrom(kt, ["tenKichThuoc", "ten_kich_thuoc", "ten"]);
@@ -664,7 +679,6 @@ function enrichCtspList(ctspList) {
       sanPham: x?.sanPham ?? x?.san_pham ?? p ?? null,
 
       tenSanPham: tenSpTmp || "-",
-      maSanPham: maSpTmp || "",
 
       idThuongHieu: x?.idThuongHieu ?? (idThuongHieu != null ? idThuongHieu : null),
       tenThuongHieu: tenThuongHieuTmp || "-",
@@ -716,8 +730,7 @@ const filteredDetails = computed(() => {
   return (details.value || []).filter((d) => {
     const maCtsp = lc(pickMaCtsp(d));
     const tenSp = lc(pickTenSanPham(d));
-    const maSp = lc(pickMaSanPham(d));
-    const matchKw = !kw || maCtsp.includes(kw) || tenSp.includes(kw) || maSp.includes(kw);
+    const matchKw = !kw || maCtsp.includes(kw) || tenSp.includes(kw);
 
     const st = getTrangThai(d);
     const matchStatus =
@@ -735,6 +748,7 @@ const filteredDetails = computed(() => {
     const idXuatXu = d?.idXuatXu ?? d?.id_xuat_xu ?? d?.xuatXuId ?? d?.sanPham?.xuatXu?.id ?? null;
     const idCoGiay = d?.idCoGiay ?? d?.id_co_giay ?? d?.coGiayId ?? d?.sanPham?.coGiay?.id ?? null;
     const idChatLieu = d?.idChatLieu ?? d?.id_chat_lieu ?? d?.chatLieuId ?? d?.sanPham?.chatLieu?.id ?? null;
+
     const idViTriThiDau = d?.idViTriThiDau ?? d?.id_vi_tri_thi_dau ?? d?.viTriThiDauId ?? d?.sanPham?.viTriThiDau?.id ?? null;
     const idPhongCachChoi = d?.idPhongCachChoi ?? d?.id_phong_cach_choi ?? d?.phongCachChoiId ?? d?.sanPham?.phongCachChoi?.id ?? null;
 
@@ -878,6 +892,9 @@ async function loadData() {
       return { ...x, anhDaiDienUrl: pick?.daiDien || pick?.first || "" };
     });
 
+    // ✅ bump để ảnh render mới (tránh cache)
+    bumpImgVer();
+
     // query productId
     const pid = Number(route.query?.productId);
     if (Number.isFinite(pid) && pid > 0) filters.idSanPham = String(pid);
@@ -892,8 +909,8 @@ async function loadData() {
 onMounted(loadData);
 </script>
 
-
 <style scoped>
+/* giữ nguyên style của bạn */
 .ss-page-title {
   font-weight: 900;
   font-size: 22px;
@@ -976,26 +993,6 @@ onMounted(loadData);
   accent-color: #ff4d4f;
 }
 
-/* pill */
-.ss-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-weight: 800;
-  font-size: 12px;
-}
-.ss-pill-active {
-  background: rgba(255, 77, 79, 0.1);
-  color: #b42324;
-  border: 1px solid rgba(255, 77, 79, 0.35);
-}
-.ss-pill-inactive {
-  background: rgba(17, 24, 39, 0.06);
-  color: #111827;
-  border: 1px solid rgba(17, 24, 39, 0.14);
-}
-
 /* thumb */
 .ss-thumb {
   width: 46px;
@@ -1018,19 +1015,25 @@ onMounted(loadData);
   white-space: normal;
 }
 
-/* icon view */
+/* icon view (đúng chuẩn “đen mềm”) */
 .ss-icon-btn-view {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid rgba(17, 24, 39, 0.14);
   border-radius: 10px;
-  padding: 6px 8px;
-  background: transparent;
+  background: #fff;
+  padding: 0;
 }
 .ss-icon-btn-view .material-icons-outlined {
   font-size: 18px;
-  color: #111827;
+  color: rgba(17, 24, 39, 0.88);
 }
 .ss-icon-btn-view:hover {
   background: rgba(17, 24, 39, 0.04);
+  border-color: rgba(17, 24, 39, 0.22);
 }
 
 /* pagination */
@@ -1047,7 +1050,7 @@ onMounted(loadData);
 }
 .ss-page-btn .material-icons-outlined {
   font-size: 18px;
-  color: #111827;
+  color: rgba(17, 24, 39, 0.88);
 }
 .ss-page-btn:disabled {
   opacity: 0.45;

@@ -4,7 +4,10 @@
     style="width: 280px; z-index: 1000"
   >
     <!-- Logo (GIỮ NGUYÊN CHỖ LOGO) -->
-    <div class="p-4 text-center border-bottom" style="border-color: var(--ss-border) !important;">
+    <div
+      class="p-4 text-center border-bottom"
+      style="border-color: var(--ss-border) !important"
+    >
       <img
         src="@/assets/images/logo/Logo_SevenStrike.png"
         alt="SevenStrike"
@@ -39,7 +42,11 @@
             <span class="material-icons me-3">local_offer</span>
             Giảm giá
           </div>
-          <span class="material-icons ss-expand" :class="{ open: openGroup.discount }">expand_more</span>
+          <span
+            class="material-icons ss-expand"
+            :class="{ open: openGroup.discount }"
+            >expand_more</span
+          >
         </button>
 
         <div v-show="openGroup.discount" class="ss-submenu">
@@ -59,7 +66,11 @@
             <span class="material-icons me-3">inventory_2</span>
             Quản lý sản phẩm
           </div>
-          <span class="material-icons ss-expand" :class="{ open: openGroup.product }">expand_more</span>
+          <span
+            class="material-icons ss-expand"
+            :class="{ open: openGroup.product }"
+            >expand_more</span
+          >
         </button>
 
         <div v-show="openGroup.product" class="ss-submenu">
@@ -76,16 +87,36 @@
           <!-- Thuộc tính (phần riêng) -->
           <div class="ss-subtitle">Thuộc tính</div>
 
-          <RouterLink class="ss-sub-link" to="/admin/xuat-xu">Xuất xứ</RouterLink>
-          <RouterLink class="ss-sub-link" to="/admin/thuong-hieu">Thương hiệu</RouterLink>
-          <RouterLink class="ss-sub-link" to="/admin/vi-tri-thi-dau">Vị trí thi đấu</RouterLink>
-          <RouterLink class="ss-sub-link" to="/admin/phong-cach-choi">Phong cách chơi</RouterLink>
-          <RouterLink class="ss-sub-link" to="/admin/co-giay">Cổ giày</RouterLink>
-          <RouterLink class="ss-sub-link" to="/admin/chat-lieu">Chất liệu</RouterLink>
-          <RouterLink class="ss-sub-link" to="/admin/mau-sac">Màu sắc</RouterLink>
-          <RouterLink class="ss-sub-link" to="/admin/kich-thuoc">Kích thước</RouterLink>
-          <RouterLink class="ss-sub-link" to="/admin/form-chan">Form chân</RouterLink>
-          <RouterLink class="ss-sub-link" to="/admin/loai-san">Loại sân</RouterLink>
+          <RouterLink class="ss-sub-link" to="/admin/xuat-xu"
+            >Xuất xứ</RouterLink
+          >
+          <RouterLink class="ss-sub-link" to="/admin/thuong-hieu"
+            >Thương hiệu</RouterLink
+          >
+          <RouterLink class="ss-sub-link" to="/admin/vi-tri-thi-dau"
+            >Vị trí thi đấu</RouterLink
+          >
+          <RouterLink class="ss-sub-link" to="/admin/phong-cach-choi"
+            >Phong cách chơi</RouterLink
+          >
+          <RouterLink class="ss-sub-link" to="/admin/co-giay"
+            >Cổ giày</RouterLink
+          >
+          <RouterLink class="ss-sub-link" to="/admin/chat-lieu"
+            >Chất liệu</RouterLink
+          >
+          <RouterLink class="ss-sub-link" to="/admin/mau-sac"
+            >Màu sắc</RouterLink
+          >
+          <RouterLink class="ss-sub-link" to="/admin/kich-thuoc"
+            >Kích thước</RouterLink
+          >
+          <RouterLink class="ss-sub-link" to="/admin/form-chan"
+            >Form chân</RouterLink
+          >
+          <RouterLink class="ss-sub-link" to="/admin/loai-san"
+            >Loại sân</RouterLink
+          >
         </div>
       </div>
 
@@ -96,12 +127,21 @@
             <span class="material-icons me-3">group</span>
             Quản lý tài khoản
           </div>
-          <span class="material-icons ss-expand" :class="{ open: openGroup.account }">expand_more</span>
+          <span
+            class="material-icons ss-expand"
+            :class="{ open: openGroup.account }"
+            >expand_more</span
+          >
         </button>
 
         <div v-show="openGroup.account" class="ss-submenu">
-          <RouterLink class="ss-sub-link" to="/admin/khach-hang">Khách hàng</RouterLink>
-          <RouterLink class="ss-sub-link" to="/admin/nhan-vien">Nhân viên</RouterLink>
+          <!-- ✅ CHỈ ĐỔI LINK để trỏ sang màn mới -->
+          <RouterLink class="ss-sub-link" to="/admin/tai-khoan/khach-hang"
+            >Khách hàng</RouterLink
+          >
+          <RouterLink class="ss-sub-link" to="/admin/tai-khoan/nhan-vien"
+            >Nhân viên</RouterLink
+          >
         </div>
       </div>
     </nav>
@@ -145,7 +185,7 @@ function toggle(key) {
 }
 
 .ss-nav-link.router-link-active {
-  background: rgba(255, 77, 79, 0.10);
+  background: rgba(255, 77, 79, 0.1);
   color: #ff4d4f;
   border: 1px solid rgba(255, 77, 79, 0.22);
 }
@@ -207,7 +247,7 @@ function toggle(key) {
 }
 
 .ss-sub-link.router-link-active {
-  background: rgba(255, 77, 79, 0.10);
+  background: rgba(255, 77, 79, 0.1);
   color: #ff4d4f;
   border: 1px solid rgba(255, 77, 79, 0.22);
 }

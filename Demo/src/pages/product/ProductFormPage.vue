@@ -91,7 +91,7 @@ import { useToast } from "primevue/usetoast";
 
 import productService from "@/services/productService";
 import productDetailService from "@/services/productDetailService";
-import anhChiTietSanPhamService from "@/services/anhChiTietSanPhamService";
+import anhChiTietSanPhamService from "@/services/anhChiTietSanPhamService.js";
 
 const toast = useToast();
 const route = useRoute();
@@ -221,7 +221,6 @@ async function loadProductRepresentativeImage(productId) {
   }
 
   if (!ctspList.length) {
-    // chưa có CTSP => không có ảnh đại diện
     latestCtspId.value = null;
     return "";
   }
@@ -242,10 +241,16 @@ async function loadProductRepresentativeImage(productId) {
 
   // lấy ảnh của CTSP đó
   try {
-    const imgs = await anhChiTietSanPhamService.getByChiTietSanPham(ctspId);
+    const imgsRes = await anhChiTietSanPhamService.getByChiTietSanPham(ctspId); // ✅ alias
+    const imgs = unwrapList(imgsRes);
+
     if (!imgs || !imgs.length) return "";
-    const daiDien = imgs.find((x) => x?.laAnhDaiDien === true) || imgs[0];
-    return daiDien?.duongDanAnh || "";
+
+    // ưu tiên ảnh đại diện
+    const daiDien = imgs.find((x) => x?.laAnhDaiDien === true || x?.la_anh_dai_dien === true) || imgs[0];
+
+    // linh hoạt key đường dẫn
+    return daiDien?.duongDanAnh ?? daiDien?.url ?? daiDien?.path ?? "";
   } catch (e) {
     return "";
   }
@@ -261,7 +266,6 @@ async function loadOne() {
       kinhDoanh: true,
       imagePreviewUrl: "",
     };
-    // tạo mới: chưa có CTSP => không gắn ảnh được
     latestCtspId.value = null;
     return;
   }
@@ -282,11 +286,9 @@ async function loadOne() {
     form.moTaNgan = p?.moTaNgan ?? p?.moTa ?? "";
     form.moTaChiTiet = p?.moTaChiTiet ?? p?.moTaDayDu ?? p?.chiTiet ?? "";
 
-    // trạng thái (linh hoạt)
     const kd = p?.trangThaiKinhDoanh ?? p?.kinhDoanh ?? p?.trangThai ?? p?.isActive ?? true;
     form.kinhDoanh = !(kd === false || kd === 0 || kd === "0" || String(kd).toLowerCase() === "false");
 
-    // nếu đang có objectUrl preview thì revoke trước
     if (lastObjectUrl) {
       URL.revokeObjectURL(lastObjectUrl);
       lastObjectUrl = null;
@@ -317,9 +319,8 @@ async function loadOne() {
 
 // ✅ upload ảnh “sản phẩm” = upload vào anh_chi_tiet_san_pham (set đại diện) của CTSP mới nhất
 async function uploadProductImageToLatestCtspIfAny() {
-  if (!imageFile.value) return; // không chọn ảnh
+  if (!imageFile.value) return;
   if (!isEdit.value) {
-    // tạo mới SP chưa có CTSP nên không thể gắn ảnh
     toastError("Sản phẩm mới chưa có chi tiết sản phẩm. Hãy tạo CTSP trước rồi mới gắn ảnh.");
     return;
   }
@@ -353,7 +354,6 @@ async function submit() {
 
     loading.value = true;
 
-    // payload: ❌ KHÔNG gửi giá
     const payload = {
       tenSanPham: ten,
       moTaNgan: form.moTaNgan ?? null,
@@ -377,7 +377,6 @@ async function submit() {
       return;
     }
 
-    // create
     const createFn = productService.create || productService.post || productService.add;
     if (typeof createFn !== "function") throw new Error("productService chưa có hàm create/post/add");
 
@@ -387,7 +386,6 @@ async function submit() {
 
     toastSuccess("Thêm sản phẩm thành công");
 
-    // tạo xong chuyển về trang edit
     if (createdId) router.push(`/admin/san-pham/${createdId}`);
     else back();
   } catch (e) {

@@ -459,6 +459,7 @@ import { useToast } from "primevue/usetoast";
 
 import productService from "@/services/productService";
 import productDetailService from "@/services/productDetailService";
+import anhChiTietSanPhamService from "@/services/anhChiTietSanPhamService"; // ✅ THÊM
 import { refDataService } from "@/services/refDataService";
 
 const primeToast = useToast();
@@ -569,7 +570,6 @@ const selectAll = computed({
 });
 
 function normalizeArr(res) {
-  // service của bạn có chỗ trả array trực tiếp, có chỗ trả axios response -> normalize hết
   if (Array.isArray(res)) return res;
   if (Array.isArray(res?.data)) return res.data;
   if (Array.isArray(res?.data?.data)) return res.data.data;
@@ -680,7 +680,6 @@ const selectedProduct = computed({
       form.maSanPham = val.maSanPham ?? val.ma ?? "";
       form.tenSanPham = val.tenSanPham ?? val.ten ?? "";
       form.moTaNgan = val.moTaNgan ?? val.moTa ?? "";
-      // ✅ đồng bộ các select thuộc tính theo sản phẩm đã chọn
       syncAttributesFromProduct(val);
 
       resetVariantsAndRows();
@@ -695,10 +694,9 @@ const selectedProduct = computed({
   },
 });
 
-function onCreateProductTag() {
-  // vue-select đã tự chọn option mới, setter ở trên sẽ xử lý
-}
+function onCreateProductTag() {}
 
+// default selects
 function applyDefaultProductAttributes() {
   if (!selectedThuongHieu.value && thuongHieuOptions.value.length) selectedThuongHieu.value = thuongHieuOptions.value[0];
   if (!selectedXuatXu.value && xuatXuOptions.value.length) selectedXuatXu.value = xuatXuOptions.value[0];
@@ -720,7 +718,7 @@ function resetVariantsAndRows() {
   Object.keys(colorFiles).forEach((k) => delete colorFiles[k]);
 }
 
-// ======= CREATE REF =======
+// ======= CREATE REF (giữ nguyên của bạn) =======
 const refConfig = {
   thuongHieu: {
     label: "Thương hiệu",
@@ -812,7 +810,6 @@ async function onCreateRef(key, opt, { multiple = false } = {}) {
   const name = String(opt?.[cfg.nameField] ?? opt?.ten ?? "").trim();
   if (!name) return;
 
-  // ✅ lock chống gọi trùng
   const token = _lockCreate(key, name);
   if (!token) return;
 
@@ -862,25 +859,13 @@ async function onCreateRef(key, opt, { multiple = false } = {}) {
   }
 }
 
-// watch cho tag mới (an toàn)
-watch(selectedThuongHieu, (v) => {
-  if (v?.__isNew) onCreateRef("thuongHieu", v);
-});
-watch(selectedXuatXu, (v) => {
-  if (v?.__isNew) onCreateRef("xuatXu", v);
-});
-watch(selectedCoGiay, (v) => {
-  if (v?.__isNew) onCreateRef("coGiay", v);
-});
-watch(selectedChatLieu, (v) => {
-  if (v?.__isNew) onCreateRef("chatLieu", v);
-});
-watch(selectedViTriThiDau, (v) => {
-  if (v?.__isNew) onCreateRef("viTriThiDau", v);
-});
-watch(selectedPhongCachChoi, (v) => {
-  if (v?.__isNew) onCreateRef("phongCachChoi", v);
-});
+// watch cho tag mới
+watch(selectedThuongHieu, (v) => { if (v?.__isNew) onCreateRef("thuongHieu", v); });
+watch(selectedXuatXu, (v) => { if (v?.__isNew) onCreateRef("xuatXu", v); });
+watch(selectedCoGiay, (v) => { if (v?.__isNew) onCreateRef("coGiay", v); });
+watch(selectedChatLieu, (v) => { if (v?.__isNew) onCreateRef("chatLieu", v); });
+watch(selectedViTriThiDau, (v) => { if (v?.__isNew) onCreateRef("viTriThiDau", v); });
+watch(selectedPhongCachChoi, (v) => { if (v?.__isNew) onCreateRef("phongCachChoi", v); });
 
 // ====== Build rows ======
 function buildKey(ms, kt, ls, fc) {
@@ -950,21 +935,15 @@ function rebuildRows() {
 
 watch([selectedMauSac, selectedKichThuoc, selectedLoaiSan, selectedFormChan], rebuildRows);
 
-watch(
-  () => common.soLuongChung,
-  (v) => {
-    if (!hasVariantsSelected.value) return;
-    rows.value = rows.value.map((r) => (r.checked ? { ...r, soLuong: v } : r));
-  }
-);
+watch(() => common.soLuongChung, (v) => {
+  if (!hasVariantsSelected.value) return;
+  rows.value = rows.value.map((r) => (r.checked ? { ...r, soLuong: v } : r));
+});
 
-watch(
-  () => common.giaChung,
-  (v) => {
-    if (!hasVariantsSelected.value) return;
-    rows.value = rows.value.map((r) => (r.checked ? { ...r, gia: v } : r));
-  }
-);
+watch(() => common.giaChung, (v) => {
+  if (!hasVariantsSelected.value) return;
+  rows.value = rows.value.map((r) => (r.checked ? { ...r, gia: v } : r));
+});
 
 function removeRow(row) {
   removedKeys.value.add(row.key);
@@ -1005,13 +984,131 @@ function triggerColorFile(colorId) {
   const el = document.getElementById(`file-ms-${colorId}`);
   el?.click();
 }
-
 function onColorFileChange(e, group) {
   const f = e.target.files?.[0];
   const key = String(group.groupKey);
   if (!colorFiles[key]) colorFiles[key] = { file: null, fileName: "" };
   colorFiles[key].file = f || null;
   colorFiles[key].fileName = f?.name || "";
+}
+
+// ✅ ===== UPLOAD ẢNH THEO MÀU (THÊM MỚI) =====
+function pickAnhPathFromRes(obj) {
+  return obj?.duongDanAnh ?? obj?.duong_dan_anh ?? obj?.urlAnh ?? obj?.imageUrl ?? obj?.image ?? "";
+}
+
+/**
+ * Create: createdCtspList = [{id, idMauSac, ...}]
+ * - nếu colorFiles[mau].file có => upload 1 lần để lấy duongDanAnh,
+ *   rồi create record ảnh cho các ctsp còn lại cùng màu (không upload lại file)
+ */
+async function uploadImagesAfterCreate(createdCtspList) {
+  const list = createdCtspList || [];
+  if (!list.length) return;
+
+  const byColor = new Map(); // colorId -> [ctspId...]
+  for (const it of list) {
+    const ctspId = Number(it?.id);
+    const colorId = String(it?.idMauSac ?? it?.id_mau_sac ?? "");
+    if (!ctspId || !colorId) continue;
+
+    if (!byColor.has(colorId)) byColor.set(colorId, []);
+    byColor.get(colorId).push(ctspId);
+  }
+
+  for (const [colorId, ctspIds] of byColor.entries()) {
+    const f = colorFiles[colorId]?.file || null;
+    if (!f) continue; // màu này không chọn ảnh => skip
+
+    if (!ctspIds.length) continue;
+
+    // upload 1 lần cho ctsp đầu tiên
+    const firstCtspId = ctspIds[0];
+
+    const upRes = await anhChiTietSanPhamService.uploadNew({
+      idChiTietSanPham: firstCtspId,
+      file: f,
+      laAnhDaiDien: true,
+      moTa: "",
+    });
+
+    const uploaded = upRes?.data ?? upRes;
+    const duongDanAnh = pickAnhPathFromRes(uploaded);
+
+    // nếu không lấy được path thì thôi, khỏi nhân bản
+    if (!duongDanAnh) continue;
+
+    // nhân bản record ảnh cho các ctsp còn lại cùng màu
+    const tasks = [];
+    for (let i = 1; i < ctspIds.length; i++) {
+      tasks.push(
+        anhChiTietSanPhamService.create({
+          idChiTietSanPham: ctspIds[i],
+          duongDanAnh,
+          laAnhDaiDien: true,
+          moTa: "",
+          xoaMem: false,
+        })
+      );
+    }
+    if (tasks.length) await Promise.all(tasks);
+  }
+}
+
+/**
+ * Edit: ctspId = id.value
+ * - nếu có file của màu đang sửa => ưu tiên updateUpload nếu có ảnh cũ,
+ *   fail thì fallback uploadNew (vẫn set đại diện chuẩn).
+ */
+async function uploadImageAfterEdit(ctspId) {
+  const colorId = String(selectedMauSac.value?.[0]?.id ?? "");
+  const f = colorId ? (colorFiles[colorId]?.file || null) : null;
+  if (!ctspId || !f) return;
+
+  try {
+    const res = await anhChiTietSanPhamService.byChiTietSanPham(ctspId);
+    const imgs = normalizeArr(res);
+    const daiDien = imgs.find((x) => (x?.laAnhDaiDien ?? x?.la_anh_dai_dien) === true) || imgs[0] || null;
+    const imgId = daiDien?.id ? Number(daiDien.id) : null;
+
+    if (imgId) {
+      try {
+        // nếu BE có PUT /{id}/upload
+        await anhChiTietSanPhamService.updateUpload({
+          id: imgId,
+          file: f,
+          laAnhDaiDien: true,
+          moTa: daiDien?.moTa ?? "",
+        });
+        return;
+      } catch (e) {
+        // fallback
+        await anhChiTietSanPhamService.uploadNew({
+          idChiTietSanPham: ctspId,
+          file: f,
+          laAnhDaiDien: true,
+          moTa: "",
+        });
+        return;
+      }
+    }
+
+    // chưa có ảnh nào => upload mới
+    await anhChiTietSanPhamService.uploadNew({
+      idChiTietSanPham: ctspId,
+      file: f,
+      laAnhDaiDien: true,
+      moTa: "",
+    });
+  } catch (e) {
+    // fallback cuối
+    await anhChiTietSanPhamService.uploadNew({
+      idChiTietSanPham: ctspId,
+      file: f,
+      laAnhDaiDien: true,
+      moTa: "",
+    });
+  }
 }
 
 function back() {
@@ -1040,7 +1137,6 @@ async function loadEditIfNeeded() {
     form.maSanPham = p.maSanPham ?? p.ma ?? "";
     form.tenSanPham = p.tenSanPham ?? p.ten ?? "";
     form.moTaNgan = p.moTaNgan ?? p.moTa ?? "";
-    // ✅ đồng bộ thuộc tính theo SP (khi sửa chi tiết)
     syncAttributesFromProduct(p);
   }
 
@@ -1100,7 +1196,6 @@ onMounted(async () => {
     applyDefaultProductAttributes();
     await loadEditIfNeeded();
 
-    // ✅ nếu đang có idSanPham rồi (query hoặc edit) thì cố sync thuộc tính theo productOptions
     if (form.idSanPham) {
       const p2 = productOptions.value.find((x) => Number(x.id) === Number(form.idSanPham));
       if (p2) syncAttributesFromProduct(p2);
@@ -1165,7 +1260,6 @@ async function submit() {
     const selectedRows = rows.value.filter((r) => r.checked);
     if (!selectedRows.length) return stopWithError("Bạn chưa tick dòng nào để thêm.");
 
-    // validate nhanh
     const bad = selectedRows.find((r) => Number(r.soLuong) < 0 || Number(r.gia) < 0 || String(r.gia ?? "") === "");
     if (bad) return stopWithError("Vui lòng nhập Số lượng/Giá hợp lệ (>= 0) cho các dòng đã tick.");
 
@@ -1195,14 +1289,18 @@ async function submit() {
       };
 
       await productDetailService.update(id.value, payload);
+
+      // ✅ upload ảnh (nếu có chọn file màu)
+      await uploadImageAfterEdit(Number(id.value));
+
       toastSuccess("Lưu chi tiết sản phẩm thành công");
 
-      // ✅ về list + bật toast ở list
       router.push(`/admin/chi-tiet-san-pham?productId=${form.idSanPham}&saved=1&mode=update`);
       return;
     }
 
-    await Promise.all(
+    // CREATE nhiều CTSP
+    const createdResList = await Promise.all(
       selectedRows.map((r) => {
         const price = Number(r.gia || 0);
         const payload = {
@@ -1220,9 +1318,16 @@ async function submit() {
       })
     );
 
+    // normalize created list => [{id, idMauSac...}]
+    const createdCtspList = createdResList
+      .map((x) => x?.data ?? x)
+      .filter(Boolean);
+
+    // ✅ upload ảnh theo MÀU sau khi tạo
+    await uploadImagesAfterCreate(createdCtspList);
+
     toastSuccess("Thêm chi tiết sản phẩm thành công");
 
-    // ✅ về list + bật toast ở list
     router.push(`/admin/chi-tiet-san-pham?productId=${form.idSanPham}&saved=1&mode=create`);
   } catch (e) {
     console.error(e);

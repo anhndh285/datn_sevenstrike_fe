@@ -22,14 +22,10 @@
             <label class="form-label mb-0">Tìm</label>
           </div>
 
-          <input
-            v-model="keyword"
-            class="form-control ss-search-input"
-            placeholder="Tìm theo mã / tên..."
-          />
+          <input v-model="keyword" class="form-control ss-search-input" placeholder="Tìm theo mã / tên..." />
 
-          <div class="small text-muted mt-2">
-            Tổng số sản phẩm: <b>{{ filteredProducts.length }}</b>
+          <div class="small ss-text-sub mt-2">
+            Tổng số sản phẩm: <b class="ss-text-strong">{{ filteredProducts.length }}</b>
           </div>
         </div>
 
@@ -58,33 +54,23 @@
       <!-- Row 2: Buttons + Page size -->
       <div class="d-flex align-items-center justify-content-between gap-2 mt-3 flex-wrap">
         <div class="d-flex gap-2">
-          <button
-            class="btn ss-btn ss-btn-outline"
-            type="button"
-            @click="resetFilter"
-            :disabled="loading"
-          >
+          <button class="btn ss-btn ss-btn-outline" type="button" @click="resetFilter" :disabled="loading">
             Đặt lại bộ lọc
           </button>
 
-          <button
-            class="btn ss-btn ss-btn-primary"
-            type="button"
-            @click="goAddProductDetail"
-            :disabled="loading"
-          >
+          <button class="btn ss-btn ss-btn-primary" type="button" @click="goAddProductDetail" :disabled="loading">
             Thêm chi tiết sản phẩm
           </button>
         </div>
 
         <div class="d-flex align-items-center gap-2">
-          <span class="small text-muted">Hiển thị</span>
+          <span class="small ss-text-sub">Hiển thị</span>
           <select v-model.number="pageSize" class="form-select ss-page-size" :disabled="loading">
             <option :value="5">5</option>
             <option :value="10">10</option>
             <option :value="15">15</option>
           </select>
-          <span class="small text-muted">/ trang</span>
+          <span class="small ss-text-sub">/ trang</span>
         </div>
       </div>
     </div>
@@ -119,40 +105,44 @@
 
           <tbody v-if="loading">
             <tr>
-              <td colspan="8" class="text-center text-muted py-4">Đang tải...</td>
+              <td colspan="8" class="text-center ss-text-sub py-4">Đang tải...</td>
             </tr>
           </tbody>
 
           <tbody v-else-if="!pagedProducts.length">
             <tr>
-              <td colspan="8" class="text-center text-muted py-4">Không có dữ liệu</td>
+              <td colspan="8" class="text-center ss-text-sub py-4">Không có dữ liệu</td>
             </tr>
           </tbody>
 
           <tbody v-else>
             <tr v-for="(p, idx) in pagedProducts" :key="p.id">
-              <td>{{ (page - 1) * pageSize + idx + 1 }}</td>
+              <td class="ss-text">{{ (page - 1) * pageSize + idx + 1 }}</td>
 
               <td>
-                <div class="fw-semibold">{{ p.tenSanPham ?? p.ten_san_pham ?? p.ten ?? "-" }}</div>
-                <div class="text-muted small" v-if="p.maSanPham ?? p.ma_san_pham ?? p.ma">
+                <div class="ss-text-strong">
+                  {{ p.tenSanPham ?? p.ten_san_pham ?? p.ten ?? "-" }}
+                </div>
+
+                <div class="ss-text-sub small" v-if="p.maSanPham ?? p.ma_san_pham ?? p.ma">
                   {{ p.maSanPham ?? p.ma_san_pham ?? p.ma }}
                 </div>
-                <div class="text-muted small" v-if="p.moTaNgan ?? p.mo_ta_ngan ?? p.moTa">
+
+                <div class="ss-text-sub small" v-if="p.moTaNgan ?? p.mo_ta_ngan ?? p.moTa">
                   {{ p.moTaNgan ?? p.mo_ta_ngan ?? p.moTa }}
                 </div>
               </td>
 
-              <td>{{ getXuatXuTen(p) }}</td>
-              <td>{{ getThuongHieuTen(p) }}</td>
+              <td class="ss-text">{{ getXuatXuTen(p) }}</td>
+              <td class="ss-text">{{ getThuongHieuTen(p) }}</td>
 
-              <td class="text-muted">
+              <td class="ss-text-sub">
                 {{ formatDate(p.ngayTao ?? p.ngay_tao ?? p.createdAt ?? p.created_at) }}
               </td>
 
               <td>
-                <span v-if="qtyLoadingIds.has(p.id)" class="text-muted">...</span>
-                <span v-else class="fw-semibold">{{ qtyMap[p.id] ?? 0 }}</span>
+                <span v-if="qtyLoadingIds.has(p.id)" class="ss-text-sub">...</span>
+                <span v-else class="ss-text-strong">{{ qtyMap[p.id] ?? 0 }}</span>
               </td>
 
               <td>
@@ -177,7 +167,8 @@
                     <span class="ss-slider"></span>
                   </label>
 
-                  <button class="btn ss-icon-btn-view" type="button" title="Xem" @click="viewProduct(p)">
+                  <!-- ✅ SS ONLY (đồng nhất toàn hệ qua admin.css) -->
+                  <button class="ss-icon-btn-view" type="button" title="Xem" @click="viewProduct(p)">
                     <span class="material-icons-outlined">visibility</span>
                   </button>
                 </div>
@@ -189,7 +180,7 @@
 
       <!-- Pagination bar -->
       <div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
-        <div class="small text-muted">Tổng: {{ filteredProducts.length }} bản ghi</div>
+        <div class="small ss-text-sub">Tổng: {{ filteredProducts.length }} bản ghi</div>
 
         <div class="ss-pagination">
           <button class="btn ss-page-btn" :disabled="page <= 1" @click="page = page - 1">
@@ -236,7 +227,6 @@ const thuongHieuMap = reactive({});
 const switchLoadingIds = reactive(new Set());
 
 function unwrapList(v) {
-  // chịu được: array | axiosResponse | {data: array}
   if (Array.isArray(v)) return v;
   const d = v?.data ?? v;
   if (Array.isArray(d)) return d;
@@ -252,9 +242,9 @@ function lc(s) {
 function getTrangThai(p) {
   const v =
     p?.trangThaiKinhDoanh ??
-    p?.trang_thai_kinh_doanh ?? // ✅ DB snake_case
+    p?.trang_thai_kinh_doanh ??
     p?.trangThai ??
-    p?.trang_thai ?? // ✅ dự phòng
+    p?.trang_thai ??
     p?.trangThaiSanPham ??
     p?.dangKinhDoanh ??
     p?.kinhDoanh ??
@@ -440,7 +430,7 @@ async function toggleTrangThai(p) {
     const payload = {
       ...p,
       trangThaiKinhDoanh: next,
-      trang_thai_kinh_doanh: next, // ✅ thêm snake_case
+      trang_thai_kinh_doanh: next,
       trangThai: next,
       trang_thai: next,
       dangKinhDoanh: next,
@@ -484,6 +474,19 @@ onMounted(async () => {
   letter-spacing: 0.4px;
 }
 
+/* ===== chữ “bình thường” (đỡ nhạt) ===== */
+.ss-text {
+  color: rgba(17, 24, 39, 0.78);
+}
+.ss-text-strong {
+  color: rgba(17, 24, 39, 0.92);
+  font-weight: 700;
+}
+.ss-text-sub {
+  color: rgba(17, 24, 39, 0.58);
+}
+
+/* ===== button base ===== */
 .ss-btn {
   border-radius: 12px;
   padding: 10px 14px;
@@ -516,7 +519,7 @@ onMounted(async () => {
   filter: brightness(0.98);
 }
 
-/* ===== Search: bỏ lót, gọn như mẫu ===== */
+/* ===== Search ===== */
 .ss-search-input {
   height: 44px;
   border-radius: 14px;
@@ -543,6 +546,8 @@ onMounted(async () => {
   margin: 0;
   cursor: pointer;
   user-select: none;
+  color: rgba(17, 24, 39, 0.78);
+  font-weight: 600;
 }
 .ss-radio-item input {
   transform: translateY(1px);
@@ -565,23 +570,36 @@ onMounted(async () => {
 }
 .ss-pill-inactive {
   background: rgba(17, 24, 39, 0.06);
-  color: #111827;
+  color: rgba(17, 24, 39, 0.88);
   border: 1px solid rgba(17, 24, 39, 0.14);
 }
 
-/* ===== icon mắt: nhỏ, không nổi ===== */
+/* ===== icon mắt: SS ONLY =====
+   ✅ Lưu ý: admin.css đã ép global rồi.
+   Ở đây chỉ để “dự phòng”, không đổi style khác. */
 .ss-icon-btn-view {
-  border: 1px solid rgba(17, 24, 39, 0.14);
-  border-radius: 10px;
-  padding: 6px 8px;
-  background: transparent;
+  width: var(--ss-icon-size, 36px);
+  height: var(--ss-icon-size, 36px);
+  border-radius: var(--ss-icon-radius, 10px);
+  border: 1px solid var(--ss-icon-border, rgba(17, 24, 39, 0.14));
+  background: #fff;
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  color: var(--ss-icon, rgba(17, 24, 39, 0.92)) !important;
+  transition: 0.2s;
 }
 .ss-icon-btn-view .material-icons-outlined {
   font-size: 18px;
-  color: #111827;
+  color: currentColor !important;
+  line-height: 1;
 }
 .ss-icon-btn-view:hover {
-  background: rgba(17, 24, 39, 0.04);
+  background: var(--ss-icon-bg-hover, rgba(17, 24, 39, 0.04));
+  border-color: var(--ss-icon-border-hover, rgba(17, 24, 39, 0.18));
 }
 
 /* ===== switch ===== */
@@ -641,7 +659,7 @@ onMounted(async () => {
 }
 .ss-page-btn .material-icons-outlined {
   font-size: 18px;
-  color: #111827;
+  color: rgba(17, 24, 39, 0.92);
 }
 .ss-page-btn:disabled {
   opacity: 0.45;
@@ -657,5 +675,13 @@ onMounted(async () => {
   height: 36px;
   border-radius: 10px;
   border: 1px solid rgba(17, 24, 39, 0.14);
+}
+
+/* Table tone chữ (đỡ nhạt) */
+.ss-table-grid td {
+  color: rgba(17, 24, 39, 0.78);
+}
+.ss-table-grid th {
+  color: rgba(17, 24, 39, 0.88);
 }
 </style>

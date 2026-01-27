@@ -62,7 +62,7 @@
 
             <router-link
               class="sub-link"
-              :class="route.path === '/admin/giam-gia/dot' ? 'sub-item-active fw-bold' : 'text-secondary'"
+              :class="route.path.startsWith('/admin/giam-gia/dot') ? 'sub-item-active fw-bold' : 'text-secondary'"
               to="/admin/giam-gia/dot"
             >
               Đợt giảm giá
@@ -91,7 +91,6 @@
           </button>
 
           <div v-show="productMenuOpen" class="sub-menu">
-            <!-- ✅ SẢN PHẨM: active cho cả /san-pham, /san-pham/new, /san-pham/:id... -->
             <router-link
               class="sub-link"
               :class="route.path.startsWith('/admin/san-pham') ? 'sub-item-active fw-bold' : 'text-secondary'"
@@ -100,7 +99,6 @@
               Sản phẩm
             </router-link>
 
-            <!-- ✅ THÊM: SẢN PHẨM CHI TIẾT -->
             <router-link
               class="sub-link"
               :class="route.path.startsWith('/admin/chi-tiet-san-pham') ? 'sub-item-active fw-bold' : 'text-secondary'"
@@ -227,18 +225,19 @@
           </button>
 
           <div v-show="accountMenuOpen" class="sub-menu">
+            <!-- ✅ FIX: trỏ thẳng route mới + active startsWith -->
             <router-link
               class="sub-link"
-              :class="route.path === '/admin/khach-hang' ? 'sub-item-active fw-bold' : 'text-secondary'"
-              to="/admin/khach-hang"
+              :class="route.path.startsWith('/admin/tai-khoan/khach-hang') ? 'sub-item-active fw-bold' : 'text-secondary'"
+              to="/admin/tai-khoan/khach-hang"
             >
               Khách hàng
             </router-link>
 
             <router-link
               class="sub-link"
-              :class="route.path === '/admin/nhan-vien' ? 'sub-item-active fw-bold' : 'text-secondary'"
-              to="/admin/nhan-vien"
+              :class="route.path.startsWith('/admin/tai-khoan/nhan-vien') ? 'sub-item-active fw-bold' : 'text-secondary'"
+              to="/admin/tai-khoan/nhan-vien"
             >
               Nhân viên
             </router-link>
@@ -275,7 +274,6 @@ import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 // ✅ dùng component global "Toast" đã register trong main.js
-// (không cần import Toast ở đây nữa)
 
 const route = useRoute();
 
@@ -309,7 +307,9 @@ const attrPaths = [
 ];
 
 const discountPaths = ["/admin/giam-gia/phieu", "/admin/giam-gia/dot"];
-const accountPaths = ["/admin/khach-hang", "/admin/nhan-vien"];
+
+// ✅ FIX: group tài khoản theo path mới
+const accountPaths = ["/admin/tai-khoan/khach-hang", "/admin/tai-khoan/nhan-vien"];
 
 const isProductGroupActive = computed(() => productPaths.some((p) => route.path.startsWith(p)));
 const isAttrGroupActive = computed(() => attrPaths.some((p) => route.path.startsWith(p)));
@@ -328,6 +328,8 @@ watch(
     if (productPaths.some((x) => p.startsWith(x))) productMenuOpen.value = true;
     if (attrPaths.some((x) => p.startsWith(x))) attrMenuOpen.value = true;
     if (discountPaths.some((x) => p.startsWith(x))) discountMenuOpen.value = true;
+
+    // ✅ FIX: open nhóm tài khoản khi đi vào /admin/tai-khoan/...
     if (accountPaths.some((x) => p.startsWith(x))) accountMenuOpen.value = true;
   },
   { immediate: true }
