@@ -7,7 +7,7 @@
         Quay lại
       </button>
 
-      <h3 class="page-title">CẬP NHẬT KHÁCH HÀNG</h3>
+      <h3 class="page-title">Cập nhật khách hàng</h3>
 
       <div class="head-spacer"></div>
     </div>
@@ -70,7 +70,7 @@
         <!-- ===== ĐỊA CHỈ ===== -->
         <div class="addr-section">
           <div class="addr-head">
-            <div class="addr-title">ĐỊA CHỈ (có thể thêm nhiều)</div>
+            <div class="addr-title">Địa chỉ (có thể thêm nhiều)</div>
 
             <button type="button" class="ss-btn ss-btn-outline" @click="addAddress" :disabled="loadingAddr">
               <span class="material-icons-outlined">add</span>

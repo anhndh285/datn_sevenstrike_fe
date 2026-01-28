@@ -90,11 +90,7 @@
         </div>
 
         <!-- ACTIONS -->
-        <div class="d-flex justify-content-between align-items-center mt-4 actions">
-          <!-- Trạng thái: chủ đạo (đen -> đỏ), KHÔNG vàng/xanh -->
-          <button type="button" class="ss-btn ss-btn-state" @click="toggleStatus">
-            {{ nv.trangThai ? "Hủy hoạt động" : "Kích hoạt" }}
-          </button>
+        <div class="d-flex justify-content-end align-items-center mt-4 actions">
 
           <div class="d-flex gap-2">
             <button type="submit" class="ss-btn ss-btn-primary ss-btn-submit">
@@ -193,17 +189,6 @@ const loadNhanVien = async () => {
   } catch (error) {
     console.error("Lỗi khi lấy chi tiết nhân viên:", error);
     alert("Không thể tải thông tin nhân viên!");
-  }
-};
-
-const toggleStatus = async () => {
-  try {
-    nv.value.trangThai = !nv.value.trangThai;
-    await updateNhanVien(id, nv.value);
-    alert(nv.value.trangThai ? "Đã kích hoạt nhân viên!" : "Đã hủy kích hoạt nhân viên!");
-  } catch (e) {
-    console.error(e);
-    alert("Cập nhật trạng thái thất bại: " + e.message);
   }
 };
 

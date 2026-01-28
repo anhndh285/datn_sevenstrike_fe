@@ -64,11 +64,6 @@
           <label class="label">Ngày sinh</label>
           <input v-model="form.ngaySinh" type="date" class="input" />
         </div>
-
-        <div class="col">
-          <label class="label">Ghi chú</label>
-          <input v-model.trim="form.ghiChu" class="input" placeholder="(tuỳ chọn)" />
-        </div>
       </div>
 
       <!-- ĐỊA CHỈ -->
@@ -182,7 +177,7 @@ const form = ref({
   soDienThoai: "",
   gioiTinh: null,
   ngaySinh: "",
-  ghiChu: "",
+  trangThai: true
 });
 
 const provinces = ref([]);

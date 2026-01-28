@@ -1,27 +1,45 @@
 <!-- File: src/pages/tai_khoan/nhan_vien/taikhoan_nhanvien.vue -->
 <template>
+  <h2 class="page-title">Quản lý nhân viên</h2>
+
   <div class="taikhoan-nhanvien" v-if="!isPage">
     <div class="toolbar">
       <div class="toolbar-left">
         <div class="search-wrapper">
           <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input v-model="filters.keyword" type="text" placeholder="Tìm kiếm" class="search-input" />
+          <input v-model="filters.keyword" type="text" placeholder="Tìm theo tên, SĐT, email,... " class="search-input" />
         </div>
       </div>
 
       <div class="toolbar-right">
-        <div class="filter-group">
-          <label>Trạng thái:</label>
-          <select v-model="filters.status" class="form-select rounded-3 no-border-select">
-            <option value="">Tất cả</option>
-            <option value="active">Hoạt động</option>
-            <option value="inactive">Ngừng hoạt động</option>
-          </select>
-        </div>
+        <button class="btn-export" @click="exportExcel">
+          <i class="fa-solid fa-file-excel"></i> Xuất Excel
+        </button>
 
         <button class="btn btn-newaccount" @click="themnv">
           <i class="fa-solid fa-plus"></i> Thêm nhân viên
         </button>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Chức vụ:</label>
+        <select v-model="filters.roleId" class="form-select rounded-3 no-border-select">
+          <option value="">Tất cả</option>
+          <option v-for="[id, name] in roleMap" :key="id" :value="id">
+            {{ name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Trạng thái:</label>
+        <select v-model="filters.status" class="form-select rounded-3 no-border-select">
+          <option value="">Tất cả</option>
+          <option value="active">Hoạt động</option>
+          <option value="inactive">Ngừng hoạt động</option>
+        </select>
       </div>
     </div>
 
@@ -76,11 +94,18 @@
             </td>
 
             <td class="text-center">
-              <!-- ✅ SS ONLY -->
-              <button class="ss-icon-btn-view" @click="updatednv(item.id)" title="Xem" type="button">
-                <span class="material-icons-outlined">visibility</span>
-              </button>
-            </td>
+  <div class="action-group">
+    <label class="switch">
+      <input type="checkbox" v-model="item.trangThai" @change="toggleStatus(item)" />
+      <span class="slider"></span>
+    </label>
+
+    <button class="ss-icon-btn-view" @click="updatednv(item.id)" title="Xem" type="button">
+      <span class="material-icons-outlined">visibility</span>
+    </button>
+  </div>
+</td>
+
           </tr>
         </tbody>
       </table>
@@ -108,9 +133,11 @@
 </template>
 
 <script setup>
-import { searchNhanVien, pagingNhanVien } from "@/services/tai_khoan/nhan_vien/nhan_vienService";
+import { searchNhanVien, pagingNhanVien, updateNhanVien, getAllNhanVien } from "@/services/tai_khoan/nhan_vien/nhan_vienService";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import * as XLSX from "xlsx";
+
 
 const router = useRouter();
 const route = useRoute();
@@ -125,7 +152,9 @@ const nhanVienOrigin = ref([]);
 const filters = ref({
   keyword: "",
   status: "",
+  roleId: "",
 });
+
 
 const roleMap = ref(new Map());
 
@@ -178,6 +207,14 @@ const applyStatusFilter = () => {
   nhanVienList.value = source.filter((item) => Boolean(item.trangThai) === isActive);
 };
 
+const applyRoleFilter = () => {
+  const source = Array.isArray(nhanVienList.value) ? nhanVienList.value : [];
+  if (!filters.value.roleId) return;
+
+  const roleId = Number(filters.value.roleId);
+  nhanVienList.value = source.filter((item) => Number(item.idQuyenHan) === roleId);
+};
+
 const sortNewestFirst = (arr) => (arr || []).slice().sort((a, b) => (b?.id ?? 0) - (a?.id ?? 0));
 
 const handleFilter = async () => {
@@ -194,6 +231,7 @@ const handleFilter = async () => {
     }
 
     applyStatusFilter();
+    applyRoleFilter();
   } catch (e) {
     console.log("Filter error", e);
   }
@@ -230,6 +268,70 @@ const initials = (name) => {
   const parts = t.split(/\s+/).filter(Boolean);
   const last2 = parts.slice(-2);
   return last2.map((p) => p[0]?.toUpperCase() || "").join("");
+};
+
+const toggleStatus = async (item) => {
+  try {
+    await updateNhanVien(item.id, {
+      trangThai: item.trangThai,
+    });
+  } catch (e) {
+    console.log(e);
+    alert("Không thể cập nhật trạng thái");
+    item.trangThai = !item.trangThai;
+  }
+};
+
+const exportExcel = async () => {
+  try {
+    let allData = [];
+    if (filters.value.keyword.trim()) {
+      allData = await searchNhanVien(filters.value.keyword.trim());
+    } else {
+      allData = await getAllNhanVien();
+    }
+
+    let filteredData = allData;
+    if (filters.value.status) {
+      const isActive = filters.value.status === "active";
+      filteredData = allData.filter((item) => Boolean(item.trangThai) === isActive);
+    }
+
+    if (filters.value.roleId) {
+      const roleId = Number(filters.value.roleId);
+      filteredData = filteredData.filter((item) => Number(item.idQuyenHan) === roleId);
+    }
+
+    const sortedData = sortNewestFirst(filteredData);
+
+    const dataToExport = sortedData.map((item, index) => ({
+      'STT': index + 1,
+      'Mã nhân viên': item.maNhanVien ?? "---",
+      'Họ và tên': item.tenNhanVien ?? "---",
+      'SĐT': item.soDienThoai ?? "---",
+      'Email': item.email ?? "---",
+      'Địa chỉ': buildDiaChi(item),
+      'Quyền hạn': getRoleName(item.idQuyenHan),
+      'Trạng thái': item.trangThai ? "Hoạt động" : "Ngừng hoạt động",
+    }));
+
+    if (dataToExport.length === 0) {
+      alert("Không có dữ liệu để xuất.");
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Danh sách nhân viên");
+
+    worksheet['!cols'] = [ {wch:5}, {wch:15}, {wch:25}, {wch:15}, {wch:30}, {wch:50}, {wch:15}, {wch:20} ];
+
+    XLSX.writeFile(workbook, "DanhSachNhanVien.xlsx");
+
+  } catch (error) {
+    console.error("Lỗi khi xuất Excel:", error);
+    alert("Đã xảy ra lỗi khi xuất file Excel.");
+  }
 };
 
 watch(
@@ -269,10 +371,18 @@ onMounted(async () => {
   box-shadow: var(--ss-shadow-soft);
 }
 
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  margin-top: 10px;
+  color: rgba(17, 24, 39, 0.92);
+}
+
 .text-center { text-align: center; }
 .text-gray { color: var(--ss-text-muted); }
 .text-dark { color: rgba(17,24,39,0.88); }
-.fw-700 { font-weight: 800; }
+.fw-700 { font-weight: 600; }
 
 .toolbar {
   display: flex;
@@ -287,7 +397,7 @@ onMounted(async () => {
 .toolbar-right { gap: 16px; }
 
 /* Button */
-.btn { height: 34px; padding: 0 14px; border: none; cursor: pointer; font-weight: 800; font-size: 13px; transition: all 0.2s; }
+.btn { height: 34px; padding: 0 14px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s; }
 .btn:hover { opacity: 0.96; }
 
 .btn-newaccount{
@@ -303,9 +413,36 @@ onMounted(async () => {
 }
 .btn-newaccount i { font-size: 12px; }
 
+.btn-export {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #107c41;
+  box-shadow: 0 4px 12px rgba(16, 124, 65, 0.2);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.btn-export:hover {
+  background: #0e6b38;
+}
+.btn-export i { font-size: 12px; }
+
+.filters-bar {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
 .filter-group{
   display:flex; align-items:center; gap:10px;
-  font-size:14px; color: rgba(17,24,39,0.78); font-weight:700;
+  font-size:14px; color: rgba(17,24,39,0.78); font-weight:600;
   white-space:nowrap;
 }
 
@@ -314,7 +451,7 @@ onMounted(async () => {
   padding: 6px 12px;
   border-radius: 999px;
   font-size: 11.5px;
-  font-weight: 900;
+  font-weight: 700;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
@@ -338,14 +475,30 @@ onMounted(async () => {
 }
 
 /* Table */
-.table-wrapper { overflow-x: auto; }
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(17,24,39,0.06);
+  border: 1px solid rgba(17,24,39,0.08);
+}
+
 table { width: 100%; border-collapse: separate; border-spacing: 0; }
+
+th:first-child {
+  border-top-left-radius: 16px;
+}
+
+th:last-child {
+  border-top-right-radius: 16px;
+}
+
 
 th{
   padding: 16px;
   background:#F9FAFB;
   font-size: 13.5px;
-  font-weight: 900;
+  font-weight: 600;
   text-align:left;
   color: rgba(17,24,39,0.88);
   border-bottom: 1px solid #E5E7EB;
@@ -377,7 +530,7 @@ tbody tr:hover { background:#F9FAFB; }
   display:flex; align-items:center; justify-content:center;
   background: rgba(17,24,39,0.04);
   color: rgba(17,24,39,0.78);
-  font-weight: 900;
+  font-weight: 700;
 }
 
 /* Pagination */
@@ -393,7 +546,7 @@ tbody tr:hover { background:#F9FAFB; }
   cursor:pointer;
   transition: 0.2s;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .page-btn:hover:not(.disabled){ background:#F3F4F6; border-color:#D1D5DB; }
 .page-btn.active{ background:#111827; color:#fff; border-color:#111827; }
@@ -412,15 +565,26 @@ tbody tr:hover { background:#F9FAFB; }
 }
 
 /* Search */
-.search-wrapper { position: relative; display:flex; align-items:center; }
-.search-icon { position:absolute; left:12px; color:#9CA3AF; font-size: 14px; pointer-events:none; }
+.search-wrapper { 
+  position: relative; 
+  display:flex; 
+  align-items:center; 
+}
+
+.search-icon { 
+  position:absolute; 
+  left:12px; color:#9CA3AF; 
+  font-size: 14px; 
+  pointer-events:none; 
+}
+
 .search-input{
   height: 40px;
   padding: 0 16px 0 36px;
-  border-radius: 20px;
+  border-radius: 10px;
   border: 1px solid #E5E7EB;
   outline: none;
-  min-width: 320px;
+  min-width: 400px;
   color: rgba(17,24,39,0.78);
   font-size: 14px;
   background:#F9FAFB;
@@ -452,4 +616,75 @@ tbody tr:hover { background:#F9FAFB; }
   background: rgba(17,24,39,0.04);
   border-color: rgba(17,24,39,0.22);
 }
+
+
+/* ===== switch ===== */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #e5e7eb;
+  border-radius: 20px;
+  transition: .3s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: .3s;
+}
+
+.switch input:checked + .slider {
+  background-color: #22c55e;
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(18px);
+}
+
+.action-group{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.switch {
+  width: 32px;
+  height: 18px;
+}
+
+.slider {
+  border-radius: 18px;
+}
+
+.slider:before {
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(14px);
+}
+
 </style>
