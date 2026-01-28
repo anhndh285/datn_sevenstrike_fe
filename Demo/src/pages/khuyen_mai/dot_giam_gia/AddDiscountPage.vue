@@ -114,6 +114,21 @@
             </div>
           </div>
 
+          <!-- ✅ Source Filters (Bộ lọc cho danh sách sản phẩm) -->
+          <div class="filter-grid mb-3">
+            <select v-model="sourceFilters.brand" class="form-select-sm bg-white">
+              <option value="">-- Thương hiệu --</option>
+              <option v-for="opt in sourceFilterOptions.brands" :key="opt" :value="opt">{{ opt }}</option>
+            </select>
+            <select v-model="sourceFilters.category" class="form-select-sm bg-white">
+              <option value="">-- Loại sản phẩm --</option>
+              <option v-for="opt in sourceFilterOptions.categories" :key="opt" :value="opt">{{ opt }}</option>
+            </select>
+            <button class="btn-clear-filter bg-white" type="button" @click="clearSourceFilters" title="Xóa bộ lọc">
+              <i class="fa-solid fa-filter-circle-xmark"></i>
+            </button>
+          </div>
+
           <div class="table-wrapper-mini">
             <table class="custom-table">
               <colgroup>
@@ -160,14 +175,14 @@
                         @change="handleParentCheck(group.idSanPham, $event.target.checked)"
                       />
                     </td>
-                    <td class="text-center">
+                    <td class="text-center" @click="toggleExpand(group.idSanPham)" style="cursor: pointer">
                       <img 
                         :src="group.variants[0]?.anh || 'https://via.placeholder.com/40'" 
                         class="product-thumb" 
                       />
                     </td>
-                    <td class="text-center">{{ group.maSanPham }}</td>
-                    <td class="text-center">{{ group.tenSanPham }}</td>
+                    <td class="text-center" @click="toggleExpand(group.idSanPham)" style="cursor: pointer">{{ group.maSanPham }}</td>
+                    <td class="text-center" @click="toggleExpand(group.idSanPham)" style="cursor: pointer">{{ group.tenSanPham }}</td>
                   </tr>
 
                   <!-- Child Rows (Variants) -->
@@ -176,6 +191,9 @@
                     v-for="v in group.variants" 
                     :key="v.id"
                     class="child-row"
+                    @click="fillSourceFilters(v)"
+                    style="cursor: pointer"
+                    title="Click để điền bộ lọc"
                   >
                     <td></td>
                   <td class="text-center">
@@ -184,6 +202,7 @@
                       class="custom-checkbox"
                         :value="v.id"
                         v-model="selectedVariantIds"
+                        @change="onSourceCheckboxChange"
                     />
                   </td>
                     <td class="text-center">
@@ -241,33 +260,33 @@
 
         <!-- Filters for Detail Table -->
         <div class="filter-grid mb-3" v-if="selectedVariantIds.length > 0">
-          <select v-model="detailFilters.brand" class="form-select-sm">
+          <select v-model="detailFilters.brand" class="form-select-sm bg-white">
             <option value="">-- Thương hiệu --</option>
             <option v-for="opt in filterOptions.brands" :key="opt" :value="opt">{{ opt }}</option>
           </select>
 
-          <select v-model="detailFilters.material" class="form-select-sm">
+          <select v-model="detailFilters.material" class="form-select-sm bg-white">
             <option value="">-- Chất liệu --</option>
             <option v-for="opt in filterOptions.materials" :key="opt" :value="opt">{{ opt }}</option>
           </select>
 
-          <select v-model="detailFilters.size" class="form-select-sm">
+          <select v-model="detailFilters.size" class="form-select-sm bg-white">
             <option value="">-- Kích cỡ --</option>
             <option v-for="opt in filterOptions.sizes" :key="opt" :value="opt">{{ opt }}</option>
           </select>
 
-          <select v-model="detailFilters.color" class="form-select-sm">
+          <select v-model="detailFilters.color" class="form-select-sm bg-white">
             <option value="">-- Màu sắc --</option>
             <option v-for="opt in filterOptions.colors" :key="opt" :value="opt">{{ opt }}</option>
           </select>
 
-          <select v-model="detailFilters.sole" class="form-select-sm">
+          <select v-model="detailFilters.sole" class="form-select-sm bg-white">
             <option value="">-- Đế giày --</option>
             <option v-for="opt in filterOptions.soles" :key="opt" :value="opt">{{ opt }}</option>
           </select>
 
           <button
-            class="btn-clear-filter"
+            class="btn-clear-filter bg-white"
             type="button"
             @click="clearDetailFilters"
             title="Xóa bộ lọc"
@@ -312,13 +331,17 @@
               <tr
                 v-for="(item, index) in paginatedVariantsDisplay"
                 :key="item.id"
+                @click="fillFilters(item)"
+                style="cursor: pointer"
+                title="Click để điền thông tin vào bộ lọc"
               >
-                <td class="text-center">
+                <td class="text-center" @click.stop>
                   <input
                     type="checkbox"
                     class="custom-checkbox"
                     :value="item.id"
                     v-model="selectedVariantIds"
+                    @change="onDetailCheckboxChange"
                   />
                 </td>
                 <td class="text-center">
@@ -406,6 +429,34 @@ const currentDetailPage = ref(1);
 const detailItemsPerPage = 5;
 const expandedGroupIds = ref([]);
 
+// --- SOURCE FILTERS (Bộ lọc sản phẩm nguồn) ---
+const sourceFilters = reactive({ brand: "", category: "" });
+
+const sourceFilterOptions = computed(() => {
+  const data = rawVariants.value;
+  const getOpts = (k) => [...new Set(data.map(i => i[k]))].filter(Boolean).sort();
+  return {
+    brands: getOpts('tenThuongHieu'),
+    categories: getOpts('tenLoaiSan'),
+  };
+});
+
+const clearSourceFilters = () => {
+  sourceFilters.brand = "";
+  sourceFilters.category = "";
+};
+
+const fillSourceFilters = (item) => {
+  sourceFilters.brand = item.tenThuongHieu || "";
+  sourceFilters.category = item.tenLoaiSan || "";
+};
+
+const onSourceCheckboxChange = (e) => {
+  if (!e.target.checked) {
+    clearSourceFilters();
+  }
+};
+
 // --- COMPUTED ---
 const productGroups = computed(() => {
   const groups = {};
@@ -425,13 +476,29 @@ const productGroups = computed(() => {
 });
 
 const filteredParentProducts = computed(() => {
-  if (!searchKeyword.value) return productGroups.value;
-  const key = searchKeyword.value.toLowerCase();
-  return productGroups.value.filter(
-    (g) =>
+  let groups = productGroups.value;
+
+  // 1. Filter by Keyword
+  if (searchKeyword.value) {
+    const key = searchKeyword.value.toLowerCase();
+    groups = groups.filter(g =>
       (g.tenSanPham || "").toLowerCase().includes(key) ||
       (g.maSanPham || "").toLowerCase().includes(key)
-  );
+    );
+  }
+
+  // 2. Filter by Source Filters
+  if (sourceFilters.brand || sourceFilters.category) {
+    groups = groups.filter(g => {
+      return g.variants.some(v => {
+        const matchBrand = !sourceFilters.brand || v.tenThuongHieu === sourceFilters.brand;
+        const matchCat = !sourceFilters.category || v.tenLoaiSan === sourceFilters.category;
+        return matchBrand && matchCat;
+      });
+    });
+  }
+
+  return groups;
 });
 
 const totalPages = computed(() =>
@@ -487,7 +554,23 @@ const clearDetailFilters = () => {
   Object.keys(detailFilters).forEach((k) => (detailFilters[k] = ""));
 };
 
-watch(detailFilters, () => { currentDetailPage.value = 1; }, { deep: true });
+watch(detailFilters, () => {
+  currentDetailPage.value = 1;
+}, { deep: true });
+
+const fillFilters = (item) => {
+  detailFilters.brand = item.tenThuongHieu || "";
+  detailFilters.material = item.tenChatLieu || "";
+  detailFilters.color = item.tenMauSac || "";
+  detailFilters.size = item.tenKichThuoc || "";
+  detailFilters.sole = item.tenLoaiSan || "";
+};
+
+const onDetailCheckboxChange = (e) => {
+  if (!e.target.checked) {
+    clearDetailFilters();
+  }
+};
 // ---------------------
 
 const totalDetailPages = computed(() =>
@@ -571,6 +654,7 @@ const handleParentCheck = (parentId, isChecked) => {
     selectedVariantIds.value = selectedVariantIds.value.filter(
       (id) => !childIds.includes(id)
     );
+    clearSourceFilters();
   }
 };
 
@@ -855,6 +939,7 @@ onMounted(() => {
   height: 40px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
+  background-color: #fff; /* ✅ White background */
   outline: none;
 }
 .search-icon {
@@ -1003,8 +1088,12 @@ onMounted(() => {
 /* Filter grid */
 .filter-grid { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .form-select-sm {
-  padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; outline: none; min-width: 120px;
+  padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; outline: none; min-width: 120px; color: #334155;
 }
+.bg-white {
+  background-color: #fff !important;
+}
+
 .btn-clear-filter {
   background: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; width: 34px; height: 34px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;
 }

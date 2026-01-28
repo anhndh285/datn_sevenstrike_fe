@@ -82,10 +82,10 @@
               <th class="text-center" width="50px">STT</th>
               <th>Mã đợt</th>
               <th>Tên đợt</th>
-              <th>Loại giảm</th>
-              <th class="text-right">Giá trị</th>
-              <th>Ngày bắt đầu</th>
-              <th>Ngày kết thúc</th>
+              <th class="text-center">Loại giảm</th>
+              <th class="text-center">Giá trị</th>
+              <th class="text-center">Ngày bắt đầu</th>
+              <th class="text-center">Ngày kết thúc</th>
               <th class="text-center">Trạng thái</th>
               <th class="text-center">Hành động</th>
             </tr>
@@ -108,13 +108,11 @@
                 {{ (currentPage - 1) * itemsPerPage + index + 1 }}
               </td>
 
-              <td>
-                <strong>{{ item.maDotGiamGia }}</strong>
-              </td>
+              <td>{{ item.maDotGiamGia }}</td>
 
               <td>{{ item.tenDotGiamGia }}</td>
 
-              <td>
+              <td class="text-center">
                 <!-- ✅ đổi tag theo palette đỏ/đen -->
                 <span
                   class="ss-tag"
@@ -124,7 +122,7 @@
                 </span>
               </td>
 
-              <td class="text-right highlight-text">
+              <td class="text-center highlight-text">
                 {{
                   item.loaiGiamGia
                     ? formatCurrency(item.giaTriGiamGia)
@@ -132,8 +130,8 @@
                 }}
               </td>
 
-              <td>{{ formatDate(item.ngayBatDau) }}</td>
-              <td>{{ formatDate(item.ngayKetThuc) }}</td>
+              <td class="text-center">{{ formatDate(item.ngayBatDau) }}</td>
+              <td class="text-center">{{ formatDate(item.ngayKetThuc) }}</td>
 
               <td class="text-center">
                 <!-- ✅ badge theo palette chủ đạo -->
@@ -595,7 +593,7 @@ onMounted(() => {
   padding: 0 10px;
   border-radius: 999px;
   font-size: 11.5px;
-  font-weight: 900;
+  font-weight: 400;
   letter-spacing: 0.2px;
   border: 1px solid transparent;
 }
@@ -611,7 +609,7 @@ onMounted(() => {
 }
 
 .highlight-text {
-  font-weight: 900;
+  font-weight: 400;
   color: rgba(17, 24, 39, 0.92);
 }
 

@@ -44,24 +44,11 @@
           <div class="form-group row-group">
             <label class="label" style="min-width: 120px">Loại giảm giá:</label>
             <div class="radio-group">
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  :value="false"
-                  v-model="formData.loaiGiamGia"
-                  :disabled="isEnded"
-                />
-                %
-              </label>
-              <label class="radio-item">
-                <input
-                  type="radio"
-                  :value="true"
-                  v-model="formData.loaiGiamGia"
-                  :disabled="isEnded"
-                />
-                VNĐ
-              </label>
+              <!-- Chỉ cho phép % -->
+              <div class="d-flex align-items-center gap-2">
+                <input type="radio" :value="false" v-model="formData.loaiGiamGia" checked disabled />
+                <span class="font-weight-normal">% Phần trăm</span>
+              </div>
             </div>
           </div>
 
@@ -127,6 +114,21 @@
             </div>
           </div>
 
+          <!-- ✅ Source Filters (Bộ lọc cho danh sách sản phẩm) -->
+          <div class="filter-grid mb-3">
+            <select v-model="sourceFilters.brand" class="form-select-sm bg-white">
+              <option value="">-- Thương hiệu --</option>
+              <option v-for="opt in sourceFilterOptions.brands" :key="opt" :value="opt">{{ opt }}</option>
+            </select>
+            <select v-model="sourceFilters.category" class="form-select-sm bg-white">
+              <option value="">-- Loại sản phẩm --</option>
+              <option v-for="opt in sourceFilterOptions.categories" :key="opt" :value="opt">{{ opt }}</option>
+            </select>
+            <button class="btn-clear-filter bg-white" type="button" @click="clearSourceFilters" title="Xóa bộ lọc">
+              <i class="fa-solid fa-filter-circle-xmark"></i>
+            </button>
+          </div>
+
           <div class="table-wrapper-mini">
             <table class="custom-table">
               <colgroup>
@@ -134,6 +136,7 @@
                 <col style="width: 50px" />
                 <col style="width: 60px" />
                 <col style="width: 150px" />
+                <col style="width: 80px" />
                 <col />
               </colgroup>
               <thead>
@@ -142,6 +145,7 @@
                   <th class="text-center">#</th>
                   <th class="text-center">Ảnh</th>
                   <th class="text-center">Mã SP</th>
+                  <th class="text-center">Kích cỡ</th>
                   <th class="text-center">Tên sản phẩm</th>
                 </tr>
               </thead>
@@ -171,26 +175,35 @@
                       :disabled="isEnded"
                     />
                   </td>
-                    <td class="text-center">
+                    <td class="text-center" @click="toggleExpand(group.idSanPham)" style="cursor: pointer">
                       <img :src="group.variants[0]?.anh || 'https://via.placeholder.com/40'" class="product-thumb" />
                     </td>
-                  <td class="text-center">{{ group.maSanPham }}</td>
-                    <td class="text-center">
+                  <td class="text-center" @click="toggleExpand(group.idSanPham)" style="cursor: pointer">{{ group.maSanPham }}</td>
+                    <td></td>
+                    <td class="text-center" @click="toggleExpand(group.idSanPham)" style="cursor: pointer">
                     {{ group.tenSanPham }}
                   </td>
                 </tr>
 
                   <!-- Child Rows -->
-                  <tr v-if="expandedGroupIds.includes(group.idSanPham)" v-for="v in group.variants" :key="v.id" class="child-row">
+                  <tr 
+                    v-if="expandedGroupIds.includes(group.idSanPham)" 
+                    v-for="v in group.variants" 
+                    :key="v.id" 
+                    class="child-row"
+                    @click="fillSourceFilters(v)"
+                    style="cursor: pointer"
+                    title="Click để điền bộ lọc"
+                  >
                     <td></td>
-                    <td class="text-center">
-                      <input type="checkbox" class="custom-checkbox" :value="v.id" v-model="selectedVariantIds" :disabled="isEnded" />
+                    <td class="text-center" @click.stop>
+                      <input type="checkbox" class="custom-checkbox" :value="v.id" v-model="selectedVariantIds" :disabled="isEnded" @change="onSourceCheckboxChange" />
                     </td>
                     <td class="text-center">
                       <img :src="v.anh || 'https://via.placeholder.com/40'" class="product-thumb-sm" />
                     </td>
                     <td class="text-center text-muted small">{{ v.maChiTietSanPham }}</td>
-                    <td class="small">{{ v.tenMauSac }} - {{ v.tenKichThuoc }} - {{ v.tenLoaiSan }}</td>
+                    <td class="small">{{ v.tenMauSac }} - {{ v.tenLoaiSan }}</td>
                   </tr>
                 </template>
               </tbody>
@@ -332,14 +345,18 @@
               <tr
                 v-for="(item, index) in paginatedVariantsDisplay"
                 :key="item.id"
+                @click="fillFilters(item)"
+                style="cursor: pointer"
+                title="Click để điền thông tin vào bộ lọc"
               >
-                <td class="text-center">
+                <td class="text-center" @click.stop>
                   <input
                     type="checkbox"
                     class="custom-checkbox"
                     :value="item.id"
                     v-model="selectedVariantIds"
                     :disabled="isEnded"
+                    @change="onDetailCheckboxChange"
                   />
                 </td>
                 <td class="text-center">
@@ -467,6 +484,34 @@ const detailFilters = reactive({
   sole: "",
 });
 
+// --- SOURCE FILTERS ---
+const sourceFilters = reactive({ brand: "", category: "" });
+
+const sourceFilterOptions = computed(() => {
+  const data = rawVariants.value;
+  const getOpts = (k) => [...new Set(data.map(i => i[k]))].filter(Boolean).sort();
+  return {
+    brands: getOpts('tenThuongHieu'),
+    categories: getOpts('tenLoaiSan'),
+  };
+});
+
+const clearSourceFilters = () => {
+  sourceFilters.brand = "";
+  sourceFilters.category = "";
+};
+
+const fillSourceFilters = (item) => {
+  sourceFilters.brand = item.tenThuongHieu || "";
+  sourceFilters.category = item.tenLoaiSan || "";
+};
+
+const onSourceCheckboxChange = (e) => {
+  if (!e.target.checked) {
+    clearSourceFilters();
+  }
+};
+
 const activeDiscountsMap = ref({});
 
 // --- COMPUTED ---
@@ -488,13 +533,24 @@ const productGroups = computed(() => {
 });
 
 const filteredParentProducts = computed(() => {
-  if (!searchKeyword.value) return productGroups.value;
-  const key = searchKeyword.value.toLowerCase();
-  return productGroups.value.filter(
-    (g) =>
+  let groups = productGroups.value;
+
+  if (searchKeyword.value) {
+    const key = searchKeyword.value.toLowerCase();
+    groups = groups.filter((g) =>
       (g.tenSanPham || "").toLowerCase().includes(key) ||
       (g.maSanPham || "").toLowerCase().includes(key)
-  );
+    );
+  }
+
+  if (sourceFilters.brand || sourceFilters.category) {
+    groups = groups.filter(g => g.variants.some(v => {
+      const matchBrand = !sourceFilters.brand || v.tenThuongHieu === sourceFilters.brand;
+      const matchCat = !sourceFilters.category || v.tenLoaiSan === sourceFilters.category;
+      return matchBrand && matchCat;
+    }));
+  }
+  return groups;
 });
 
 const totalPages = computed(() =>
@@ -599,6 +655,20 @@ watch(
   },
   { deep: true }
 );
+
+const fillFilters = (item) => {
+  detailFilters.brand = item.tenThuongHieu || "";
+  detailFilters.material = item.tenChatLieu || "";
+  detailFilters.color = item.tenMauSac || "";
+  detailFilters.size = item.tenKichThuoc || "";
+  detailFilters.sole = item.tenLoaiSan || "";
+};
+
+const onDetailCheckboxChange = (e) => {
+  if (!e.target.checked) {
+    clearDetailFilters();
+  }
+};
 
 // --- HELPERS ---
 const formatDateForInput = (dateInput) => {
@@ -778,6 +848,7 @@ const handleParentCheck = (parentId, isChecked) => {
     selectedVariantIds.value = selectedVariantIds.value.filter(
       (id) => !childIds.includes(id)
     );
+    clearSourceFilters();
   }
 };
 
@@ -1387,5 +1458,11 @@ onMounted(() => loadData());
 .child-row td {
   background-color: #f8fafc;
   border-bottom: 1px solid #f1f5f9;
+}
+
+.font-weight-normal { font-weight: 400 !important; }
+
+.bg-white {
+  background-color: #fff !important;
 }
 </style>
