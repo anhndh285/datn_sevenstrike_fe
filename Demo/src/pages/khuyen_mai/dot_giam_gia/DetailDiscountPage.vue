@@ -70,6 +70,7 @@
               type="date"
               class="form-control"
               :disabled="isEnded"
+              @click="$event.target.showPicker()"
             />
           </div>
 
@@ -80,6 +81,7 @@
               type="date"
               class="form-control"
               :disabled="isEnded"
+              @click="$event.target.showPicker()"
             />
           </div>
 
@@ -120,9 +122,9 @@
               <option value="">-- Thương hiệu --</option>
               <option v-for="opt in sourceFilterOptions.brands" :key="opt" :value="opt">{{ opt }}</option>
             </select>
-            <select v-model="sourceFilters.category" class="form-select-sm bg-white">
-              <option value="">-- Loại sản phẩm --</option>
-              <option v-for="opt in sourceFilterOptions.categories" :key="opt" :value="opt">{{ opt }}</option>
+            <select v-model="sourceFilters.origin" class="form-select-sm bg-white">
+              <option value="">-- Xuất xứ --</option>
+              <option v-for="opt in sourceFilterOptions.origins" :key="opt" :value="opt">{{ opt }}</option>
             </select>
             <button class="btn-clear-filter bg-white" type="button" @click="clearSourceFilters" title="Xóa bộ lọc">
               <i class="fa-solid fa-filter-circle-xmark"></i>
@@ -136,7 +138,6 @@
                 <col style="width: 50px" />
                 <col style="width: 60px" />
                 <col style="width: 150px" />
-                <col style="width: 80px" />
                 <col />
               </colgroup>
               <thead>
@@ -145,7 +146,6 @@
                   <th class="text-center">#</th>
                   <th class="text-center">Ảnh</th>
                   <th class="text-center">Mã SP</th>
-                  <th class="text-center">Kích cỡ</th>
                   <th class="text-center">Tên sản phẩm</th>
                 </tr>
               </thead>
@@ -179,7 +179,6 @@
                       <img :src="group.variants[0]?.anh || 'https://via.placeholder.com/40'" class="product-thumb" />
                     </td>
                   <td class="text-center" @click="toggleExpand(group.idSanPham)" style="cursor: pointer">{{ group.maSanPham }}</td>
-                    <td></td>
                     <td class="text-center" @click="toggleExpand(group.idSanPham)" style="cursor: pointer">
                     {{ group.tenSanPham }}
                   </td>
@@ -203,7 +202,7 @@
                       <img :src="v.anh || 'https://via.placeholder.com/40'" class="product-thumb-sm" />
                     </td>
                     <td class="text-center text-muted small">{{ v.maChiTietSanPham }}</td>
-                    <td class="small">{{ v.tenMauSac }} - {{ v.tenLoaiSan }}</td>
+                    <td class="small">{{ v.tenMauSac }} - {{ v.tenKichThuoc }} - {{ v.tenLoaiSan }}</td>
                   </tr>
                 </template>
               </tbody>
@@ -289,7 +288,7 @@
           </select>
 
           <select v-model="detailFilters.sole" class="form-select-sm">
-            <option value="">-- Đế giày --</option>
+            <option value="">-- Loại sân --</option>
             <option v-for="opt in filterOptions.soles" :key="opt" :value="opt">
               {{ opt }}
             </option>
@@ -328,7 +327,7 @@
                 <th class="text-center">Chất liệu</th>
                 <th class="text-center">Kích cỡ</th>
                 <th class="text-center">Màu sắc</th>
-                <th class="text-center">Đế giày</th>
+                <th class="text-center">Loại sân</th>
               </tr>
             </thead>
 
@@ -442,7 +441,7 @@ const discountId = route.params.id;
 /** ✅ FIX BACK: chắc chắn về đúng list */
 const goBack = async () => {
   try {
-    await router.push({ name: "admin-dot-giam-gia" });
+    await router.push({ name: "admin-discount" });
   } catch (e) {
     try {
       await router.push("/admin/giam-gia/dot");
@@ -485,25 +484,25 @@ const detailFilters = reactive({
 });
 
 // --- SOURCE FILTERS ---
-const sourceFilters = reactive({ brand: "", category: "" });
+const sourceFilters = reactive({ brand: "", origin: "" });
 
 const sourceFilterOptions = computed(() => {
   const data = rawVariants.value;
   const getOpts = (k) => [...new Set(data.map(i => i[k]))].filter(Boolean).sort();
   return {
     brands: getOpts('tenThuongHieu'),
-    categories: getOpts('tenLoaiSan'),
+    origins: getOpts('tenXuatXu'),
   };
 });
 
 const clearSourceFilters = () => {
   sourceFilters.brand = "";
-  sourceFilters.category = "";
+  sourceFilters.origin = "";
 };
 
 const fillSourceFilters = (item) => {
   sourceFilters.brand = item.tenThuongHieu || "";
-  sourceFilters.category = item.tenLoaiSan || "";
+  sourceFilters.origin = item.tenXuatXu || "";
 };
 
 const onSourceCheckboxChange = (e) => {
@@ -543,11 +542,11 @@ const filteredParentProducts = computed(() => {
     );
   }
 
-  if (sourceFilters.brand || sourceFilters.category) {
+  if (sourceFilters.brand || sourceFilters.origin) {
     groups = groups.filter(g => g.variants.some(v => {
       const matchBrand = !sourceFilters.brand || v.tenThuongHieu === sourceFilters.brand;
-      const matchCat = !sourceFilters.category || v.tenLoaiSan === sourceFilters.category;
-      return matchBrand && matchCat;
+      const matchOrigin = !sourceFilters.origin || v.tenXuatXu === sourceFilters.origin;
+      return matchBrand && matchOrigin;
     }));
   }
   return groups;
@@ -1028,13 +1027,13 @@ onMounted(() => loadData());
 }
 .page-title {
   font-size: 22px;
-  font-weight: 700; /* ✅ bớt đậm */
+  font-weight: 600;
   color: var(--ss-text);
   margin: 0;
   letter-spacing: 0.2px;
 }
 .title-light {
-  font-weight: 500; /* ✅ bớt đậm */
+  font-weight: 400;
   color: var(--ss-sub);
 }
 
@@ -1045,7 +1044,7 @@ onMounted(() => loadData());
   border: 1px solid rgba(17, 24, 39, 0.14);
   padding: 8px 14px;
   border-radius: 10px;
-  font-weight: 600; /* ✅ bớt đậm */
+  font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -1081,7 +1080,7 @@ onMounted(() => loadData());
 
 .card-title {
   font-size: 16px;
-  font-weight: 650; /* ✅ bớt đậm */
+  font-weight: 600;
   color: var(--ss-text);
   margin-bottom: 20px;
   border-bottom: 1px solid rgba(17, 24, 39, 0.08);
@@ -1105,7 +1104,7 @@ onMounted(() => loadData());
 }
 .label {
   font-size: 13px;
-  font-weight: 600; /* ✅ bớt đậm */
+  font-weight: 500;
   color: var(--ss-sub);
   margin-bottom: 8px;
   display: block;
@@ -1156,7 +1155,7 @@ onMounted(() => loadData());
   border: none;
   padding: 10px 18px;
   border-radius: 10px;
-  font-weight: 600; /* ✅ bớt đậm */
+  font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -1175,7 +1174,7 @@ onMounted(() => loadData());
   border: none;
   padding: 10px 18px;
   border-radius: 10px;
-  font-weight: 600; /* ✅ bớt đậm */
+  font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -1196,7 +1195,7 @@ onMounted(() => loadData());
   border-radius: 10px;
   padding: 6px 12px;
   font-size: 12px;
-  font-weight: 600; /* ✅ bớt đậm */
+  font-weight: 500;
   cursor: pointer;
   transition: 0.2s;
   height: 34px;
@@ -1222,6 +1221,7 @@ onMounted(() => loadData());
   outline: none;
   transition: 0.2s;
   color: rgba(17, 24, 39, 0.86);
+  background-color: #fff;
 }
 .input-wrapper input:focus {
   border-color: rgba(255, 77, 79, 0.45);
@@ -1263,7 +1263,7 @@ onMounted(() => loadData());
   cursor: pointer;
   transition: all 0.2s;
   color: rgba(17, 24, 39, 0.70);
-  font-weight: 600; /* ✅ bớt đậm */
+  font-weight: 500;
 }
 .page-btn:hover:not(:disabled) {
   background: rgba(17, 24, 39, 0.04);
@@ -1293,7 +1293,7 @@ onMounted(() => loadData());
 .custom-table th {
   background: #f8fafc;
   color: rgba(17, 24, 39, 0.70);
-  font-weight: 600; /* ✅ bớt đậm */
+  font-weight: 500;
   padding: 12px;
   border-bottom: 1px solid rgba(17, 24, 39, 0.10);
   white-space: nowrap;
@@ -1317,7 +1317,7 @@ onMounted(() => loadData());
   background-color: #ef4444;
   color: #fff;
   font-size: 10px;
-  font-weight: 600; /* ✅ bớt đậm */
+  font-weight: 500;
   padding: 1px 6px;
   border-radius: 6px;
   margin-left: 6px;
@@ -1330,7 +1330,7 @@ onMounted(() => loadData());
 }
 .new-price {
   color: #ef4444;
-  font-weight: 650; /* ✅ bớt đậm */
+  font-weight: 600;
 }
 
 /* Detail header */
@@ -1342,7 +1342,7 @@ onMounted(() => loadData());
 }
 .section-title {
   font-size: 16px;
-  font-weight: 650; /* ✅ bớt đậm */
+  font-weight: 600;
   color: var(--ss-text);
   margin: 0;
 }
@@ -1353,7 +1353,7 @@ onMounted(() => loadData());
   border-radius: 999px;
   font-size: 12px;
   margin-left: 8px;
-  font-weight: 600; /* ✅ bớt đậm */
+  font-weight: 500;
 }
 
 /* Filters */
@@ -1413,7 +1413,8 @@ onMounted(() => loadData());
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: var(--ss-red);
+  accent-color: #ef4444;
+  background-color: #fff;
 }
 
 .color-dot {

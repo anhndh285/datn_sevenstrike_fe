@@ -3,38 +3,34 @@
     <h2 class="page-title">QUẢN LÝ ĐỢT GIẢM GIÁ</h2>
 
     <div class="card filter-section">
-      <div class="filter-row">
-        <div class="filter-item search-item">
+      <div class="filter-header">
+        <div class="filter-title">
+          <i class="fa-solid fa-filter"></i> Bộ lọc tìm kiếm
+        </div>
+      </div>
+
+      <div class="filter-grid">
+        <div class="filter-item search-col">
           <label class="label">Từ khóa</label>
           <div class="input-wrapper">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
             <input
               v-model="filters.keyword"
               type="text"
+              class="form-control"
               placeholder="Tìm theo tên hoặc mã đợt..."
             />
           </div>
         </div>
 
         <div class="filter-item">
-          <label class="label">Từ ngày</label>
-          <input v-model="filters.startDate" type="date" class="form-control" />
+          <label class="label">Ngày bắt đầu</label>
+          <input v-model="filters.startDate" type="date" class="form-control" @click="$event.target.showPicker()" />
         </div>
 
         <div class="filter-item">
-          <label class="label">Đến ngày</label>
-          <input v-model="filters.endDate" type="date" class="form-control" />
-        </div>
-      </div>
-
-      <div class="filter-row mt-3">
-        <div class="filter-item">
-          <label class="label">Loại giảm giá</label>
-          <select v-model="filters.type" class="form-control">
-            <option value="">-- Tất cả --</option>
-            <option value="percent">Theo Phần trăm (%)</option>
-            <option value="money">Theo Số tiền (VND)</option>
-          </select>
+          <label class="label">Ngày kết thúc</label>
+          <input v-model="filters.endDate" type="date" class="form-control" @click="$event.target.showPicker()" />
         </div>
 
         <div class="filter-item">
@@ -47,16 +43,14 @@
           </select>
         </div>
 
-        <div class="filter-item action-item">
-          <label class="label d-none-mobile">&nbsp;</label>
-          <div class="btn-group">
-            <button class="btn-filter reset" @click="resetFilters">
-              <i class="fa-solid fa-rotate-left"></i>
-              <span class="btn-text">Làm mới</span>
-            </button>
+        <div class="filter-item action-col">
+          <div class="btn-group-filter">
             <button class="btn-filter search" @click="fetchDiscounts">
-              <i class="fa-solid fa-filter"></i>
-              <span class="btn-text">Lọc</span>
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <span>Tìm kiếm</span>
+            </button>
+            <button class="btn-filter reset" @click="resetFilters" title="Làm mới bộ lọc">
+              <i class="fa-solid fa-rotate-left"></i>
             </button>
           </div>
         </div>
@@ -67,7 +61,6 @@
       <div class="table-header">
         <div class="header-left">
           <h3>Danh sách đợt giảm giá</h3>
-          <span class="count-badge">{{ filteredList.length }} bản ghi</span>
         </div>
 
         <button class="btn-add" @click="goToAddPage">
@@ -82,8 +75,8 @@
               <th class="text-center" width="50px">STT</th>
               <th>Mã đợt</th>
               <th>Tên đợt</th>
-              <th class="text-center">Loại giảm</th>
               <th class="text-center">Giá trị</th>
+              <th class="text-center">Loại giảm</th>
               <th class="text-center">Ngày bắt đầu</th>
               <th class="text-center">Ngày kết thúc</th>
               <th class="text-center">Trạng thái</th>
@@ -112,6 +105,14 @@
 
               <td>{{ item.tenDotGiamGia }}</td>
 
+              <td class="text-center highlight-text">
+                {{
+                  item.loaiGiamGia
+                    ? formatCurrency(item.giaTriGiamGia)
+                    : item.giaTriGiamGia + "%"
+                }}
+              </td>
+
               <td class="text-center">
                 <!-- ✅ đổi tag theo palette đỏ/đen -->
                 <span
@@ -120,14 +121,6 @@
                 >
                   {{ item.loaiGiamGia ? "VND" : "%" }}
                 </span>
-              </td>
-
-              <td class="text-center highlight-text">
-                {{
-                  item.loaiGiamGia
-                    ? formatCurrency(item.giaTriGiamGia)
-                    : item.giaTriGiamGia + "%"
-                }}
               </td>
 
               <td class="text-center">{{ formatDate(item.ngayBatDau) }}</td>
@@ -206,7 +199,6 @@ const filters = reactive({
   keyword: "",
   startDate: "",
   endDate: "",
-  type: "",
   status: "",
 });
 
@@ -307,13 +299,9 @@ const filteredList = computed(() => {
     const startMatch = !startDate || (itemStart && itemStart >= startDate);
     const endMatch = !endDate || (itemEnd && itemEnd <= endDate);
 
-    let typeMatch = true;
-    if (filters.type === "percent") typeMatch = item.loaiGiamGia === false;
-    if (filters.type === "money") typeMatch = item.loaiGiamGia === true;
-
     const statusMatch = !filters.status || item.statusKey === filters.status;
 
-    return keywordMatch && startMatch && endMatch && typeMatch && statusMatch;
+    return keywordMatch && startMatch && endMatch && statusMatch;
   });
 });
 
@@ -343,7 +331,6 @@ const resetFilters = () => {
   filters.keyword = "";
   filters.startDate = "";
   filters.endDate = "";
-  filters.type = "";
   filters.status = "";
   fetchDiscounts();
 };
@@ -399,7 +386,7 @@ onMounted(() => {
 
 .page-title {
   font-size: 22px;
-  font-weight: 900;
+  font-weight: 600;
   margin-bottom: 30px;
   margin-top: 10px;
   color: rgba(17, 24, 39, 0.92);
@@ -412,31 +399,65 @@ onMounted(() => {
   margin-bottom: 24px;
   border: 1px solid var(--ss-border);
   box-shadow: var(--ss-shadow-soft);
+  padding-bottom: 30px;
 }
 
-.filter-row {
+.filter-header {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 12px;
+}
+
+.filter-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #334155;
   display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) auto;
   gap: 20px;
-  flex-wrap: wrap;
+  align-items: end;
 }
-.mt-3 { margin-top: 20px; }
 
-.filter-item {
-  flex: 1;
-  min-width: 200px;
-  display: flex;
-  flex-direction: column;
+/* Responsive Grid */
+@media (max-width: 1200px) {
+  .filter-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .search-col {
+    grid-column: span 2;
+  }
+  .action-col {
+    grid-column: span 2;
+    justify-self: end;
+    margin-top: 10px;
+  }
 }
-.search-item { flex: 2; min-width: 250px; }
-.action-item {
-  flex: 0.8;
-  min-width: 180px;
-  justify-content: flex-end;
+
+@media (max-width: 768px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+  .search-col, .action-col {
+    grid-column: span 1;
+    justify-self: stretch;
+  }
+  .btn-group-filter {
+    width: 100%;
+  }
+  .btn-filter {
+    flex: 1;
+  }
 }
 
 .label {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 500;
   color: rgba(17, 24, 39, 0.65);
   margin-bottom: 8px;
   display: block;
@@ -444,21 +465,21 @@ onMounted(() => {
 
 .form-control,
 .input-wrapper input {
-  height: 40px;
+  height: 42px;
   width: 100%;
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
   padding: 0 12px;
   font-size: 14px;
   outline: none;
   transition: all 0.2s;
   background-color: #fff;
-  color: rgba(17, 24, 39, 0.82);
+  color: #334155;
 }
 .form-control:focus,
 .input-wrapper input:focus {
-  border-color: rgba(255, 77, 79, 0.55);
-  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.10);
+  border-color: #ff4d4f;
+  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.15);
 }
 
 .input-wrapper { position: relative; width: 100%; }
@@ -474,46 +495,43 @@ onMounted(() => {
   pointer-events: none;
 }
 
-.btn-group { display: flex; gap: 10px; }
+.btn-group-filter { display: flex; gap: 10px; }
 
 .btn-filter {
-  height: 40px;
-  flex: 1;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: 12px;
-  font-weight: 800;
+  border-radius: 10px;
+  font-weight: 500;
   font-size: 14px;
   cursor: pointer;
   border: 1px solid transparent;
   white-space: nowrap;
-  padding: 0 15px;
+  padding: 0 20px;
   transition: 0.2s;
 }
 
 .btn-filter.reset {
-  background: #fff;
-  color: rgba(17, 24, 39, 0.92);
-  border-color: rgba(17, 24, 39, 0.18);
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 0 14px;
 }
 .btn-filter.reset:hover {
-  border-color: rgba(255, 77, 79, 0.55);
-  background: rgba(255, 77, 79, 0.06);
+  background: #e2e8f0;
+  color: #ef4444;
 }
 
 .btn-filter.search {
-  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
+  background: #111827;
   color: #fff;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.15);
   border: none;
 }
-.btn-filter.search:hover { filter: brightness(0.98); }
-
-@media (max-width: 768px) {
-  .filter-row { gap: 15px; }
-  .filter-item { flex: 100%; min-width: 100%; }
-  .d-none-mobile { display: none; }
+.btn-filter.search:hover { 
+  background: #000;
+  transform: translateY(-1px);
 }
 
 .table-header {
@@ -525,7 +543,8 @@ onMounted(() => {
 .header-left { display: flex; align-items: center; gap: 10px; }
 .header-left h3 {
   margin: 0;
-  font-weight: 900;
+  font-size: 16px;
+  font-weight: 600;
   color: rgba(17, 24, 39, 0.92);
 }
 
@@ -534,7 +553,7 @@ onMounted(() => {
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 500;
   color: rgba(17, 24, 39, 0.70);
 }
 
@@ -545,7 +564,7 @@ onMounted(() => {
   padding: 0 18px;
   height: 40px;
   border-radius: 12px;
-  font-weight: 800;
+  font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -571,7 +590,7 @@ onMounted(() => {
 .custom-table th {
   background: #f9fafb;
   color: rgba(17, 24, 39, 0.82);
-  font-weight: 900;
+  font-weight: 600;
   font-size: 13.5px;
   padding: 14px 12px;
   border-bottom: 1px solid rgba(17, 24, 39, 0.10);
@@ -622,7 +641,7 @@ onMounted(() => {
   padding: 5px 12px;
   border-radius: 999px;
   font-size: 11.5px;
-  font-weight: 900;
+  font-weight: 600;
   white-space: nowrap;
   border: 1px solid transparent;
   letter-spacing: 0.1px;

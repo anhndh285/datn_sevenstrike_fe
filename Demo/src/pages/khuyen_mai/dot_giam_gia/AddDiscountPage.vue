@@ -6,7 +6,7 @@
       </h2>
       <button
         class="btn-back"
-        @click="router.push({ name: 'admin-dot-giam-gia' })"
+        @click="router.push('/admin/giam-gia/dot')"
       >
         <i class="fa-solid fa-arrow-left"></i> Quay lại
       </button>
@@ -72,6 +72,7 @@
               v-model="formData.ngayBatDau"
               type="date"
               class="form-control"
+              @click="$event.target.showPicker()"
             />
           </div>
 
@@ -83,6 +84,7 @@
               v-model="formData.ngayKetThuc"
               type="date"
               class="form-control"
+              @click="$event.target.showPicker()"
             />
           </div>
 
@@ -120,9 +122,9 @@
               <option value="">-- Thương hiệu --</option>
               <option v-for="opt in sourceFilterOptions.brands" :key="opt" :value="opt">{{ opt }}</option>
             </select>
-            <select v-model="sourceFilters.category" class="form-select-sm bg-white">
-              <option value="">-- Loại sản phẩm --</option>
-              <option v-for="opt in sourceFilterOptions.categories" :key="opt" :value="opt">{{ opt }}</option>
+            <select v-model="sourceFilters.origin" class="form-select-sm bg-white">
+              <option value="">-- Xuất xứ --</option>
+              <option v-for="opt in sourceFilterOptions.origins" :key="opt" :value="opt">{{ opt }}</option>
             </select>
             <button class="btn-clear-filter bg-white" type="button" @click="clearSourceFilters" title="Xóa bộ lọc">
               <i class="fa-solid fa-filter-circle-xmark"></i>
@@ -281,7 +283,7 @@
           </select>
 
           <select v-model="detailFilters.sole" class="form-select-sm bg-white">
-            <option value="">-- Đế giày --</option>
+            <option value="">-- Loại sân --</option>
             <option v-for="opt in filterOptions.soles" :key="opt" :value="opt">{{ opt }}</option>
           </select>
 
@@ -316,7 +318,7 @@
                 <th class="text-center">Chất liệu</th>
                 <th class="text-center">Kích cỡ</th>
                 <th class="text-center">Màu sắc</th>
-                <th class="text-center">Đế giày</th>
+                <th class="text-center">Loại sân</th>
               </tr>
             </thead>
             <tbody>
@@ -430,25 +432,25 @@ const detailItemsPerPage = 5;
 const expandedGroupIds = ref([]);
 
 // --- SOURCE FILTERS (Bộ lọc sản phẩm nguồn) ---
-const sourceFilters = reactive({ brand: "", category: "" });
+const sourceFilters = reactive({ brand: "", origin: "" });
 
 const sourceFilterOptions = computed(() => {
   const data = rawVariants.value;
   const getOpts = (k) => [...new Set(data.map(i => i[k]))].filter(Boolean).sort();
   return {
     brands: getOpts('tenThuongHieu'),
-    categories: getOpts('tenLoaiSan'),
+    origins: getOpts('tenXuatXu'),
   };
 });
 
 const clearSourceFilters = () => {
   sourceFilters.brand = "";
-  sourceFilters.category = "";
+  sourceFilters.origin = "";
 };
 
 const fillSourceFilters = (item) => {
   sourceFilters.brand = item.tenThuongHieu || "";
-  sourceFilters.category = item.tenLoaiSan || "";
+  sourceFilters.origin = item.tenXuatXu || "";
 };
 
 const onSourceCheckboxChange = (e) => {
@@ -488,12 +490,12 @@ const filteredParentProducts = computed(() => {
   }
 
   // 2. Filter by Source Filters
-  if (sourceFilters.brand || sourceFilters.category) {
+  if (sourceFilters.brand || sourceFilters.origin) {
     groups = groups.filter(g => {
       return g.variants.some(v => {
         const matchBrand = !sourceFilters.brand || v.tenThuongHieu === sourceFilters.brand;
-        const matchCat = !sourceFilters.category || v.tenLoaiSan === sourceFilters.category;
-        return matchBrand && matchCat;
+        const matchOrigin = !sourceFilters.origin || v.tenXuatXu === sourceFilters.origin;
+        return matchBrand && matchOrigin;
       });
     });
   }
@@ -750,7 +752,7 @@ const submitCreate = async () => {
     isLoading.value = true;
     await discountService.createDiscountComposite(payload);
     alert("Tạo đợt giảm giá thành công!");
-    router.push({ name: "admin-dot-giam-gia" });
+    router.push({ name: "admin-discount" });
   } catch (e) {
     alert("Lỗi tạo mới: " + (e.response?.data?.message || e.message));
   } finally {
@@ -800,7 +802,7 @@ onMounted(() => {
 }
 .page-title {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 600;
   color: #1e293b;
   margin: 0;
 }
@@ -810,7 +812,7 @@ onMounted(() => {
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -842,7 +844,7 @@ onMounted(() => {
 }
 .card-title {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   color: #334155;
   margin-bottom: 20px;
   border-bottom: 1px solid #f1f5f9;
@@ -864,7 +866,7 @@ onMounted(() => {
 }
 .label {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: #64748b;
   margin-bottom: 8px;
   display: block;
@@ -910,7 +912,7 @@ onMounted(() => {
   border: none;
   padding: 10px 20px;
   border-radius: 6px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1003,7 +1005,7 @@ onMounted(() => {
 .custom-table th {
   background: #f8fafc;
   color: #475569;
-  font-weight: 600;
+  font-weight: 500;
   padding: 12px;
   border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;
@@ -1029,7 +1031,7 @@ onMounted(() => {
 }
 .section-title {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   color: #1e293b;
   margin: 0;
 }
@@ -1112,7 +1114,8 @@ onMounted(() => {
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #16a34a;
+  accent-color: #ef4444;
+  background-color: #fff;
 }
 .empty-state {
   text-align: center;

@@ -15,6 +15,7 @@ const API = {
   MATERIAL: `${BASE_URL}/chat-lieu`,
   CATEGORY: `${BASE_URL}/loai-san`,
   SOLE: `${BASE_URL}/co-giay`,
+  ORIGIN: `${BASE_URL}/xuat-xu`,
   IMAGE: `/api/admin/anh-chi-tiet-san-pham`,
 };
 
@@ -70,6 +71,7 @@ export const discountService = {
         thuongHieuRes,
         chatLieuRes,
         loaiSanRes,
+        xuatXuRes,
         anhRes,
       ] = await Promise.all([
         apiClient.get(API.PRODUCT_DETAIL),
@@ -79,6 +81,7 @@ export const discountService = {
         apiClient.get(API.BRAND),
         apiClient.get(API.MATERIAL),
         apiClient.get(API.CATEGORY),
+        apiClient.get(API.ORIGIN),
         apiClient.get(API.IMAGE),
       ]);
 
@@ -89,6 +92,7 @@ export const discountService = {
       const thuongHieu = unwrapList(thuongHieuRes);
       const chatLieu = unwrapList(chatLieuRes);
       const loaiSan = unwrapList(loaiSanRes);
+      const xuatXu = unwrapList(xuatXuRes);
       const anhList = unwrapList(anhRes);
 
       const toMap = (arr, nameField) =>
@@ -103,6 +107,7 @@ export const discountService = {
       const thuongHieuMap = toMap(thuongHieu, "tenThuongHieu");
       const chatLieuMap = toMap(chatLieu, "tenChatLieu");
       const loaiSanMap = toMap(loaiSan, "tenLoaiSan");
+      const xuatXuMap = toMap(xuatXu, "tenXuatXu");
 
       const spById = (id) => sp.find((x) => String(x.id) === String(id)) || {};
 
@@ -124,6 +129,7 @@ export const discountService = {
 
         const idThuongHieu = parent.idThuongHieu || parent.id_thuong_hieu;
         const idChatLieu = parent.idChatLieu || parent.id_chat_lieu;
+        const idXuatXu = parent.idXuatXu || parent.id_xuat_xu;
 
         return {
           ...item,
@@ -142,6 +148,7 @@ export const discountService = {
 
           tenThuongHieu: thuongHieuMap[idThuongHieu] || "Chưa cập nhật",
           tenChatLieu: chatLieuMap[idChatLieu] || "Chưa cập nhật",
+          tenXuatXu: xuatXuMap[idXuatXu] || "Chưa cập nhật",
 
           maChiTietSanPham:
             item.maChiTietSanPham || item.ma_chi_tiet_san_pham || `CTSP-${item.id}`,
