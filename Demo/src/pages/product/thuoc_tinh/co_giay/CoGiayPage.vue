@@ -1,3 +1,4 @@
+<!-- File: src/pages/thuoc_tinh/CoGiayPage.vue -->
 <template>
   <div class="ss-page">
     <!-- Title + button -->
@@ -12,7 +13,7 @@
     <!-- Search (nhỏ như mẫu) -->
     <div class="ss-card ss-border p-3 mb-3">
       <div class="ss-search-wrap">
-        <span class="material-icons ss-search-icon">search</span>
+        <span class="material-icons-outlined ss-search-icon">search</span>
         <input
           v-model="keyword"
           class="form-control ss-search-input"
@@ -23,7 +24,7 @@
 
     <!-- Table -->
     <div class="ss-card ss-border">
-      <div class="p-3 fw-bold">Danh sách cổ giày</div>
+      <div class="p-3 fw-bold ss-text-strong">Danh sách cổ giày</div>
 
       <div class="table-responsive">
         <table class="table ss-table mb-0">
@@ -38,13 +39,17 @@
 
           <tbody v-if="!loading && pagedItems.length">
             <tr v-for="(row, idx) in pagedItems" :key="row.id ?? idx">
-              <td>{{ (page - 1) * pageSize + idx + 1 }}</td>
-              <td class="fw-bold">{{ row.maCoGiay ?? row.ma ?? "--" }}</td>
-              <td>{{ row.tenCoGiay ?? row.ten ?? "" }}</td>
+              <td class="ss-text">{{ (page - 1) * pageSize + idx + 1 }}</td>
+              <td class="ss-text-strong">
+                {{ row.maCoGiay ?? row.ma ?? "--" }}
+              </td>
+              <td class="ss-text">
+                {{ row.tenCoGiay ?? row.ten ?? "" }}
+              </td>
               <td class="text-center">
-                <!-- chỉ icon mắt -->
-                <button class="btn btn-light ss-action" @click="onView(row)" title="Xem">
-                  <span class="material-icons">visibility</span>
+                <!-- ✅ SS ONLY: đồng nhất icon mắt toàn hệ -->
+                <button class="ss-icon-btn-view" type="button" @click="onView(row)" title="Xem">
+                  <span class="material-icons-outlined">visibility</span>
                 </button>
               </td>
             </tr>
@@ -52,13 +57,13 @@
 
           <tbody v-else-if="loading">
             <tr>
-              <td colspan="4" class="text-center py-4 text-muted">Đang tải...</td>
+              <td colspan="4" class="text-center py-4 ss-text-sub">Đang tải...</td>
             </tr>
           </tbody>
 
           <tbody v-else>
             <tr>
-              <td colspan="4" class="text-center py-4 text-muted">Không có dữ liệu</td>
+              <td colspan="4" class="text-center py-4 ss-text-sub">Không có dữ liệu</td>
             </tr>
           </tbody>
         </table>
@@ -66,13 +71,13 @@
 
       <!-- paging đơn giản -->
       <div class="d-flex align-items-center justify-content-between p-3">
-        <div class="text-muted">Tổng: {{ filteredItems.length }} bản ghi</div>
+        <div class="ss-text-sub">Tổng: <b class="ss-text-strong">{{ filteredItems.length }}</b> bản ghi</div>
 
         <div class="d-flex align-items-center gap-2">
           <button class="btn btn-outline-secondary ss-btn-sm" :disabled="page <= 1" @click="page--">
             ‹
           </button>
-          <div class="text-muted">Trang {{ page }} / {{ totalPages }}</div>
+          <div class="ss-text-sub">Trang <b class="ss-text-strong">{{ page }}</b> / <b class="ss-text-strong">{{ totalPages }}</b></div>
           <button
             class="btn btn-outline-secondary ss-btn-sm"
             :disabled="page >= totalPages"
@@ -88,12 +93,12 @@
     <div v-if="modal.open" class="ss-overlay">
       <div class="ss-modal">
         <div class="ss-modal-header">
-          <div class="fw-bold">THÊM CỔ GIÀY</div>
+          <div class="fw-bold ss-text-strong">THÊM CỔ GIÀY</div>
           <button class="btn btn-sm btn-outline-secondary" @click="closeModal">X</button>
         </div>
 
         <div class="ss-modal-body">
-          <label class="form-label">Tên cổ giày *</label>
+          <label class="form-label ss-text">Tên cổ giày *</label>
           <input v-model="form.tenCoGiay" class="form-control" placeholder="Nhập tên..." />
         </div>
 
@@ -111,7 +116,7 @@
       <div class="ss-success">
         <div class="ss-success-ring"></div>
         <div class="ss-success-title">Thành công</div>
-        <div class="text-muted">Thêm cổ giày thành công!</div>
+        <div class="ss-text-sub">Thêm cổ giày thành công!</div>
         <button class="btn btn-primary mt-3 px-4" @click="success.open = false">OK</button>
       </div>
     </div>
@@ -182,13 +187,13 @@ function closeModal() {
 async function fetchAll() {
   loading.value = true;
   try {
-    // ưu tiên getAll/all tuỳ service bạn đang có
     const res =
       typeof coGiayService.getAll === "function"
         ? await coGiayService.getAll()
         : await coGiayService.all();
 
-    items.value = Array.isArray(res) ? res : res?.data ?? [];
+    const data = Array.isArray(res) ? res : (res?.data ?? res?.content ?? []);
+    items.value = Array.isArray(data) ? data : [];
   } catch (e) {
     console.error(e);
     alert("Không tải được danh sách cổ giày.");
@@ -237,6 +242,19 @@ onMounted(fetchAll);
   font-size: 22px;
   letter-spacing: 0.4px;
 }
+
+/* ===== chữ “bình thường”, không nhạt ===== */
+.ss-text {
+  color: rgba(17, 24, 39, 0.82);
+}
+.ss-text-strong {
+  color: rgba(17, 24, 39, 0.92);
+  font-weight: 700;
+}
+.ss-text-sub {
+  color: rgba(17, 24, 39, 0.60);
+}
+
 .ss-btn {
   border-radius: 10px;
   padding: 10px 14px;
@@ -244,6 +262,49 @@ onMounted(fetchAll);
 .ss-btn-sm {
   border-radius: 10px;
   padding: 6px 10px;
+}
+
+/* ===========================
+   ✅ BUTTON THEO MÀU CHỦ ĐẠO
+   (đỏ / đen / trắng)
+   =========================== */
+
+/* Primary: gradient đỏ -> đen */
+.btn-primary {
+  border: none !important;
+  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 22px rgba(255, 77, 79, 0.16);
+}
+.btn-primary:hover {
+  filter: brightness(0.98);
+  box-shadow: 0 12px 26px rgba(17, 24, 39, 0.18), 0 10px 22px rgba(255, 77, 79, 0.14);
+}
+.btn-primary:active {
+  transform: translateY(0.5px);
+}
+.btn-primary:disabled,
+.btn-primary.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Outline secondary: nền trắng, viền đen mềm; hover ám đỏ nhẹ */
+.btn-outline-secondary {
+  background: #fff !important;
+  color: rgba(17, 24, 39, 0.92) !important;
+  border: 1px solid rgba(17, 24, 39, 0.22) !important;
+}
+.btn-outline-secondary:hover {
+  border-color: rgba(255, 77, 79, 0.55) !important;
+  background: rgba(255, 77, 79, 0.06) !important;
+  color: rgba(17, 24, 39, 0.92) !important;
+}
+.btn-outline-secondary:disabled,
+.btn-outline-secondary.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* search nhỏ + icon */
@@ -257,7 +318,7 @@ onMounted(fetchAll);
   top: 50%;
   transform: translateY(-50%);
   font-size: 18px;
-  color: #9ca3af;
+  color: rgba(17, 24, 39, 0.55);
   pointer-events: none;
 }
 .ss-search-input {
@@ -266,33 +327,27 @@ onMounted(fetchAll);
   border-radius: 999px !important;
 }
 
-/* table lines rõ */
+/* table lines rõ (không kẻ dọc body) */
 .ss-table thead th {
   font-size: 13px;
   font-weight: 800;
-  border-bottom: 1px solid rgba(0,0,0,0.08);
+  color: rgba(17, 24, 39, 0.88);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
-.ss-table td, .ss-table th {
+.ss-table td,
+.ss-table th {
   padding: 12px 14px;
   vertical-align: middle;
 }
 .ss-table tbody tr:not(:last-child) td {
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-}
-
-.ss-action {
-  border-radius: 10px;
-  padding: 6px 8px;
-}
-.ss-action .material-icons {
-  font-size: 18px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 /* modal */
 .ss-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -303,14 +358,14 @@ onMounted(fetchAll);
   background: #fff;
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
 }
 .ss-modal-header {
   padding: 14px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(0,0,0,0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 .ss-modal-body {
   padding: 16px;
@@ -320,7 +375,7 @@ onMounted(fetchAll);
   display: flex;
   justify-content: end;
   gap: 10px;
-  border-top: 1px solid rgba(0,0,0,0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* success */
@@ -330,23 +385,26 @@ onMounted(fetchAll);
   border-radius: 12px;
   text-align: center;
   padding: 28px 20px 22px;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
 }
 .ss-success-ring {
   width: 80px;
   height: 80px;
   border-radius: 999px;
   margin: 0 auto 14px;
-  border: 6px solid rgba(34,197,94,0.25);
-  border-top-color: rgba(34,197,94,0.75);
+  border: 6px solid rgba(34, 197, 94, 0.25);
+  border-top-color: rgba(34, 197, 94, 0.75);
   animation: spin 1s linear infinite;
 }
 .ss-success-title {
   font-size: 34px;
   font-weight: 800;
   margin-bottom: 6px;
+  color: rgba(17, 24, 39, 0.92);
 }
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

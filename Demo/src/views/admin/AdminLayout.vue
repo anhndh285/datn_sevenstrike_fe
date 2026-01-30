@@ -62,7 +62,7 @@
 
             <router-link
               class="sub-link"
-              :class="route.path === '/admin/giam-gia/dot' ? 'sub-item-active fw-bold' : 'text-secondary'"
+              :class="route.path.startsWith('/admin/giam-gia/dot') ? 'sub-item-active fw-bold' : 'text-secondary'"
               to="/admin/giam-gia/dot"
             >
               Đợt giảm giá
@@ -93,13 +93,21 @@
           <div v-show="productMenuOpen" class="sub-menu">
             <router-link
               class="sub-link"
-              :class="route.path === '/admin/san-pham' ? 'sub-item-active fw-bold' : 'text-secondary'"
+              :class="route.path.startsWith('/admin/san-pham') ? 'sub-item-active fw-bold' : 'text-secondary'"
               to="/admin/san-pham"
             >
               Sản phẩm
             </router-link>
 
-            <!-- THUỘC TÍNH: là 1 dòng bình thường, click mới xổ -->
+            <router-link
+              class="sub-link"
+              :class="route.path.startsWith('/admin/chi-tiet-san-pham') ? 'sub-item-active fw-bold' : 'text-secondary'"
+              to="/admin/chi-tiet-san-pham"
+            >
+              Sản phẩm chi tiết
+            </router-link>
+
+            <!-- THUỘC TÍNH -->
             <button
               type="button"
               class="sub-link sub-toggle"
@@ -217,18 +225,19 @@
           </button>
 
           <div v-show="accountMenuOpen" class="sub-menu">
+            <!-- ✅ FIX: trỏ thẳng route mới + active startsWith -->
             <router-link
               class="sub-link"
-              :class="route.path === '/admin/khach-hang' ? 'sub-item-active fw-bold' : 'text-secondary'"
-              to="/admin/khach-hang"
+              :class="route.path.startsWith('/admin/tai-khoan/khach-hang') ? 'sub-item-active fw-bold' : 'text-secondary'"
+              to="/admin/tai-khoan/khach-hang"
             >
               Khách hàng
             </router-link>
 
             <router-link
               class="sub-link"
-              :class="route.path === '/admin/nhan-vien' ? 'sub-item-active fw-bold' : 'text-secondary'"
-              to="/admin/nhan-vien"
+              :class="route.path.startsWith('/admin/tai-khoan/nhan-vien') ? 'sub-item-active fw-bold' : 'text-secondary'"
+              to="/admin/tai-khoan/nhan-vien"
             >
               Nhân viên
             </router-link>
@@ -239,6 +248,9 @@
 
     <!-- Main -->
     <main class="flex-grow-1" style="margin-left: 280px">
+      <!-- ✅ PRIMEVUE TOAST (đặt trước header để không bị che) -->
+      <Toast position="top-right" />
+
       <!-- Header -->
       <header class="navbar bg-white px-4 sticky-top ss-header" style="height: 64px">
         <div class="container-fluid justify-content-end gap-3">
@@ -260,6 +272,8 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
+
+// ✅ dùng component global "Toast" đã register trong main.js
 
 const route = useRoute();
 
@@ -293,7 +307,9 @@ const attrPaths = [
 ];
 
 const discountPaths = ["/admin/giam-gia/phieu", "/admin/giam-gia/dot"];
-const accountPaths = ["/admin/khach-hang", "/admin/nhan-vien"];
+
+// ✅ FIX: group tài khoản theo path mới
+const accountPaths = ["/admin/tai-khoan/khach-hang", "/admin/tai-khoan/nhan-vien"];
 
 const isProductGroupActive = computed(() => productPaths.some((p) => route.path.startsWith(p)));
 const isAttrGroupActive = computed(() => attrPaths.some((p) => route.path.startsWith(p)));
@@ -312,6 +328,8 @@ watch(
     if (productPaths.some((x) => p.startsWith(x))) productMenuOpen.value = true;
     if (attrPaths.some((x) => p.startsWith(x))) attrMenuOpen.value = true;
     if (discountPaths.some((x) => p.startsWith(x))) discountMenuOpen.value = true;
+
+    // ✅ FIX: open nhóm tài khoản khi đi vào /admin/tai-khoan/...
     if (accountPaths.some((x) => p.startsWith(x))) accountMenuOpen.value = true;
   },
   { immediate: true }
@@ -319,7 +337,7 @@ watch(
 
 const toggleProductMenu = () => {
   productMenuOpen.value = !productMenuOpen.value;
-  if (!productMenuOpen.value) attrMenuOpen.value = false; // đóng cha => đóng con
+  if (!productMenuOpen.value) attrMenuOpen.value = false;
 };
 const toggleAttrMenu = () => (attrMenuOpen.value = !attrMenuOpen.value);
 
