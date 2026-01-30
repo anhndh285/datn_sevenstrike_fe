@@ -877,14 +877,30 @@ const clearDetailFilters = () => {
 // --- VALIDATE OVERLAP ---
 const checkOverlaps = async (newStart, newEnd, selectedIds) => {
   const allDiscounts = await discountService.getAll();
+
+  // Lấy ID và Mã hiện tại để loại trừ chính xác (ép kiểu String/LowerCase)
+  const currentId = String(route.params.id || "");
+  const currentCode = String(formData.maDotGiamGia || "").trim().toLowerCase();
+
   const overlappingDiscounts = (Array.isArray(allDiscounts) ? allDiscounts : []).filter((d) => {
-    if (d.id == discountId) return false;
+    // 1. Loại trừ theo ID
+    if (String(d.id) === currentId) return false;
+    // 2. Loại trừ theo Mã
+    if (currentCode && String(d.maDotGiamGia || "").trim().toLowerCase() === currentCode) return false;
+
     if (!d.trangThai) return false;
+
+    // Helper: Parse chuỗi YYYY-MM-DD về Local Time để khớp với parseDate(array)
+    const parseInputDate = (str) => {
+      if (!str) return new Date();
+      const [y, m, d] = str.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    };
 
     const dStart = parseDate(d.ngayBatDau);
     const dEnd = parseDate(d.ngayKetThuc);
-    const nStart = new Date(newStart);
-    const nEnd = new Date(newEnd);
+    const nStart = parseInputDate(newStart);
+    const nEnd = parseInputDate(newEnd);
 
     dStart.setHours(0, 0, 0, 0);
     dEnd.setHours(23, 59, 59, 999);
