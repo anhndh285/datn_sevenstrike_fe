@@ -2,115 +2,140 @@
 <template>
   <h2 class="page-title">Quản lý khách hàng</h2>
 
-  <div class="taikhoan-khachhang" v-if="!isPage">
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <div class="search-wrapper">
-          <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input v-model="filters.keyword" type="text" placeholder="Tìm theo tên, SĐT, email,... "
-            class="search-input" />
+  <div class="taikhoan-khachhang-container" v-if="!isPage">
+    <div class="panel">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input v-model="filters.keyword" type="text" placeholder="Tìm theo tên, SĐT, email,... "
+              class="search-input" />
+          </div>
+        </div>
+
+        <div class="toolbar-right">
+          <button class="btn btn-reset" @click="resetFilters">
+            <i class="fa-solid fa-rotate-left"></i> Đặt lại bộ lọc
+          </button>
+
+          <button class="btn-export" @click="exportExcel">
+            <i class="fa-solid fa-file-excel"></i> Xuất Excel
+          </button>
+          <button class="btn btn-newaccount" @click="themkh">
+            <i class="fa-solid fa-plus"></i> Thêm khách hàng
+          </button>
         </div>
       </div>
 
-      <div class="toolbar-right">
-        <button class="btn-export" @click="exportExcel">
-          <i class="fa-solid fa-file-excel"></i> Xuất Excel
-        </button>
-        <button class="btn btn-newaccount" @click="themkh">
-          <i class="fa-solid fa-plus"></i> Thêm khách hàng
-        </button>
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label>Giới tính:</label>
+          <select v-model="filters.gender" class="form-select rounded-3 filter-pill">
+            <option value="">Tất cả</option>
+            <option value="male">Nam</option>
+            <option value="female">Nữ</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Trạng thái:</label>
+          <select v-model="filters.status" class="form-select rounded-3 filter-pill">
+            <option value="">Tất cả</option>
+            <option value="active">Hoạt động</option>
+            <option value="inactive">Ngừng hoạt động</option>
+          </select>
+        </div>
       </div>
     </div>
 
-    <div class="filters-bar">
-      <div class="filter-group">
-        <label>Giới tính:</label>
-        <select v-model="filters.gender" class="form-select rounded-3 no-border-select">
-          <option value="">Tất cả</option>
-          <option value="male">Nam</option>
-          <option value="female">Nữ</option>
-        </select>
+    <div class="panel">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Mã khách hàng</th>
+              <th>Họ tên</th>
+              <th>SĐT</th>
+              <th>Email</th>
+              <th>Địa chỉ</th>
+              <th>Trạng thái</th>
+              <th class="text-center">Thao tác</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr v-for="(item, index) in khachhangList" :key="item.id">
+              <td class="text-gray">{{ pageNo * pageSize + index + 1 }}</td>
+
+              <td class="text-dark fw-700">{{ item.maKhachHang ?? "---" }}</td>
+
+              <td class="text-dark fw-700">{{ item.tenKhachHang ?? "---" }}</td>
+              <td class="text-gray">{{ item.soDienThoai ?? "---" }}</td>
+              <td class="text-gray">{{ item.email ?? "---" }}</td>
+
+              <!-- ✅ Địa chỉ: ưu tiên macDinh -->
+              <td class="text-gray">{{ addrMap.get(item.id) ?? "---" }}</td>
+
+              <td>
+                <span class="badge" :class="item.trangThai ? 'status-active' : 'status-ended'">
+                  {{ item.trangThai ? "Hoạt động" : "Ngừng hoạt động" }}
+                </span>
+              </td>
+
+              <td class="text-center">
+                <div class="action-group">
+                  <label class="switch">
+                    <input type="checkbox" v-model="item.trangThai" @change="toggleStatus(item)" />
+                    <span class="slider"></span>
+                  </label>
+
+                  <button class="ss-icon-btn-view" @click="updatedkh(item.id)" title="Xem" type="button">
+                    <span class="material-icons-outlined">visibility</span>
+                  </button>
+                </div>
+              </td>
+
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <div class="filter-group">
-        <label>Trạng thái:</label>
-        <select v-model="filters.status" class="form-select rounded-3 no-border-select">
-          <option value="">Tất cả</option>
-          <option value="active">Hoạt động</option>
-          <option value="inactive">Ngừng hoạt động</option>
-        </select>
-      </div>
-    </div>
+      <div class="pagination-container">
+  <button
+    class="page-btn"
+    :class="{ disabled: pageNo === 0 }"
+    :disabled="pageNo === 0"
+    @click="changePage(pageNo - 1)"
+  >
+    <i class="fa-solid fa-chevron-left"></i>
+  </button>
 
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>STT</th>
-            <th>Mã khách hàng</th>
-            <th>Họ tên</th>
-            <th>SĐT</th>
-            <th>Email</th>
-            <th>Địa chỉ</th>
-            <th>Trạng thái</th>
-            <th class="text-center">Thao tác</th>
-          </tr>
-        </thead>
+  <button
+    v-for="p in visiblePages"
+    :key="p"
+    class="page-btn"
+    :class="{ active: pageNo === p }"
+    @click="changePage(p)"
+  >
+    {{ p + 1 }}
+  </button>
 
-        <tbody>
-          <tr v-for="(item, index) in khachhangList" :key="item.id">
-            <td class="text-gray">{{ pageNo * pageSize + index + 1 }}</td>
+  <button
+    class="page-btn"
+    :class="{ disabled: pageNo >= totalPages - 1 }"
+    :disabled="pageNo >= totalPages - 1"
+    @click="changePage(pageNo + 1)"
+  >
+    <i class="fa-solid fa-chevron-right"></i>
+  </button>
+</div>
 
-            <td class="text-dark fw-700">{{ item.maKhachHang ?? "---" }}</td>
-
-            <td class="text-dark fw-700">{{ item.tenKhachHang ?? "---" }}</td>
-            <td class="text-gray">{{ item.soDienThoai ?? "---" }}</td>
-            <td class="text-gray">{{ item.email ?? "---" }}</td>
-
-            <!-- ✅ Địa chỉ: ưu tiên macDinh -->
-            <td class="text-gray">{{ addrMap.get(item.id) ?? "---" }}</td>
-
-            <td>
-              <span class="badge" :class="item.trangThai ? 'status-active' : 'status-ended'">
-                {{ item.trangThai ? "Hoạt động" : "Ngừng hoạt động" }}
-              </span>
-            </td>
-
-            <td class="text-center">
-              <div class="action-group">
-                <label class="switch">
-                  <input type="checkbox" v-model="item.trangThai" @change="toggleStatus(item)" />
-                  <span class="slider"></span>
-                </label>
-
-                <button class="ss-icon-btn-view" @click="updatedkh(item.id)" title="Xem" type="button">
-                  <span class="material-icons-outlined">visibility</span>
-                </button>
-              </div>
-            </td>
-
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="pagination-container">
-      <button class="page-btn" :class="{ disabled: pageNo === 0 }" @click="prevPage" :disabled="pageNo === 0">
-        <i class="fa-solid fa-chevron-left"></i>
-      </button>
-
-      <button class="page-btn active">{{ pageNo + 1 }}</button>
-
-      <button class="page-btn" :class="{ disabled: pageNo >= totalPages - 1 }" :disabled="pageNo >= totalPages - 1"
-        @click="nextPage">
-        <i class="fa-solid fa-chevron-right"></i>
-      </button>
     </div>
   </div>
 
   <router-view />
 </template>
-
 <script setup>
 import { searchKhachHang, pagingKhachHang, updateKhachHang, getAllKhachHang } from "@/services/tai_khoan/khach_hang/khach_hangService";
 import { getAllDiaChiKhachHang } from "@/services/tai_khoan/khach_hang/diaChiKhachHangService";
@@ -259,7 +284,7 @@ const exportExcel = async () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Danh sách khách hàng");
 
-    worksheet['!cols'] = [ {wch:5}, {wch:15}, {wch:25}, {wch:15}, {wch:30}, {wch:50}, {wch:20} ];
+    worksheet['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 30 }, { wch: 50 }, { wch: 20 }];
 
     XLSX.writeFile(workbook, "DanhSachKhachHang.xlsx");
 
@@ -293,6 +318,23 @@ const handleFilter = async () => {
   }
 };
 
+const resetFilters = async () => {
+  filters.value = {
+    keyword: "",
+    status: "",
+    roleId: "",
+  };
+
+  pageNo.value = 0;
+  await handleFilter();
+};
+
+const changePage = async (page) => {
+  if (page < 0 || page >= totalPages.value) return;
+  pageNo.value = page;
+  await handleFilter();
+};
+
 const prevPage = async () => {
   if (pageNo.value === 0) return;
   pageNo.value--;
@@ -305,6 +347,24 @@ const nextPage = async () => {
   await handleFilter();
 };
 
+const visiblePages = computed(() => {
+  const pages = [];
+  const max = totalPages.value;
+  const current = pageNo.value;
+
+  let start = Math.max(current - 2, 0);
+  let end = Math.min(start + 4, max - 1);
+
+  if (end - start < 4) {
+    start = Math.max(end - 4, 0);
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  return pages;
+});
 
 
 watch(
@@ -332,13 +392,19 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.taikhoan-khachhang {
+.taikhoan-khachhang-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin: 20px;
+}
+
+.panel {
   font-family: var(--admin-font);
   color: var(--ss-text);
   background: #fff;
   border-radius: 18px;
   padding: 24px;
-  margin: 20px;
   border: 1px solid var(--ss-border);
   box-shadow: var(--ss-shadow-soft);
 }
@@ -429,8 +495,34 @@ onMounted(async () => {
   font-size: 13px;
   transition: all 0.2s;
 }
+
 .btn-export:hover {
   background: #0e6b38;
+}
+
+.btn-reset {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: #e5e7eb;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: 0.2s;
+}
+
+.btn-reset:hover {
+  background: #d1d5db;
+}
+
+.filter-pill{
+  height: 38px;
+  min-width: 150px;
 }
 
 /* Badge */
@@ -573,8 +665,6 @@ tbody tr:hover {
 /* Search */
 .search-wrapper {
   position: relative;
-  width: 370px;
-  height: 40px;
   display: flex;
   align-items: center;
 }
@@ -593,7 +683,7 @@ tbody tr:hover {
   border-radius: 10px;
   border: 1px solid #E5E7EB;
   outline: none;
-  min-width: 370px;
+  min-width: 465px;
   color: rgba(17, 24, 39, 0.78);
   font-size: 14px;
   background: #F9FAFB;
@@ -644,17 +734,6 @@ tbody tr:hover {
   display: flex;
   gap: 20px;
   margin-bottom: 24px;
-}
-
-.no-border-select {
-  border: 1px solid #E5E7EB !important;
-  outline: none !important;
-  box-shadow: none !important;
-  cursor: pointer;
-  font-size: 14px;
-  border-radius: 999px !important;
-  padding: 8px 14px !important;
-  background: #fff;
 }
 
 .switch {

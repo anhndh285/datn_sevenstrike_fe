@@ -18,7 +18,6 @@
     </div>
 
     <div class="card">
-      <!-- THÔNG TIN -->
       <div class="row">
         <div class="col">
           <label class="label">Tên khách hàng <span class="req">*</span></label>

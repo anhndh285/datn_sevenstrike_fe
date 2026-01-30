@@ -1,11 +1,7 @@
-<!-- File: src/pages/tai_khoan/nhan_vien/them_nhanvien.vue -->
 <template>
   <div class="taikhoan-form">
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <div class="page-title">Thêm tài khoản nhân viên</div>
-      </div>
-
+    <div class="header-section">
+      <h2 class="page-title">Thêm nhân viên</h2>
       <div class="toolbar-right">
         <button class="btn btn-outline" @click="back">
           <i class="fa-solid fa-arrow-left"></i> Quay lại
@@ -17,171 +13,124 @@
       </div>
     </div>
 
-    <div class="card layout-2col">
-      <!-- CỘT TRÁI -->
-      <div class="left-col">
-        <div class="block">
-          <div class="block-title">Thông tin nhân viên</div>
+    <div class="form-card">
+      <div>
+        <div class="right-col-header">
+  <button class="btn btn-outline btn-sm" @click="toggleScanner">
+    <i class="fa-solid fa-qrcode"></i> Quét QR
+  </button>
+</div>
 
-          <div class="avatar-vertical">
-            <div class="avatar-preview large">
-              <img v-if="form.anhNhanVien" :src="form.anhNhanVien" />
-              <div v-else class="avatar-placeholder">
-                <span class="material-icons-outlined">person</span>
-              </div>
-            </div>
 
-            <div class="avatar-actions">
-              <input ref="fileRef" type="file" accept="image/*" class="d-none" @change="onPickFile" />
-              <button class="btn btn-outline" type="button" @click="fileRef?.click()">
-                <span class="material-icons-outlined">upload</span> Chọn ảnh
-              </button>
-              <button class="btn btn-outline" type="button" :disabled="!form.anhNhanVien" @click="clearImage">
-                <span class="material-icons-outlined">close</span> Xóa ảnh
-              </button>
-              <div class="hint">Ảnh gửi dạng base64 (anhNhanVien)</div>
-            </div>
+<div v-if="showScanner" class="scanner-overlay">
+  <div class="scanner-box">
+    <div class="scanner-header">
+      <span>Quét mã QR CCCD</span>
+      <button class="btn-close" @click="stopScanner">✕</button>
+    </div>
+    <div id="reader" width="600px"></div>
+    <div class="scanner-hint">Đưa mã QR CCCD vào khung hình</div>
+  </div>
+</div>
+      </div>
+      <div class="avatar-section">
+        <div class="avatar-wrapper" @click="fileRef?.click()">
+          <img v-if="form.anhNhanVien" :src="form.anhNhanVien" class="avatar-img" />
+          <div v-else class="avatar-placeholder">
+            <i class="fa-solid fa-camera"></i>
+            <span>Chọn ảnh</span>
           </div>
+          <input ref="fileRef" type="file" accept="image/*" class="d-none" @change="onPickFile" />
         </div>
+        <div class="avatar-hint">PNG, JPG, JPEG - Tối đa 5MB</div>
+        
+        <button v-if="form.anhNhanVien" class="btn-text-red" @click.stop="clearImage">
+          Xóa ảnh
+        </button>
+      </div>
 
-        <div class="block">
-          <label class="label">Họ và tên <span class="req">*</span></label>
+      <div class="form-grid">
+        
+        <div class="form-group">
+          <label class="label">Tên nhân viên</label>
           <input v-model.trim="form.tenNhanVien" class="input" placeholder="Nhập họ và tên" />
         </div>
-      </div>
-
-
-      <!-- CỘT PHẢI -->
-      <div class="right-col">
-
-        <!-- LIÊN HỆ -->
-        <div class="row">
-          <div class="col">
-            <label class="label">Email <span class="req">*</span></label>
-            <input v-model.trim="form.email" type="email" class="input" placeholder="example@gmail.com" />
-          </div>
-
-          <div class="col">
-            <label class="label">Số điện thoại <span class="req">*</span></label>
-            <input v-model.trim="form.soDienThoai" class="input" placeholder="0xxx..." />
-          </div>
+        <div class="form-group">
+          <label class="label">Số điện thoại</label>
+          <input v-model.trim="form.soDienThoai" class="input" placeholder="Nhập số điện thoại" />
         </div>
 
-        <!-- CÁ NHÂN -->
-        <div class="row">
-          <div class="col">
-            <label class="label">Ngày sinh</label>
-            <input v-model="form.ngaySinh" type="date" class="input" />
-          </div>
-
-          <div class="col">
-            <label class="label">CCCD <span class="req">*</span></label>
-            <input v-model.trim="form.cccd" class="input" placeholder="012345678901" />
-          </div>
+        <div class="form-group">
+          <label class="label">Email</label>
+          <input v-model.trim="form.email" type="email" class="input" placeholder="Nhập địa chỉ email" />
         </div>
 
-        <!-- TRẠNG THÁI + QUYỀN -->
-        <div class="row">
-          <div class="col">
-            <label class="label">Trạng thái <span class="req">*</span></label>
-            <select v-model="form.trangThai" class="input">
-              <option :value="true">Hoạt động</option>
-              <option :value="false">Ngừng hoạt động</option>
-            </select>
-          </div>
+        <div class="form-group">
+          <label class="label">Tỉnh/Thành phố</label>
+          <select class="input select" v-model="addr.tinhCode" @change="onTinhChange">
+            <option value="">-- Chọn Tỉnh/Thành phố --</option>
+            <option v-for="p in provinces" :key="p.code" :value="p.code">{{ p.name }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="label">Quận/Huyện</label>
+          <select class="input select" v-model="addr.huyenCode" @change="onHuyenChange">
+            <option value="">-- Chọn Quận/Huyện --</option>
+            <option v-for="d in districts" :key="d.code" :value="d.code">{{ d.name }}</option>
+          </select>
+        </div>
 
-          <div class="col">
+        <div class="form-group">
+          <label class="label">Xã/Phường</label>
+          <select class="input select" v-model="addr.xaCode">
+            <option value="">-- Chọn Xã/Phường --</option>
+            <option v-for="w in wards" :key="w.code" :value="w.code">{{ w.name }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="label">Địa chỉ cụ thể</label>
+          <input v-model.trim="form.diaChiCuThe" class="input" placeholder="Số nhà, tên đường..." />
+        </div>
+
+        <div class="form-group">
+          <label class="label">Ngày sinh</label>
+          <input v-model="form.ngaySinh" type="date" class="input" />
+        </div>
+
+        <div class="form-group">
             <label class="label">Quyền hạn <span class="req">*</span></label>
-            <select v-model="form.idQuyenHan" class="input">
+            <select v-model="form.idQuyenHan" class="input select">
               <option value="">-- Chọn quyền hạn --</option>
               <option v-for="q in quyenHanOptions" :key="q.id" :value="q.id">
-                {{ q.ten ?? q.tenQuyenHan ?? q.ma ?? ("Quyền " + q.id) }}
+                {{ q.ten ?? q.tenQuyenHan ?? ("Quyền " + q.id) }}
               </option>
             </select>
-          </div>
+        </div>
+        <div class="form-group">
+           <label class="label">Ghi chú</label>
+           <input v-model="form.ghiChu" class="input" placeholder="Ghi chú thêm..." />
         </div>
 
-        <!-- GHI CHÚ -->
-        <div class="row">
-          <div class="col full">
-            <label class="label">Ghi chú</label>
-            <input v-model.trim="form.ghiChu" class="input" placeholder="(tuỳ chọn)" />
-          </div>
-        </div>
-
-        <!-- ĐỊA CHỈ -->
-        <div class="block">
-          <div class="block-title">Địa chỉ <span class="req">*</span></div>
-
-          <div class="row">
-            <div class="col">
-              <label class="label">Tỉnh/Thành</label>
-              <select class="input" v-model="addr.tinhCode" @change="onTinhChange">
-                <option value="">Chọn Tỉnh/TP</option>
-                <option v-for="p in provinces" :key="p.code" :value="p.code">
-                  {{ p.name }}
-                </option>
-              </select>
-            </div>
-
-            <div class="col">
-              <label class="label">Quận/Huyện</label>
-              <select class="input" v-model="addr.huyenCode" @change="onHuyenChange">
-                <option value="">Chọn Quận/Huyện</option>
-                <option v-for="d in districts" :key="d.code" :value="d.code">
-                  {{ d.name }}
-                </option>
-              </select>
-            </div>
-
-            <div class="col">
-              <label class="label">Phường/Xã</label>
-              <select class="input" v-model="addr.xaCode">
-                <option value="">Chọn Phường/Xã</option>
-                <option v-for="w in wards" :key="w.code" :value="w.code">
-                  {{ w.name }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="col full">
-              <label class="label">Địa chỉ cụ thể</label>
-              <input class="input" v-model.trim="form.diaChiCuThe" placeholder="Ví dụ: 12A Nguyễn Trãi" />
-            </div>
-          </div>
-
-          <div class="addr-preview">
-            <span class="muted">Hiển thị:</span>
-            <span class="text">{{ previewAddress }}</span>
-          </div>
-        </div>
       </div>
-    </div>
 
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, nextTick } from "vue";
 import { useRouter } from "vue-router";
+import { Html5QrcodeScanner } from "html5-qrcode";
 import { addNhanVien } from "@/services/tai_khoan/nhan_vien/nhan_vienService";
 import vnAddressService from "@/services/vnAddressService";
 import emailjs from "@emailjs/browser";
 
 const router = useRouter();
-
 const saving = ref(false);
 const errorMsg = ref("");
-const successMsg = ref("");
-
 const fileRef = ref(null);
 
-// Khởi tạo EmailJS (thay YOUR_PUBLIC_KEY bằng public key của bạn từ emailjs.com)
 const EMAILJS_PUBLIC_KEY = "D-LHcLlAo_N5Vc5Kc";
-
-// Initialize EmailJS
 emailjs.init(EMAILJS_PUBLIC_KEY);
 
 const form = ref({
@@ -194,11 +143,7 @@ const form = ref({
   anhNhanVien: "",
   ngaySinh: "",
   ghiChu: "",
-  thanhPho: "",
-  quan: "",
-  phuong: "",
   diaChiCuThe: "",
-  cccd: "",
   trangThai: true,
 });
 
@@ -229,20 +174,6 @@ const loadQuyenHan = async () => {
 
 const findName = (list, code) => list.find((x) => String(x.code) === String(code))?.name || "";
 
-const previewAddress = computed(() => {
-  const tinhName = findName(provinces.value, addr.value.tinhCode);
-  const huyenName = findName(districts.value, addr.value.huyenCode);
-  const xaName = findName(wards.value, addr.value.xaCode);
-  return (
-    vnAddressService.buildAddressText({
-      detail: form.value.diaChiCuThe,
-      wardName: xaName,
-      districtName: huyenName,
-      provinceName: tinhName,
-    }) || "---"
-  );
-});
-
 const onTinhChange = async () => {
   addr.value.huyenCode = "";
   addr.value.xaCode = "";
@@ -258,19 +189,13 @@ const onHuyenChange = async () => {
 const onPickFile = (e) => {
   const file = e?.target?.files?.[0];
   if (!file) return;
-
   if (!file.type.startsWith("image/")) {
-    errorMsg.value = "Vui lòng chọn file ảnh.";
+    alert("Vui lòng chọn file ảnh.");
     return;
   }
-  if (file.size > 2 * 1024 * 1024) {
-    errorMsg.value = "Ảnh quá lớn (tối đa 2MB).";
-    return;
-  }
-
   const reader = new FileReader();
   reader.onload = () => {
-    form.value.anhNhanVien = reader.result; // base64 -> đúng field DTO
+    form.value.anhNhanVien = reader.result;
   };
   reader.readAsDataURL(file);
 };
@@ -281,134 +206,137 @@ const clearImage = () => {
 };
 
 const removeVietnameseTones = (str) => {
-  return str
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D");
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
 };
 
 const buildUsername = (fullName) => {
   if (!fullName) return "";
-
   const noTone = removeVietnameseTones(fullName.trim().toLowerCase());
-
   const parts = noTone.split(/\s+/);
-
-  const lastName = parts[parts.length - 1]; // bach
-  const initials = parts
-    .slice(0, parts.length - 1)
-    .map((x) => x[0])
-    .join(""); // vh
-
+  const lastName = parts[parts.length - 1];
+  const initials = parts.slice(0, parts.length - 1).map((x) => x[0]).join("");
   return lastName + initials;
 };
 
 const generatePassword = (length = 8) => {
-  const chars =
-    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$";
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$";
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 };
 
+const showScanner = ref(false);
+let scanner = null;
 
-const sendEmail = async ({ tenNhanVien, tenTaiKhoan, matKhau, email }) => {
-  const templateParams = {
-    to_name: tenNhanVien,
-    username: tenTaiKhoan,
-    password: matKhau,
-    to_email: email,
-  };
-
+const onScanSuccess = async (decodedText, decodedResult) => {
   try {
-    const res = await emailjs.send(
-      "service_n03lqrf",      // your service ID
-      "template_1gy88ic",     // your template ID
-      templateParams,
-      EMAILJS_PUBLIC_KEY      // pass public key here too
-    );
-    console.log("EmailJS response:", res);
-  } catch (error) {
-    console.error("Lỗi gửi email (chi tiết):", error);
-    // include server response text if present
-    const msg = error?.text || error?.statusText || error?.message || "Gửi email thất bại";
-    throw new Error(msg);
+    const data = JSON.parse(decodedText);
+
+    if (data.tenNhanVien) form.value.tenNhanVien = data.tenNhanVien;
+    if (data.email) form.value.email = data.email;
+    if (data.soDienThoai) form.value.soDienThoai = data.soDienThoai;
+    if (data.ngaySinh) form.value.ngaySinh = data.ngaySinh;
+    if (data.ghiChu) form.value.ghiChu = data.ghiChu;
+    if (data.diaChiCuThe) form.value.diaChiCuThe = data.diaChiCuThe;
+
+    if (form.value.tenNhanVien) {
+        form.value.tenTaiKhoan = buildUsername(form.value.tenNhanVien);
+    }
+
+    if (data.thanhPho) {
+      const tinhCode = findCodeByName(provinces.value, data.thanhPho);
+      if (tinhCode) {
+        addr.value.tinhCode = tinhCode;
+        await onTinhChange();
+
+        if (data.quan) {
+          const huyenCode = findCodeByName(districts.value, data.quan);
+          if (huyenCode) {
+            addr.value.huyenCode = huyenCode;
+            await onHuyenChange();
+
+            if (data.phuong) {
+              const xaCode = findCodeByName(wards.value, data.phuong);
+              if (xaCode) {
+                addr.value.xaCode = xaCode;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    alert("Quét dữ liệu thành công!");
+    stopScanner();
+
+  } catch (e) {
+    console.error("Lỗi đọc QR:", e);
+    alert("Mã QR không hợp lệ. Vui lòng sử dụng mã QR đúng định dạng JSON hệ thống.");
   }
 };
 
-const validate = () => {
-  if (!form.value.tenNhanVien) return "Vui lòng nhập Họ và tên";
-  if (!form.value.tenTaiKhoan) return "Vui lòng nhập Tên tài khoản";
-  if (!form.value.matKhau) return "Vui lòng nhập Mật khẩu";
-  if (!form.value.email) return "Vui lòng nhập Email";
-  if (!form.value.soDienThoai) return "Vui lòng nhập Số điện thoại";
-  if (!form.value.cccd) return "Vui lòng nhập CCCD";
-  if (!form.value.idQuyenHan) return "Vui lòng chọn Quyền hạn";
-  if (!form.value.anhNhanVien) return "Vui lòng chọn Ảnh nhân viên";
-
-  if (!addr.value.tinhCode || !addr.value.huyenCode || !addr.value.xaCode) {
-    return "Vui lòng chọn đầy đủ Tỉnh/Huyện/Xã";
+const toggleScanner = async () => {
+  showScanner.value = !showScanner.value;
+  if (showScanner.value) {
+    await nextTick();
+    scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }, false);
+    scanner.render(onScanSuccess, (err) => {});
+  } else {
+    stopScanner();
   }
-  if (!form.value.diaChiCuThe) return "Vui lòng nhập Địa chỉ cụ thể";
+};
 
+const stopScanner = () => {
+  if (scanner) {
+    scanner.clear().catch(console.error);
+    scanner = null;
+  }
+  showScanner.value = false;
+};
+
+const sendEmail = async ({ tenNhanVien, tenTaiKhoan, matKhau, email }) => {
+    console.log("Sending email to", email);
+};
+
+const validate = () => {
+  if (!form.value.tenNhanVien) return "Chưa nhập tên nhân viên";
+  if (!form.value.email) return "Chưa nhập email";
+  if (!form.value.soDienThoai) return "Chưa nhập số điện thoại";
+  if (!form.value.idQuyenHan) return "Chưa chọn quyền hạn";
+  if (!addr.value.tinhCode || !addr.value.huyenCode || !addr.value.xaCode) return "Chưa chọn địa chỉ đầy đủ";
   return "";
 };
 
 const submit = async () => {
-  errorMsg.value = "";
-  successMsg.value = "";
-
   form.value.tenTaiKhoan = buildUsername(form.value.tenNhanVien);
   form.value.matKhau = generatePassword();
 
   const msg = validate();
   if (msg) {
-    errorMsg.value = msg;
+    alert(msg);
     return;
   }
 
-  const ok = confirm(`Xác nhận tạo nhân viên: "${form.value.tenNhanVien}" ?`);
-  if (!ok) return;
-
   try {
     saving.value = true;
-
-    // map name tỉnh/huyện/xã -> đúng field DTO: thanhPho/quan/phuong
-    const thanhPho = findName(provinces.value, addr.value.tinhCode);
-    const quan = findName(districts.value, addr.value.huyenCode);
-    const phuong = findName(wards.value, addr.value.xaCode);
-
     const payload = {
+      ...form.value,
       idQuyenHan: Number(form.value.idQuyenHan),
-      tenNhanVien: form.value.tenNhanVien,
-      tenTaiKhoan: form.value.tenTaiKhoan,
-      matKhau: form.value.matKhau,
-      email: form.value.email,
-      soDienThoai: form.value.soDienThoai,
-      anhNhanVien: form.value.anhNhanVien,
-      ngaySinh: form.value.ngaySinh || null,
-      ghiChu: form.value.ghiChu || null,
-      thanhPho,
-      quan,
-      phuong,
-      diaChiCuThe: form.value.diaChiCuThe,
-      cccd: form.value.cccd,
-      trangThai: form.value.trangThai,
+      thanhPho: findName(provinces.value, addr.value.tinhCode),
+      quan: findName(districts.value, addr.value.huyenCode),
+      phuong: findName(wards.value, addr.value.xaCode),
     };
 
     await addNhanVien(payload);
-
     await sendEmail({
       tenNhanVien: form.value.tenNhanVien,
       tenTaiKhoan: form.value.tenTaiKhoan,
       matKhau: form.value.matKhau,
       email: form.value.email,
     });
-
-    successMsg.value = "Tạo nhân viên thành công!";
-    setTimeout(() => back(), 300);
+    
+    alert("Thêm nhân viên thành công!");
+    back();
   } catch (e) {
-    console.log(e);
-    errorMsg.value = e?.message || "Tạo nhân viên thất bại";
+    alert(e.message || "Lỗi hệ thống");
   } finally {
     saving.value = false;
   }
@@ -421,41 +349,172 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
 .taikhoan-form {
   font-family: "Inter", sans-serif;
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  border: 1px solid #E5E7EB;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
-  margin: 20px;
+  max-width: 1000px;
+  margin: 20px auto;
+  color: #334155;
 }
 
-.toolbar {
+.header-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .page-title {
-  font-weight: 900;
-  font-size: 16px;
-  color: #111827;
-  letter-spacing: .3px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
 }
 
-.toolbar-right {
+.form-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 40px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.avatar-section {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40px;
 }
 
-.btn {
+.avatar-wrapper {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.2s;
+  border: 1px solid #e2e8f0;
+}
+
+.avatar-wrapper:hover {
+  background-color: #e2e8f0;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #94a3b8;
+  gap: 5px;
+}
+
+.avatar-placeholder i {
+  font-size: 24px;
+}
+
+.avatar-placeholder span {
+  font-size: 12px;
+}
+
+.avatar-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 30px;
+  row-gap: 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  display: flex;
+  justify-content: space-between;
+}
+
+.input {
+  height: 44px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0 16px;
+  font-size: 14px;
+  
+  background-color: #ffffff !important; 
+  color: #1e293b !important;
+  
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #f97316;
+  background-color: #ffffff;
+}
+
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1em;
+  background-color: #ffffff !important;
+}
+
+.radio-group {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  height: 44px;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.radio-item input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #007bff;
+  cursor: pointer;
+}
+
+.form-footer {
+  margin-top: 40px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 20px;
+}
+
+.btn{
   height: 36px;
   padding: 0 14px;
   border: none;
@@ -463,224 +522,68 @@ onMounted(async () => {
   font-weight: 800;
   font-size: 13px;
   border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
   transition: .2s;
 }
 
-.btn:disabled {
-  opacity: .6;
-  cursor: not-allowed;
+.btn:hover {
+  opacity: 0.9;
 }
 
-.btn-outline {
-  background: #fff;
-  border: 1px solid rgba(17, 24, 39, 0.14);
-  color: rgba(17, 24, 39, 0.88);
+.btn-secondary {
+  background: #64748b;
+  color: white;
 }
 
-.btn-outline:hover {
-  background: rgba(17, 24, 39, 0.04);
-}
-
-.btn-primary {
-  color: #fff;
+.btn-primary{
+  color:#fff;
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
-  box-shadow: 0 10px 18px rgba(255, 77, 79, 0.16);
+  box-shadow: 0 10px 18px rgba(255,77,79,0.16);
 }
 
-.card {
-  border: 1px solid rgba(255, 77, 79, 0.22);
-  border-radius: 14px;
-  padding: 16px;
-  background: #fff;
+.btn-outline{
+  background:#fff;
+  border:1px solid rgba(17,24,39,0.14);
+  color: rgba(17,24,39,0.88);
 }
 
-.row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.col {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.label {
-  font-size: 13px;
-  font-weight: 800;
-  color: rgba(17, 24, 39, 0.85);
-}
-
-.req {
+.btn-text-red {
+  background: none;
+  border: none;
   color: #ef4444;
-}
-
-.input {
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid rgba(17, 24, 39, 0.14);
-  padding: 0 12px;
-  outline: none;
-  background: #F9FAFB;
-  color: rgba(17, 24, 39, 0.88);
-}
-
-.input:focus {
-  background: #fff;
-  border-color: rgba(255, 77, 79, 0.65);
-  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.12);
-}
-
-.alert {
-  margin-top: 10px;
-  border-radius: 12px;
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  font-size: 13px;
-}
-
-.alert.error {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.alert.success {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.block {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed rgba(17, 24, 39, 0.12);
-}
-
-.block-title {
-  font-weight: 900;
-  font-size: 13px;
-  color: rgba(17, 24, 39, 0.88);
-  margin-bottom: 10px;
-}
-
-.avatar-row {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.avatar-preview {
-  width: 84px;
-  height: 84px;
-  border-radius: 16px;
-  border: 1px solid rgba(17, 24, 39, 0.14);
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.avatar-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(17, 24, 39, 0.04);
-}
-
-.avatar-placeholder span {
-  font-size: 36px;
-  color: rgba(17, 24, 39, 0.55);
-}
-
-.avatar-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.hint {
   font-size: 12px;
-  color: rgba(17, 24, 39, 0.55);
-  max-width: 520px;
+  cursor: pointer;
+  margin-top: 5px;
 }
 
-.d-none {
-  display: none;
+.scan-action {
+  color: #007bff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
 }
 
-.addr-preview {
-  margin-top: 8px;
-  font-size: 13px;
-}
+.d-none { display: none; }
 
-.addr-preview .muted {
-  color: rgba(17, 24, 39, 0.55);
-  font-weight: 700;
-  margin-right: 6px;
-}
-
-.addr-preview .text {
-  color: rgba(17, 24, 39, 0.88);
-  font-weight: 800;
-}
-
-.layout-2col {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 20px;
-}
-
-.left-col {
-  border-right: 1px solid rgba(0, 0, 0, .06);
-  padding-right: 16px;
-}
-
-.right-col {
-  padding-left: 4px;
-}
-
-.avatar-vertical {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.avatar-preview.large {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-}
-
-.row .full {
-  grid-column: 1 / -1;
-}
-
-@media(max-width:900px) {
-  .layout-2col {
+@media (max-width: 768px) {
+  .form-grid {
     grid-template-columns: 1fr;
   }
-
-  .left-col {
-    border-right: none;
-    padding-right: 0;
-  }
 }
+
+.scanner-overlay {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(0,0,0,0.5);
+  display: flex; justify-content: center; align-items: center;
+}
+.scanner-box {
+  background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px;
+}
+.scanner-header {
+  display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold;
+}
+.btn-close { border: none; background: none; font-size: 20px; cursor: pointer;}
+.scanner-hint { text-align: center; margin-top: 10px; font-size: 13px; color: #666; }
 </style>

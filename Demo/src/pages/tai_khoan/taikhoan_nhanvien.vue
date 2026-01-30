@@ -2,130 +2,151 @@
 <template>
   <h2 class="page-title">Quản lý nhân viên</h2>
 
-  <div class="taikhoan-nhanvien" v-if="!isPage">
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <div class="search-wrapper">
-          <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input v-model="filters.keyword" type="text" placeholder="Tìm theo tên, SĐT, email,... " class="search-input" />
+  <div class="taikhoan-nhanvien-container" v-if="!isPage">
+    <div class="panel">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input v-model="filters.keyword" type="text" placeholder="Tìm theo tên, SĐT, email,... " class="search-input" />
+          </div>
+        </div>
+
+        <div class="toolbar-right">
+          <button class="btn btn-reset" @click="resetFilters">
+  <i class="fa-solid fa-rotate-left"></i> Đặt lại bộ lọc
+</button>
+
+          <button class="btn-export" @click="exportExcel">
+            <i class="fa-solid fa-file-excel"></i> Xuất Excel
+          </button>
+
+          <button class="btn btn-newaccount" @click="themnv">
+            <i class="fa-solid fa-plus"></i> Thêm nhân viên
+          </button>
         </div>
       </div>
 
-      <div class="toolbar-right">
-        <button class="btn-export" @click="exportExcel">
-          <i class="fa-solid fa-file-excel"></i> Xuất Excel
-        </button>
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label>Chức vụ:</label>
+          <select v-model="filters.roleId" class="form-select rounded-3 filter-pill">
+            <option value="">Tất cả</option>
+            <option v-for="[id, name] in roleMap" :key="id" :value="id">
+              {{ name }}
+            </option>
+          </select>
+        </div>
 
-        <button class="btn btn-newaccount" @click="themnv">
-          <i class="fa-solid fa-plus"></i> Thêm nhân viên
-        </button>
+        <div class="filter-group">
+          <label>Trạng thái:</label>
+          <select v-model="filters.status" class="form-select rounded-3 filter-pill">
+            <option value="">Tất cả</option>
+            <option value="active">Hoạt động</option>
+            <option value="inactive">Ngừng hoạt động</option>
+          </select>
+        </div>
       </div>
     </div>
 
-    <div class="filters-bar">
-      <div class="filter-group">
-        <label>Chức vụ:</label>
-        <select v-model="filters.roleId" class="form-select rounded-3 no-border-select">
-          <option value="">Tất cả</option>
-          <option v-for="[id, name] in roleMap" :key="id" :value="id">
-            {{ name }}
-          </option>
-        </select>
+    <div class="panel">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Ảnh</th>
+              <th>Mã nhân viên</th>
+              <th>Họ và tên</th>
+              <th>SĐT</th>
+              <th>Email</th>
+              <th>Địa chỉ</th>
+              <th>Quyền hạn</th>
+              <th>Trạng thái</th>
+              <th class="text-center">Thao tác</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr v-for="(item, index) in nhanVienList" :key="item.id">
+              <td class="text-gray">{{ pageNo * pageSize + index + 1 }}</td>
+
+              <td>
+                <div class="avatar">
+                  <img v-if="isImg(item.anhNhanVien)" :src="item.anhNhanVien" alt="avatar" />
+                  <div v-else class="avatar-fallback">{{ initials(item.tenNhanVien) }}</div>
+                </div>
+              </td>
+
+              <td class="text-dark fw-700">{{ item.maNhanVien ?? "---" }}</td>
+
+              <td class="text-dark fw-700">{{ item.tenNhanVien ?? "---" }}</td>
+              <td class="text-gray">{{ item.soDienThoai ?? "---" }}</td>
+              <td class="text-gray">{{ item.email ?? "---" }}</td>
+
+              <td class="text-gray">
+                {{ buildDiaChi(item) }}
+              </td>
+
+              <td>
+                <span class="badge badge-role">
+                  {{ getRoleName(item.idQuyenHan) }}
+                </span>
+              </td>
+
+              <td>
+                <span class="badge" :class="item.trangThai ? 'status-active' : 'status-ended'">
+                  {{ item.trangThai ? "Hoạt động" : "Ngừng hoạt động" }}
+                </span>
+              </td>
+
+              <td class="text-center">
+                <div class="action-group">
+                  <label class="switch">
+                    <input type="checkbox" v-model="item.trangThai" @change="toggleStatus(item)" />
+                    <span class="slider"></span>
+                  </label>
+
+                  <button class="ss-icon-btn-view" @click="updatednv(item.id)" title="Xem" type="button">
+                    <span class="material-icons-outlined">visibility</span>
+                  </button>
+                </div>
+              </td>
+
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <div class="filter-group">
-        <label>Trạng thái:</label>
-        <select v-model="filters.status" class="form-select rounded-3 no-border-select">
-          <option value="">Tất cả</option>
-          <option value="active">Hoạt động</option>
-          <option value="inactive">Ngừng hoạt động</option>
-        </select>
-      </div>
-    </div>
+      <div class="pagination-container">
+  <button
+    class="page-btn"
+    :class="{ disabled: pageNo === 0 }"
+    :disabled="pageNo === 0"
+    @click="changePage(pageNo - 1)"
+  >
+    <i class="fa-solid fa-chevron-left"></i>
+  </button>
 
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>STT</th>
-            <th>Mã nhân viên</th>
-            <th>Ảnh</th>
-            <th>Họ và tên</th>
-            <th>SĐT</th>
-            <th>Email</th>
-            <th>Địa chỉ</th>
-            <th>Quyền hạn</th>
-            <th>Trạng thái</th>
-            <th class="text-center">Thao tác</th>
-          </tr>
-        </thead>
+  <button
+    v-for="p in visiblePages"
+    :key="p"
+    class="page-btn"
+    :class="{ active: pageNo === p }"
+    @click="changePage(p)"
+  >
+    {{ p + 1 }}
+  </button>
 
-        <tbody>
-          <tr v-for="(item, index) in nhanVienList" :key="item.id">
-            <td class="text-gray">{{ pageNo * pageSize + index + 1 }}</td>
-
-            <td class="text-dark fw-700">{{ item.maNhanVien ?? "---" }}</td>
-
-            <td>
-              <div class="avatar">
-                <img v-if="isImg(item.anhNhanVien)" :src="item.anhNhanVien" alt="avatar" />
-                <div v-else class="avatar-fallback">{{ initials(item.tenNhanVien) }}</div>
-              </div>
-            </td>
-
-            <td class="text-dark fw-700">{{ item.tenNhanVien ?? "---" }}</td>
-            <td class="text-gray">{{ item.soDienThoai ?? "---" }}</td>
-            <td class="text-gray">{{ item.email ?? "---" }}</td>
-
-            <td class="text-gray">
-              {{ buildDiaChi(item) }}
-            </td>
-
-            <td>
-              <span class="badge badge-role">
-                {{ getRoleName(item.idQuyenHan) }}
-              </span>
-            </td>
-
-            <td>
-              <span class="badge" :class="item.trangThai ? 'status-active' : 'status-ended'">
-                {{ item.trangThai ? "Hoạt động" : "Ngừng hoạt động" }}
-              </span>
-            </td>
-
-            <td class="text-center">
-  <div class="action-group">
-    <label class="switch">
-      <input type="checkbox" v-model="item.trangThai" @change="toggleStatus(item)" />
-      <span class="slider"></span>
-    </label>
-
-    <button class="ss-icon-btn-view" @click="updatednv(item.id)" title="Xem" type="button">
-      <span class="material-icons-outlined">visibility</span>
-    </button>
-  </div>
-</td>
-
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="pagination-container">
-      <button class="page-btn" :class="{ disabled: pageNo === 0 }" @click="prevPage" :disabled="pageNo === 0">
-        <i class="fa-solid fa-chevron-left"></i>
-      </button>
-
-      <button class="page-btn active">{{ pageNo + 1 }}</button>
-
-      <button
-        class="page-btn"
-        :class="{ disabled: pageNo >= totalPages - 1 }"
-        :disabled="pageNo >= totalPages - 1"
-        @click="nextPage"
-      >
-        <i class="fa-solid fa-chevron-right"></i>
-      </button>
+  <button
+    class="page-btn"
+    :class="{ disabled: pageNo >= totalPages - 1 }"
+    :disabled="pageNo >= totalPages - 1"
+    @click="changePage(pageNo + 1)"
+  >
+    <i class="fa-solid fa-chevron-right"></i>
+  </button>
+</div>
     </div>
   </div>
 
@@ -237,6 +258,23 @@ const handleFilter = async () => {
   }
 };
 
+const resetFilters = async () => {
+  filters.value = {
+    keyword: "",
+    status: "",
+    roleId: "",
+  };
+
+  pageNo.value = 0;
+  await handleFilter();
+};
+
+const changePage = async (page) => {
+  if (page < 0 || page >= totalPages.value) return;
+  pageNo.value = page;
+  await handleFilter();
+};
+
 const prevPage = async () => {
   if (pageNo.value === 0) return;
   pageNo.value--;
@@ -248,6 +286,25 @@ const nextPage = async () => {
   pageNo.value++;
   await handleFilter();
 };
+
+const visiblePages = computed(() => {
+  const pages = [];
+  const max = totalPages.value;
+  const current = pageNo.value;
+
+  let start = Math.max(current - 2, 0);
+  let end = Math.min(start + 4, max - 1);
+
+  if (end - start < 4) {
+    start = Math.max(end - 4, 0);
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  return pages;
+});
 
 const buildDiaChi = (x) => {
   const parts = [x.diaChiCuThe, x.phuong, x.quan, x.thanhPho]
@@ -360,13 +417,19 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.taikhoan-nhanvien {
+.taikhoan-nhanvien-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin: 20px;
+}
+
+.panel {
   font-family: var(--admin-font);
   color: var(--ss-text);
   background: #fff;
   border-radius: 18px;
   padding: 24px;
-  margin: 20px;
   border: 1px solid var(--ss-border);
   box-shadow: var(--ss-shadow-soft);
 }
@@ -434,6 +497,31 @@ onMounted(async () => {
 }
 .btn-export i { font-size: 12px; }
 
+.btn-reset {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: #e5e7eb;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: 0.2s;
+}
+
+.btn-reset:hover {
+  background: #d1d5db;
+}
+
+.filter-pill{
+  height: 38px;
+  min-width: 150px;
+}
+
 .filters-bar {
   display: flex;
   gap: 20px;
@@ -445,6 +533,12 @@ onMounted(async () => {
   font-size:14px; color: rgba(17,24,39,0.78); font-weight:600;
   white-space:nowrap;
 }
+
+.filter-pill{
+  height: 38px;
+  min-width: 150px;
+}
+
 
 /* Badge */
 .badge{
@@ -552,18 +646,6 @@ tbody tr:hover { background:#F9FAFB; }
 .page-btn.active{ background:#111827; color:#fff; border-color:#111827; }
 .page-btn.disabled{ color:#D1D5DB; background:#F9FAFB; }
 
-/* Select */
-.no-border-select{
-  border: 1px solid #E5E7EB !important;
-  outline: none !important;
-  box-shadow: none !important;
-  cursor: pointer;
-  font-size: 14px;
-  border-radius: 999px !important;
-  padding: 8px 14px !important;
-  background: #fff;
-}
-
 /* Search */
 .search-wrapper { 
   position: relative; 
@@ -584,7 +666,7 @@ tbody tr:hover { background:#F9FAFB; }
   border-radius: 10px;
   border: 1px solid #E5E7EB;
   outline: none;
-  min-width: 400px;
+  min-width: 465px;
   color: rgba(17,24,39,0.78);
   font-size: 14px;
   background:#F9FAFB;
