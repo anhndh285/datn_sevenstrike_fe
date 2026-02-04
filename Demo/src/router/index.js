@@ -31,12 +31,48 @@ import CapNhatKhachHangPage from "@/pages/tai_khoan/capnhat_khachhang.vue";
 import HoaDonList from "@/pages/hoa_don/HoaDonList.vue";
 import HoaDonDetail from "@/pages/hoa_don/HoaDonDetail.vue";
 
+// ✅ Client Pages
+import ClientLayout from "@/views/client/ClientLayout.vue";
+import HomePage from "@/pages/client/HomePage.vue";
+import ProductDetailPage from "@/pages/client/ProductDetailPage.vue";
+import CartPage from "@/pages/client/CartPage.vue";
+import CheckoutPage from "@/pages/client/CheckoutPage.vue";
+import OrderSuccessPage from "@/pages/client/OrderSuccessPage.vue";
+import AccountLayout from "@/pages/client/account/AccountLayout.vue";
+import OrderHistoryPage from "@/pages/client/account/OrderHistoryPage.vue";
+import OrderTrackingPage from "@/pages/client/account/OrderTrackingPage.vue";
+
 const SimplePage = (title) => ({
   template: `<div class="p-4"><h3 style="font-weight:800">${title}</h3><div class="text-muted">Demo page</div></div>`,
 });
 
 const routes = [
-  { path: "/", redirect: "/admin/san-pham" },
+  { path: "/", redirect: "/client" },
+
+  {
+    path: "/client",
+    component: ClientLayout,
+    children: [
+      { path: "", name: "client-home", component: HomePage },
+      { path: "products/:id", name: "client-product-detail", component: ProductDetailPage, props: true },
+      { path: "cart", name: "client-cart", component: CartPage },
+      { path: "checkout", name: "client-checkout", component: CheckoutPage },
+      { path: "success", name: "client-order-success", component: OrderSuccessPage },
+      { 
+        path: "account",
+        component: AccountLayout,
+        redirect: "/client/account/orders",
+        children: [
+            { path: "orders", component: OrderHistoryPage },
+            { path: "orders/:id", name: "client-tracking", component: OrderTrackingPage },
+            { path: "profile", component: SimplePage("Hồ sơ") },
+            { path: "address", component: SimplePage("Địa chỉ") },
+            { path: "coupons", component: SimplePage("Phiếu giảm giá") },
+            { path: "password", component: SimplePage("Đổi mật khẩu") },
+        ]
+      }
+    ]
+  },
 
   {
     path: "/admin",
