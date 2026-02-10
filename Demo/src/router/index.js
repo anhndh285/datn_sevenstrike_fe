@@ -8,7 +8,18 @@ import ProductDetailListPage from "@/pages/product/ProductDetailListPage.vue";
 import ProductDetailFormPage from "@/pages/product/ProductDetailFormPage.vue";
 import ProductFormPage from "@/pages/product/ProductFormPage.vue";
 
-import CoGiayPage from "@/pages/product/thuoc_tinh/co_giay/CoGiayPage.vue";
+import CoGiayPage from "@/pages/product/thuoc_tinh/CoGiayPage.vue";
+
+// ✅ THUỘC TÍNH (file lẻ, không folder snake_case)
+import XuatXuPage from "@/pages/product/thuoc_tinh/XuatXuPage.vue";
+import ThuongHieuPage from "@/pages/product/thuoc_tinh/ThuongHieuPage.vue";
+import ViTriThiDauPage from "@/pages/product/thuoc_tinh/ViTriThiDauPage.vue";
+import PhongCachChoiPage from "@/pages/product/thuoc_tinh/PhongCachChoiPage.vue";
+import ChatLieuPage from "@/pages/product/thuoc_tinh/ChatLieuPage.vue";
+import MauSacPage from "@/pages/product/thuoc_tinh/MauSacPage.vue";
+import KichThuocPage from "@/pages/product/thuoc_tinh/KichThuocPage.vue";
+import FormChanPage from "@/pages/product/thuoc_tinh/FormChanPage.vue";
+import LoaiSanPage from "@/pages/product/thuoc_tinh/LoaiSanPage.vue";
 
 import DiscountPage from "@/pages/khuyen_mai/dot_giam_gia/DiscountPage.vue";
 import AddDiscountPage from "@/pages/khuyen_mai/dot_giam_gia/AddDiscountPage.vue";
@@ -31,6 +42,12 @@ import CapNhatKhachHangPage from "@/pages/tai_khoan/capnhat_khachhang.vue";
 import HoaDonList from "@/pages/hoa_don/HoaDonList.vue";
 import HoaDonDetail from "@/pages/hoa_don/HoaDonDetail.vue";
 
+// ✅ Bán hàng
+import SalesPage from "@/pages/sales/SalesPage.vue";
+
+// ✅ Thống kê (đổi đúng đường dẫn theo vị trí file bạn đã tạo)
+import ThongKePage from "@/pages/thong_ke/ThongKePage.vue";
+
 const SimplePage = (title) => ({
   template: `<div class="p-4"><h3 style="font-weight:800">${title}</h3><div class="text-muted">Demo page</div></div>`,
 });
@@ -44,13 +61,16 @@ const routes = [
     children: [
       { path: "", redirect: "/admin/san-pham" },
 
-      { path: "dashboard", component: SimplePage("THỐNG KÊ") },
-      { path: "pos", component: SimplePage("BÁN HÀNG TẠI QUẦY") },
+      // ✅ THỐNG KÊ (hiển thị page thật thay vì demo)
+      { path: "dashboard", name: "admin-dashboard", component: ThongKePage },
+
+      // ✅ Bán hàng (UI demo)
+      { path: "pos", name: "admin-pos", component: SalesPage },
 
       // ✅ Hóa đơn
       { path: "hoa-don", name: "admin-hoa-don", component: HoaDonList },
       {
-        path: "hoa-don/:id",
+        path: "hoa-don/:id(\\d+)",
         name: "admin-hoa-don-detail",
         component: HoaDonDetail,
         props: true,
@@ -61,27 +81,13 @@ const routes = [
       // =========================================================
 
       // ✅ Phiếu giảm giá
+      { path: "giam-gia/phieu", name: "admin-voucher", component: VoucherManagePage },
+      { path: "giam-gia/phieu/them", name: "admin-voucher-new", component: VoucherFormPage },
+
+      // ✅ id chỉ ăn số => không bao giờ match nhầm "them"
       {
-        path: "giam-gia/phieu",
-        name: "admin-voucher",
-        component: VoucherManagePage,
-      },
-      {
-        path: "giam-gia/phieu/them",
-        name: "admin-voucher-new",
-        component: VoucherFormPage,
-      },
-      // ✅ chi tiết phải đứng TRƯỚC :id để tránh match nhầm
-      {
-        path: "giam-gia/phieu/chi-tiet/:id",
+        path: "giam-gia/phieu/:id(\\d+)",
         name: "admin-voucher-detail",
-        component: VoucherFormPage,
-        props: true,
-      },
-      // ✅ sửa (giữ theo dạng :id như bạn đang làm)
-      {
-        path: "giam-gia/phieu/:id",
-        name: "admin-voucher-edit",
         component: VoucherFormPage,
         props: true,
       },
@@ -90,7 +96,7 @@ const routes = [
       { path: "giam-gia/dot", name: "admin-discount", component: DiscountPage },
       { path: "giam-gia/dot/new", name: "admin-discount-new", component: AddDiscountPage },
       {
-        path: "giam-gia/dot/:id",
+        path: "giam-gia/dot/:id(\\d+)",
         name: "admin-discount-detail",
         component: DetailDiscountPage,
         props: true,
@@ -101,29 +107,28 @@ const routes = [
       // =========================================================
       { path: "san-pham", name: "admin-san-pham", component: ProductManagePage },
       { path: "san-pham/new", name: "admin-san-pham-new", component: ProductFormPage },
-      { path: "san-pham/:id", name: "admin-san-pham-one", component: ProductFormPage, props: true },
-      { path: "san-pham/:id/edit", name: "admin-san-pham-edit", component: ProductFormPage, props: true },
+      { path: "san-pham/:id(\\d+)", name: "admin-san-pham-one", component: ProductFormPage, props: true },
+      { path: "san-pham/:id(\\d+)/edit", name: "admin-san-pham-edit", component: ProductFormPage, props: true },
 
-      // ✅ Chi tiết sản phẩm
       { path: "chi-tiet-san-pham", name: "admin-ctsp", component: ProductDetailListPage },
       { path: "chi-tiet-san-pham/new", name: "admin-ctsp-new", component: ProductDetailFormPage },
-      { path: "chi-tiet-san-pham/:id", name: "admin-ctsp-one", component: ProductDetailFormPage, props: true },
+      { path: "chi-tiet-san-pham/:id(\\d+)", name: "admin-ctsp-one", component: ProductDetailFormPage, props: true },
 
       // =========================================================
       // ✅ THUỘC TÍNH
       // =========================================================
-      { path: "xuat-xu", component: SimplePage("XUẤT XỨ") },
-      { path: "thuong-hieu", component: SimplePage("THƯƠNG HIỆU") },
-      { path: "vi-tri-thi-dau", component: SimplePage("VỊ TRÍ THI ĐẤU") },
-      { path: "phong-cach-choi", component: SimplePage("PHONG CÁCH CHƠI") },
-      { path: "co-giay", component: CoGiayPage },
-      { path: "chat-lieu", component: SimplePage("CHẤT LIỆU") },
-      { path: "mau-sac", component: SimplePage("MÀU SẮC") },
-      { path: "kich-thuoc", component: SimplePage("KÍCH THƯỚC") },
-      { path: "form-chan", component: SimplePage("FORM CHÂN") },
-      { path: "loai-san", component: SimplePage("LOẠI SÂN") },
+      { path: "xuat-xu", name: "admin-xuat-xu", component: XuatXuPage },
+      { path: "thuong-hieu", name: "admin-thuong-hieu", component: ThuongHieuPage },
+      { path: "vi-tri-thi-dau", name: "admin-vi-tri-thi-dau", component: ViTriThiDauPage },
+      { path: "phong-cach-choi", name: "admin-phong-cach-choi", component: PhongCachChoiPage },
+      { path: "co-giay", name: "admin-co-giay", component: CoGiayPage },
+      { path: "chat-lieu", name: "admin-chat-lieu", component: ChatLieuPage },
+      { path: "mau-sac", name: "admin-mau-sac", component: MauSacPage },
+      { path: "kich-thuoc", name: "admin-kich-thuoc", component: KichThuocPage },
+      { path: "form-chan", name: "admin-form-chan", component: FormChanPage },
+      { path: "loai-san", name: "admin-loai-san", component: LoaiSanPage },
 
-      // ✅ (giữ nguyên demo cũ nếu bạn còn dùng)
+      // ✅ redirect demo cũ
       { path: "khach-hang", redirect: "/admin/tai-khoan/khach-hang" },
       { path: "nhan-vien", redirect: "/admin/tai-khoan/nhan-vien" },
 
@@ -137,7 +142,7 @@ const routes = [
         children: [
           { path: "them", name: "tai-khoan-khach-hang-them", component: ThemKhachHangPage },
           {
-            path: "cap-nhat/:id",
+            path: "cap-nhat/:id(\\d+)",
             name: "tai-khoan-khach-hang-cap-nhat",
             component: CapNhatKhachHangPage,
             props: true,
@@ -151,7 +156,7 @@ const routes = [
         children: [
           { path: "them", name: "tai-khoan-nhan-vien-them", component: ThemNhanVienPage },
           {
-            path: "cap-nhat/:id",
+            path: "cap-nhat/:id(\\d+)",
             name: "tai-khoan-nhan-vien-cap-nhat",
             component: CapNhatNhanVienPage,
             props: true,

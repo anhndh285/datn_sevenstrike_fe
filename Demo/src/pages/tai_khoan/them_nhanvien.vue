@@ -67,14 +67,22 @@
 
         <div class="form-group">
           <label class="label">Tỉnh/Thành phố</label>
+<<<<<<< HEAD
           <select class="input select" v-model="addr.tinhCode" @change="onTinhChange">
+=======
+          <select class="input select" v-model="addr.tinhCode" @change="timTinh">
+>>>>>>> 02bb122 (init update new UI)
             <option value="">-- Chọn Tỉnh/Thành phố --</option>
             <option v-for="p in provinces" :key="p.code" :value="p.code">{{ p.name }}</option>
           </select>
         </div>
         <div class="form-group">
           <label class="label">Quận/Huyện</label>
+<<<<<<< HEAD
           <select class="input select" v-model="addr.huyenCode" @change="onHuyenChange">
+=======
+          <select class="input select" v-model="addr.huyenCode" @change="timHuyen">
+>>>>>>> 02bb122 (init update new UI)
             <option value="">-- Chọn Quận/Huyện --</option>
             <option v-for="d in districts" :key="d.code" :value="d.code">{{ d.name }}</option>
           </select>
@@ -118,7 +126,11 @@
 </template>
 
 <script setup>
+<<<<<<< HEAD
 import { ref, onMounted, computed, nextTick } from "vue";
+=======
+import { ref, onMounted, nextTick } from "vue";
+>>>>>>> 02bb122 (init update new UI)
 import { useRouter } from "vue-router";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { addNhanVien } from "@/services/tai_khoan/nhan_vien/nhan_vienService";
@@ -174,14 +186,18 @@ const loadQuyenHan = async () => {
 
 const findName = (list, code) => list.find((x) => String(x.code) === String(code))?.name || "";
 
+<<<<<<< HEAD
 const onTinhChange = async () => {
+=======
+const timTinh = async () => {
+>>>>>>> 02bb122 (init update new UI)
   addr.value.huyenCode = "";
   addr.value.xaCode = "";
   wards.value = [];
   districts.value = addr.value.tinhCode ? await vnAddressService.getDistricts(addr.value.tinhCode) : [];
 };
 
-const onHuyenChange = async () => {
+const timHuyen = async () => {
   addr.value.xaCode = "";
   wards.value = addr.value.huyenCode ? await vnAddressService.getWards(addr.value.huyenCode) : [];
 };
@@ -226,6 +242,7 @@ const generatePassword = (length = 8) => {
 const showScanner = ref(false);
 let scanner = null;
 
+<<<<<<< HEAD
 const onScanSuccess = async (decodedText, decodedResult) => {
   try {
     const data = JSON.parse(decodedText);
@@ -273,6 +290,123 @@ const onScanSuccess = async (decodedText, decodedResult) => {
   }
 };
 
+=======
+
+const normalizeString = (str) => {
+  if (!str) return "";
+  let s = removeVietnameseTones(str.trim().toLowerCase());
+  s = s.replace(/(tinh|thanh pho|tp|huyen|quan|thi xa|xa|phuong|thi tran)\s+/g, "").trim();
+  return s;
+};
+
+const diachicccd = (list, nameToFind) => {
+  if (!nameToFind || !list || list.length === 0) return null;
+  const target = normalizeString(nameToFind);
+  
+  let found = list.find(item => normalizeString(item.name) === target);
+  
+  if (!found) {
+    found = list.find(item => normalizeString(item.name).includes(target) || target.includes(normalizeString(item.name)));
+  }
+  return found ? found.code : null;
+};
+
+const onScanSuccess = async (decodedText, decodedResult) => {
+  try {
+    if (decodedText.includes("|")) {
+      await CCCDScan(decodedText);
+    } 
+
+    alert("Quét dữ liệu thành công!");
+    stopScanner();
+
+  } catch (e) {
+    console.error("Lỗi xử lý dữ liệu:", e);
+    alert("Dữ liệu không hợp lệ hoặc lỗi hệ thống địa chỉ.");
+  }
+};
+
+const CCCDScan = async (text) => {
+  const parts = text.split("|");
+  
+  if (parts.length < 6) throw new Error("Format CCCD không đúng");
+
+  form.value.tenNhanVien = parts[2];
+  form.value.tenTaiKhoan = buildUsername(form.value.tenNhanVien);
+
+  const rawDob = parts[3];
+  if (rawDob && rawDob.length === 8) {
+    form.value.ngaySinh = `${rawDob.slice(4)}-${rawDob.slice(2, 4)}-${rawDob.slice(0, 2)}`;
+  }
+
+  const fullAddress = parts[5];
+  const addrParts = fullAddress.split(",").map(s => s.trim());
+  
+  const tinhName = addrParts.length > 0 ? addrParts[addrParts.length - 1] : "";
+  const huyenName = addrParts.length > 1 ? addrParts[addrParts.length - 2] : "";
+  const xaName = addrParts.length > 2 ? addrParts[addrParts.length - 3] : "";
+  
+  const specificAddr = addrParts.slice(0, addrParts.length - 3).join(", ");
+  form.value.diaChiCuThe = specificAddr || fullAddress;
+
+  if (tinhName) {
+    const tinhCode = diachicccd(provinces.value, tinhName);
+    if (tinhCode) {
+      addr.value.tinhCode = tinhCode;
+      await timTinh();
+
+      if (huyenName) {
+        const huyenCode = diachicccd(districts.value, huyenName);
+        if (huyenCode) {
+          addr.value.huyenCode = huyenCode;
+          await timHuyen();
+
+          if (xaName) {
+             const xaCode = diachicccd(wards.value, xaName);
+             if (xaCode) addr.value.xaCode = xaCode;
+          }
+        }
+      }
+    }
+  }
+
+};
+
+// const nhapqr = async (data) => {
+//     if (data.tenNhanVien) form.value.tenNhanVien = data.tenNhanVien;
+//     if (data.email) form.value.email = data.email;
+//     if (data.soDienThoai) form.value.soDienThoai = data.soDienThoai;
+//     if (data.ngaySinh) form.value.ngaySinh = data.ngaySinh;
+//     if (data.ghiChu) form.value.ghiChu = data.ghiChu;
+//     if (data.diaChiCuThe) form.value.diaChiCuThe = data.diaChiCuThe;
+
+//     if (form.value.tenNhanVien) {
+//         form.value.tenTaiKhoan = buildUsername(form.value.tenNhanVien);
+//     }
+
+//     if (data.thanhPho) {
+//       const tinhCode = findCodeByName(provinces.value, data.thanhPho);
+//       if (tinhCode) {
+//         addr.value.tinhCode = tinhCode;
+//         await onTinhChange();
+
+//         if (data.quan) {
+//           const huyenCode = findCodeByName(districts.value, data.quan);
+//           if (huyenCode) {
+//             addr.value.huyenCode = huyenCode;
+//             await onHuyenChange();
+
+//             if (data.phuong) {
+//               const xaCode = findCodeByName(wards.value, data.phuong);
+//               if (xaCode) addr.value.xaCode = xaCode;
+//             }
+//           }
+//         }
+//       }
+//     }
+// }
+
+>>>>>>> 02bb122 (init update new UI)
 const toggleScanner = async () => {
   showScanner.value = !showScanner.value;
   if (showScanner.value) {
@@ -293,7 +427,26 @@ const stopScanner = () => {
 };
 
 const sendEmail = async ({ tenNhanVien, tenTaiKhoan, matKhau, email }) => {
+<<<<<<< HEAD
     console.log("Sending email to", email);
+=======
+  try {
+    const serviceID = "service_n03lqrf";
+    const templateID = "template_1gy88ic";
+
+    const templateParams = {
+      to_email: email,
+      to_name: tenNhanVien,
+      username: tenTaiKhoan,
+      password: matKhau,
+    };
+
+    const response = await emailjs.send(serviceID, templateID, templateParams);
+    console.log("Email gửi thành công!", response.status, response.text);
+  } catch (error) {
+    console.error("Lỗi gửi email:", error);
+  }
+>>>>>>> 02bb122 (init update new UI)
 };
 
 const validate = () => {
@@ -351,6 +504,7 @@ onMounted(async () => {
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
+<<<<<<< HEAD
 .taikhoan-form {
   font-family: "Inter", sans-serif;
   max-width: 1000px;
@@ -512,11 +666,161 @@ onMounted(async () => {
   gap: 12px;
   border-top: 1px solid #f1f5f9;
   padding-top: 20px;
+=======
+/* ===== SevenStrike font wrapper (không in đậm) ===== */
+.taikhoan-form{
+  font-family: inherit; /* không ép Inter nếu dự án đã có font chung */
+  max-width: 1000px;
+  margin: 20px auto;
+  color: rgba(17,24,39,0.82);
+}
+
+/* ===== Header ===== */
+.header-section{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.page-title{
+  font-size: 20px;
+  font-weight: 500;
+  color: rgba(17,24,39,0.88);
+  margin: 0;
+}
+
+/* ===== Card ===== */
+.form-card{
+  background:#fff;
+  border-radius: 14px;
+  padding: 22px;
+  border: 1px solid rgba(255,77,79,0.18);
+  box-shadow: 0 18px 50px rgba(17,24,39,0.08);
+}
+
+/* ===== Avatar ===== */
+.avatar-section{
+  display:flex;
+  flex-direction: column;
+  align-items:center;
+  margin: 10px 0 18px;
+}
+
+.avatar-wrapper{
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(17,24,39,0.03);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  overflow:hidden;
+  position: relative;
+  transition: 0.15s ease;
+  border: 1px solid rgba(17,24,39,0.14);
+}
+.avatar-wrapper:hover{
+  background: rgba(17,24,39,0.04);
+}
+
+.avatar-img{ width:100%; height:100%; object-fit: cover; }
+
+.avatar-placeholder{
+  display:flex;
+  flex-direction: column;
+  align-items:center;
+  gap: 6px;
+  color: rgba(17,24,39,0.45);
+}
+.avatar-placeholder i{ font-size: 20px; }
+.avatar-placeholder span{ font-size: 12px; font-weight: 400; }
+
+.avatar-hint{
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(17,24,39,0.55);
+}
+
+.btn-text-red{
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+/* ===== Form grid ===== */
+.form-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 18px;
+  row-gap: 14px;
+}
+
+.form-group{
+  display:flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* label chuẩn 13px, không in đậm */
+.label{
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(17,24,39,0.82);
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+}
+
+.req{ color:#ef4444; }
+
+/* input chuẩn 40px */
+.input{
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(17,24,39,0.14);
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(17,24,39,0.82);
+  background: #fff !important;
+  outline: none;
+  transition: 0.15s ease;
+}
+.input:focus{
+  border-color: rgba(255,77,79,0.45);
+  box-shadow: 0 0 0 0.18rem rgba(255,77,79,0.14);
+}
+
+/* select giữ mũi tên nhẹ */
+.select{
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 1em;
+  padding-right: 34px;
+}
+
+/* ===== Buttons (13px, không in đậm) ===== */
+.toolbar-right{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+>>>>>>> 02bb122 (init update new UI)
 }
 
 .btn{
   height: 36px;
   padding: 0 14px;
+<<<<<<< HEAD
   border: none;
   cursor: pointer;
   font-weight: 800;
@@ -587,3 +891,99 @@ onMounted(async () => {
 .btn-close { border: none; background: none; font-size: 20px; cursor: pointer;}
 .scanner-hint { text-align: center; margin-top: 10px; font-size: 13px; color: #666; }
 </style>
+=======
+  border-radius: 10px;
+  border: 1px solid rgba(17,24,39,0.14);
+  background:#fff;
+  color: rgba(17,24,39,0.88);
+  font-size: 13px;
+  font-weight: 400;
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  cursor:pointer;
+  transition: 0.15s ease;
+}
+.btn:hover{ background: rgba(17,24,39,0.04); }
+.btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+.btn-primary{
+  border: none;
+  color:#fff !important;
+  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%) !important;
+  box-shadow: 0 10px 18px rgba(255,77,79,0.16);
+}
+.btn-primary:hover{ filter: brightness(0.98); }
+
+.btn-outline{
+  background:#fff;
+  border:1px solid rgba(17,24,39,0.14);
+  color: rgba(17,24,39,0.88);
+}
+
+/* btn-sm (Quét QR) vẫn giữ 36px nhưng padding nhỏ hơn */
+.btn.btn-sm{
+  padding: 0 12px;
+}
+
+/* ===== Scanner overlay (không in đậm) ===== */
+.scanner-overlay{
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(17,24,39,0.45);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.scanner-box{
+  background:#fff;
+  border-radius: 14px;
+  width: 92%;
+  max-width: 420px;
+  border: 1px solid rgba(17,24,39,0.14);
+  box-shadow: 0 18px 50px rgba(17,24,39,0.18);
+  padding: 14px;
+}
+
+.scanner-header{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 500; /* tiêu đề nhỏ, nhẹ */
+  color: rgba(17,24,39,0.88);
+}
+
+.btn-close{
+  border: 1px solid rgba(17,24,39,0.14);
+  background:#fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color: rgba(17,24,39,0.88);
+  transition: 0.15s ease;
+}
+.btn-close:hover{ background: rgba(17,24,39,0.04); }
+
+.scanner-hint{
+  text-align:center;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(17,24,39,0.55);
+}
+
+.d-none{ display:none; }
+
+@media (max-width: 768px){
+  .form-grid{ grid-template-columns: 1fr; }
+}
+</style>
+>>>>>>> 02bb122 (init update new UI)

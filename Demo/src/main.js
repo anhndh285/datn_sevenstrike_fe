@@ -7,6 +7,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "material-icons/iconfont/material-icons.css";
 import "@/assets/styles/admin.css";
 import 'bootstrap-icons/font/bootstrap-icons.css'
+import 'nouislider/dist/nouislider.min.css';
 
 import vSelect from "vue-select";
 import "vue-select/dist/vue-select.css";
