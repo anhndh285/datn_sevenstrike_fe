@@ -41,26 +41,20 @@
             />
           </div>
 
-          <div class="form-group row-group">
-            <label class="label" style="min-width: 120px">Loại giảm giá:</label>
-            <div class="radio-group">
-              <!-- Chỉ cho phép % -->
-              <div class="d-flex align-items-center gap-2">
-                <input type="radio" :value="false" v-model="formData.loaiGiamGia" checked disabled />
-                <span class="font-weight-normal">% Phần trăm</span>
-              </div>
-            </div>
-          </div>
-
           <div class="form-group">
-            <label class="label">Giá trị giảm:</label>
-            <input
-              v-model.number="formData.giaTriGiamGia"
-              type="number"
-              class="form-control"
-              placeholder="Nhập giá trị..."
-              :disabled="isEnded"
-            />
+            <label class="label">Giá trị giảm (%):</label>
+            <div class="input-group-percent">
+              <input
+                v-model.number="formData.giaTriGiamGia"
+                type="number"
+                class="form-control"
+                placeholder="Mời nhập giảm theo %"
+                min="1"
+                max="100"
+                :disabled="isEnded"
+              />
+              <span class="input-suffix">%</span>
+            </div>
           </div>
 
           <div class="form-group">
@@ -304,6 +298,34 @@
           </button>
         </div>
 
+        <!-- Price Range Slider -->
+        <div class="price-range-filter mb-3" v-if="selectedVariantIds.length > 0">
+          <label class="label">Khoảng giá: {{ formatCurrency(priceRange.min) }} - {{ formatCurrency(priceRange.max) }}</label>
+          <div class="range-slider-wrapper">
+            <div class="range-track">
+              <div class="range-fill" :style="rangeFillStyle"></div>
+            </div>
+            <input
+              type="range"
+              class="range-input range-min"
+              :min="priceRangeBounds.min"
+              :max="priceRangeBounds.max"
+              :step="priceRangeStep"
+              :value="priceRange.min"
+              @input="onMinRangeInput"
+            />
+            <input
+              type="range"
+              class="range-input range-max"
+              :min="priceRangeBounds.min"
+              :max="priceRangeBounds.max"
+              :step="priceRangeStep"
+              :value="priceRange.max"
+              @input="onMaxRangeInput"
+            />
+          </div>
+        </div>
+
         <div class="table-responsive">
           <table class="custom-table">
             <thead>
@@ -362,7 +384,10 @@
                   {{ (currentDetailPage - 1) * detailItemsPerPage + index + 1 }}
                 </td>
                 <td class="text-center">
-                  <img :src="item.anh || 'https://via.placeholder.com/40'" class="product-thumb-sm" />
+                  <div class="img-badge-wrapper">
+                    <img :src="item.anh || 'https://via.placeholder.com/40'" class="product-thumb-sm" />
+                    <span v-if="formData.giaTriGiamGia" class="discount-badge-img">-{{ formData.giaTriGiamGia }}%</span>
+                  </div>
                 </td>
                 <td class="text-primary">
                   {{ item.maChiTietSanPham }}
@@ -604,6 +629,11 @@ const variantsDisplay = computed(() => {
     list = list.filter((v) => v.tenKichThuoc === detailFilters.size);
   if (detailFilters.sole)
     list = list.filter((v) => v.tenLoaiSan === detailFilters.sole);
+  // Price range filter
+  list = list.filter((v) => {
+    const price = v.giaNiemYet || 0;
+    return price >= priceRange.min && price <= priceRange.max;
+  });
 
   return list;
 });
@@ -873,6 +903,51 @@ const removeAll = () => {
 const clearDetailFilters = () => {
   Object.keys(detailFilters).forEach((k) => (detailFilters[k] = ""));
 };
+
+// --- PRICE RANGE SLIDER ---
+const priceRangeBounds = computed(() => {
+  const prices = allSelectedVariants.value.map(v => v.giaNiemYet || 0);
+  if (prices.length === 0) return { min: 0, max: 10000000 };
+  return {
+    min: Math.floor(Math.min(...prices)),
+    max: Math.ceil(Math.max(...prices)),
+  };
+});
+
+const priceRangeStep = computed(() => {
+  const range = priceRangeBounds.value.max - priceRangeBounds.value.min;
+  if (range <= 100000) return 1000;
+  if (range <= 1000000) return 10000;
+  return 50000;
+});
+
+const priceRange = reactive({
+  min: 0,
+  max: 10000000,
+});
+
+watch(priceRangeBounds, (bounds) => {
+  priceRange.min = bounds.min;
+  priceRange.max = bounds.max;
+}, { immediate: true });
+
+const onMinRangeInput = (e) => {
+  const val = Number(e.target.value);
+  priceRange.min = Math.min(val, priceRange.max - priceRangeStep.value);
+};
+
+const onMaxRangeInput = (e) => {
+  const val = Number(e.target.value);
+  priceRange.max = Math.max(val, priceRange.min + priceRangeStep.value);
+};
+
+const rangeFillStyle = computed(() => {
+  const bounds = priceRangeBounds.value;
+  const range = bounds.max - bounds.min || 1;
+  const left = ((priceRange.min - bounds.min) / range) * 100;
+  const right = ((bounds.max - priceRange.max) / range) * 100;
+  return { left: `${left}%`, right: `${right}%` };
+});
 
 // --- VALIDATE OVERLAP ---
 const checkOverlaps = async (newStart, newEnd, selectedIds) => {
@@ -1441,6 +1516,66 @@ onMounted(() => loadData());
   margin-right: 4px;
   border: 1px solid rgba(17, 24, 39, 0.18);
 }
+/* Price Range Slider */
+.price-range-filter {
+  padding: 0 4px;
+}
+.range-slider-wrapper {
+  position: relative;
+  height: 32px;
+  margin-top: 4px;
+}
+.range-track {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  height: 4px;
+  background: rgba(17, 24, 39, 0.10);
+  border-radius: 2px;
+}
+.range-fill {
+  position: absolute;
+  height: 100%;
+  background: #ef4444;
+  border-radius: 2px;
+}
+.range-input {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+  margin: 0;
+  padding: 0;
+}
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.range-input::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
 .empty-state {
   text-align: center;
   color: rgba(17, 24, 39, 0.35);
@@ -1466,6 +1601,26 @@ onMounted(() => loadData());
   width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid #eee;
 }
 
+/* Discount badge on image */
+.img-badge-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.discount-badge-img {
+  position: absolute;
+  top: -4px;
+  right: -10px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 4px;
+  line-height: 1.2;
+  white-space: nowrap;
+  z-index: 2;
+}
+
 /* Expand button */
 .btn-expand {
   background: none; border: none; cursor: pointer; color: #64748b; width: 24px; height: 24px;
@@ -1475,6 +1630,24 @@ onMounted(() => loadData());
 .child-row td {
   background-color: #f8fafc;
   border-bottom: 1px solid #f1f5f9;
+}
+
+/* Input group with % suffix */
+.input-group-percent {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-group-percent .form-control {
+  padding-right: 36px;
+}
+.input-suffix {
+  position: absolute;
+  right: 12px;
+  color: rgba(17, 24, 39, 0.55);
+  font-weight: 600;
+  font-size: 14px;
+  pointer-events: none;
 }
 
 .font-weight-normal { font-weight: 400 !important; }
