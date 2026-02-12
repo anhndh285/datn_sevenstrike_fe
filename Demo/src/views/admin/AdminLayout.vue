@@ -4,12 +4,7 @@
     <aside class="sidebar position-fixed h-100 ss-sidebar" style="width: 280px; z-index: 1000">
       <!-- LOGO -->
       <div class="sidebar-logo text-center">
-        <img
-          src="@/assets/images/logo/Logo_SevenStrike.png"
-          alt="Logo"
-          class="img-fluid"
-          style="max-height: 78px"
-        />
+        <img src="@/assets/images/logo/Logo_SevenStrike.png" alt="Logo" class="img-fluid" style="max-height: 78px" />
       </div>
 
       <nav class="nav flex-column px-3 flex-grow-1 sidebar-nav">
@@ -33,12 +28,8 @@
 
         <!-- Giảm giá (Dropdown) -->
         <div class="nav-group">
-          <button
-            type="button"
-            class="nav-link nav-item nav-toggle w-100"
-            :class="isDiscountGroupActive ? 'sidebar-active-custom' : 'text-secondary'"
-            @click="toggleDiscountMenu"
-          >
+          <button type="button" class="nav-link nav-item nav-toggle w-100"
+            :class="isDiscountGroupActive ? 'sidebar-active-custom' : 'text-secondary'" @click="toggleDiscountMenu">
             <span class="d-flex align-items-center gap-2 nav-left">
               <span class="material-icons nav-ic" :class="isDiscountGroupActive ? 'text-orange-red' : ''">
                 local_offer
@@ -52,19 +43,15 @@
           </button>
 
           <div v-show="discountMenuOpen" class="sub-menu">
-            <router-link
-              class="sub-link"
+            <router-link class="sub-link"
               :class="route.path === '/admin/giam-gia/phieu' ? 'sub-item-active fw-bold' : 'text-secondary'"
-              to="/admin/giam-gia/phieu"
-            >
+              to="/admin/giam-gia/phieu">
               Phiếu giảm giá
             </router-link>
 
-            <router-link
-              class="sub-link"
+            <router-link class="sub-link"
               :class="route.path.startsWith('/admin/giam-gia/dot') ? 'sub-item-active fw-bold' : 'text-secondary'"
-              to="/admin/giam-gia/dot"
-            >
+              to="/admin/giam-gia/dot">
               Đợt giảm giá
             </router-link>
           </div>
@@ -72,12 +59,8 @@
 
         <!-- Quản lý sản phẩm (Dropdown) -->
         <div class="nav-group">
-          <button
-            type="button"
-            class="nav-link nav-item nav-toggle w-100"
-            :class="isProductGroupActive ? 'sidebar-active-custom' : 'text-secondary'"
-            @click="toggleProductMenu"
-          >
+          <button type="button" class="nav-link nav-item nav-toggle w-100"
+            :class="isProductGroupActive ? 'sidebar-active-custom' : 'text-secondary'" @click="toggleProductMenu">
             <span class="d-flex align-items-center gap-2 nav-left">
               <span class="material-icons nav-ic" :class="isProductGroupActive ? 'text-orange-red' : ''">
                 inventory_2
@@ -91,29 +74,21 @@
           </button>
 
           <div v-show="productMenuOpen" class="sub-menu">
-            <router-link
-              class="sub-link"
+            <router-link class="sub-link"
               :class="route.path.startsWith('/admin/san-pham') ? 'sub-item-active fw-bold' : 'text-secondary'"
-              to="/admin/san-pham"
-            >
+              to="/admin/san-pham">
               Sản phẩm
             </router-link>
 
-            <router-link
-              class="sub-link"
+            <router-link class="sub-link"
               :class="route.path.startsWith('/admin/chi-tiet-san-pham') ? 'sub-item-active fw-bold' : 'text-secondary'"
-              to="/admin/chi-tiet-san-pham"
-            >
+              to="/admin/chi-tiet-san-pham">
               Sản phẩm chi tiết
             </router-link>
 
             <!-- THUỘC TÍNH -->
-            <button
-              type="button"
-              class="sub-link sub-toggle"
-              :class="isAttrGroupActive ? 'sub-item-active fw-bold' : 'text-secondary'"
-              @click="toggleAttrMenu"
-            >
+            <button type="button" class="sub-link sub-toggle"
+              :class="isAttrGroupActive ? 'sub-item-active fw-bold' : 'text-secondary'" @click="toggleAttrMenu">
               <span>Thuộc tính</span>
               <span class="material-icons sub-caret">
                 {{ attrMenuOpen ? "expand_less" : "expand_more" }}
@@ -121,83 +96,63 @@
             </button>
 
             <div v-show="attrMenuOpen" class="sub-menu sub-menu-lv2">
-              <router-link
-                class="sub-link"
+              <router-link class="sub-link"
                 :class="route.path === '/admin/xuat-xu' ? 'sub-item-active fw-bold' : 'text-secondary'"
-                to="/admin/xuat-xu"
-              >
+                to="/admin/xuat-xu">
                 Xuất xứ
               </router-link>
 
-              <router-link
-                class="sub-link"
+              <router-link class="sub-link"
                 :class="route.path === '/admin/thuong-hieu' ? 'sub-item-active fw-bold' : 'text-secondary'"
-                to="/admin/thuong-hieu"
-              >
+                to="/admin/thuong-hieu">
                 Thương hiệu
               </router-link>
 
-              <router-link
-                class="sub-link"
+              <router-link class="sub-link"
                 :class="route.path === '/admin/vi-tri-thi-dau' ? 'sub-item-active fw-bold' : 'text-secondary'"
-                to="/admin/vi-tri-thi-dau"
-              >
+                to="/admin/vi-tri-thi-dau">
                 Vị trí thi đấu
               </router-link>
 
-              <router-link
-                class="sub-link"
+              <router-link class="sub-link"
                 :class="route.path === '/admin/phong-cach-choi' ? 'sub-item-active fw-bold' : 'text-secondary'"
-                to="/admin/phong-cach-choi"
-              >
+                to="/admin/phong-cach-choi">
                 Phong cách chơi
               </router-link>
 
-              <router-link
-                class="sub-link"
+              <router-link class="sub-link"
                 :class="route.path === '/admin/co-giay' ? 'sub-item-active fw-bold' : 'text-secondary'"
-                to="/admin/co-giay"
-              >
+                to="/admin/co-giay">
                 Cổ giày
               </router-link>
 
-              <router-link
-                class="sub-link"
+              <router-link class="sub-link"
                 :class="route.path === '/admin/chat-lieu' ? 'sub-item-active fw-bold' : 'text-secondary'"
-                to="/admin/chat-lieu"
-              >
+                to="/admin/chat-lieu">
                 Chất liệu
               </router-link>
 
-              <router-link
-                class="sub-link"
+              <router-link class="sub-link"
                 :class="route.path === '/admin/mau-sac' ? 'sub-item-active fw-bold' : 'text-secondary'"
-                to="/admin/mau-sac"
-              >
+                to="/admin/mau-sac">
                 Màu sắc
               </router-link>
 
-              <router-link
-                class="sub-link"
+              <router-link class="sub-link"
                 :class="route.path === '/admin/kich-thuoc' ? 'sub-item-active fw-bold' : 'text-secondary'"
-                to="/admin/kich-thuoc"
-              >
+                to="/admin/kich-thuoc">
                 Kích thước
               </router-link>
 
-              <router-link
-                class="sub-link"
+              <router-link class="sub-link"
                 :class="route.path === '/admin/form-chan' ? 'sub-item-active fw-bold' : 'text-secondary'"
-                to="/admin/form-chan"
-              >
+                to="/admin/form-chan">
                 Form chân
               </router-link>
 
-              <router-link
-                class="sub-link"
+              <router-link class="sub-link"
                 :class="route.path === '/admin/loai-san' ? 'sub-item-active fw-bold' : 'text-secondary'"
-                to="/admin/loai-san"
-              >
+                to="/admin/loai-san">
                 Loại sân
               </router-link>
             </div>
@@ -206,12 +161,8 @@
 
         <!-- Quản lý tài khoản (Dropdown) -->
         <div class="nav-group">
-          <button
-            type="button"
-            class="nav-link nav-item nav-toggle w-100"
-            :class="isAccountGroupActive ? 'sidebar-active-custom' : 'text-secondary'"
-            @click="toggleAccountMenu"
-          >
+          <button type="button" class="nav-link nav-item nav-toggle w-100"
+            :class="isAccountGroupActive ? 'sidebar-active-custom' : 'text-secondary'" @click="toggleAccountMenu">
             <span class="d-flex align-items-center gap-2 nav-left">
               <span class="material-icons nav-ic" :class="isAccountGroupActive ? 'text-orange-red' : ''">
                 group
@@ -226,23 +177,46 @@
 
           <div v-show="accountMenuOpen" class="sub-menu">
             <!-- ✅ FIX: trỏ thẳng route mới + active startsWith -->
-            <router-link
-              class="sub-link"
+            <router-link class="sub-link"
               :class="route.path.startsWith('/admin/tai-khoan/khach-hang') ? 'sub-item-active fw-bold' : 'text-secondary'"
-              to="/admin/tai-khoan/khach-hang"
-            >
+              to="/admin/tai-khoan/khach-hang">
               Khách hàng
             </router-link>
 
-            <router-link
-              class="sub-link"
+            <router-link class="sub-link"
               :class="route.path.startsWith('/admin/tai-khoan/nhan-vien') ? 'sub-item-active fw-bold' : 'text-secondary'"
-              to="/admin/tai-khoan/nhan-vien"
-            >
+              to="/admin/tai-khoan/nhan-vien">
               Nhân viên
             </router-link>
           </div>
         </div>
+
+        <!-- Quản lý lịch làm việc (Dropdown) -->
+        <div class="nav-group">
+          <button type="button" class="nav-link nav-item nav-toggle w-100" :class="route.path.startsWith('/admin/lich-lam-viec') || route.path.startsWith('/admin/giao-ca')
+            ? 'sidebar-active-custom'
+            : 'text-secondary'">
+            <span class="d-flex align-items-center gap-2 nav-left">
+              <span class="material-icons nav-ic">calendar_today</span>
+              <span class="nav-text">Quản lý lịch làm việc</span>
+            </span>
+          </button>
+
+          <div class="sub-menu">
+            <router-link class="sub-link"
+              :class="route.path === '/admin/giao-ca' ? 'sub-item-active fw-bold' : 'text-secondary'"
+              to="/admin/giao-ca">
+              Giao ca
+            </router-link>
+
+            <router-link class="sub-link"
+              :class="route.path === '/admin/lich-lam-viec' ? 'sub-item-active fw-bold' : 'text-secondary'"
+              to="/admin/lich-lam-viec">
+              Lịch làm việc
+            </router-link>
+          </div>
+        </div>
+
       </nav>
     </aside>
 
@@ -402,6 +376,7 @@ const toggleAccountMenu = () => (accountMenuOpen.value = !accountMenuOpen.value)
 
   transition: all 0.2s ease;
 }
+
 .nav-item:hover {
   background-color: #f8f9fa;
   color: #ff4d4f !important;

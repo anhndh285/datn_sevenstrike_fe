@@ -158,6 +158,17 @@ const routes = [
           },
         ],
       },
+
+      //Lich làm việc - Giao ca
+      {
+        path: "/admin/giao-ca",
+        component: () => import("@/pages/giao_ca/index.vue"),
+      },
+      {
+        path: "/admin/lich-lam-viec",
+        component: () => import("@/pages/lich_lam_viec/index.vue"),
+      },
+
     ],
   },
 

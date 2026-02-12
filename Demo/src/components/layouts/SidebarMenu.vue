@@ -144,6 +144,32 @@
           >
         </div>
       </div>
+
+      <!-- Giao ca & Lịch làm việc -->
+      <div class="ss-nav-group">
+        <button class="ss-nav-toggle" @click="toggle('shift')">
+          <div class="d-flex align-items-center">
+            <span class="material-icons me-3">schedule</span>
+            Giao ca & Lịch làm việc
+          </div>
+          <span
+            class="material-icons ss-expand"
+            :class="{ open: openGroup.shift }"
+          >
+            expand_more
+          </span>
+        </button>
+
+        <div v-show="openGroup.shift" class="ss-submenu">
+          <RouterLink class="ss-sub-link" to="/admin/giao-ca">
+            Giao ca
+          </RouterLink>
+          <RouterLink class="ss-sub-link" to="/admin/lich-lam-viec">
+            Lịch làm việc
+          </RouterLink>
+        </div>
+      </div>
+
     </nav>
   </aside>
 </template>
@@ -156,6 +182,7 @@ const openGroup = reactive({
   discount: false,
   product: true,
   account: false,
+  shift: false,
 });
 
 function toggle(key) {
