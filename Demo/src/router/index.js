@@ -2,6 +2,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 import AdminLayout from "@/views/admin/AdminLayout.vue";
+import LoginManager from "@/views/authen_author/LoginManager.vue";
 
 import ProductManagePage from "@/pages/product/ProductManagePage.vue";
 import ProductDetailListPage from "@/pages/product/ProductDetailListPage.vue";
@@ -45,26 +46,43 @@ import HoaDonDetail from "@/pages/hoa_don/HoaDonDetail.vue";
 // ✅ Bán hàng
 import SalesPage from "@/pages/sales/SalesPage.vue";
 
-// ✅ Thống kê (đổi đúng đường dẫn theo vị trí file bạn đã tạo)
+// ✅ Thống kê
 import ThongKePage from "@/pages/thong_ke/ThongKePage.vue";
 
-const SimplePage = (title) => ({
-  template: `<div class="p-4"><h3 style="font-weight:800">${title}</h3><div class="text-muted">Demo page</div></div>`,
-});
+// ✅ Check đăng nhập: token (nếu có) HOẶC user (hiện tại backend chưa trả token)
+const isLoggedIn = () => {
+  const tokenKeys = ["accessToken", "token", "jwt", "ss_token"];
+  const hasToken = tokenKeys.some(
+    (k) => !!localStorage.getItem(k) || !!sessionStorage.getItem(k)
+  );
+
+  const hasUser =
+    !!localStorage.getItem("user") ||
+    !!sessionStorage.getItem("user") ||
+    !!localStorage.getItem("nguoiDung") ||
+    !!sessionStorage.getItem("nguoiDung");
+
+  return hasToken || hasUser;
+};
 
 const routes = [
-  { path: "/", redirect: "/admin/san-pham" },
+  // ✅ vào web sẽ về login (vì có auth)
+  { path: "/", redirect: "/dang-nhap" },
+
+  // ✅ Login
+  { path: "/dang-nhap", name: "dang-nhap", component: LoginManager, meta: { public: true } },
 
   {
     path: "/admin",
     component: AdminLayout,
+    meta: { requiresAuth: true },
     children: [
       { path: "", redirect: "/admin/san-pham" },
 
-      // ✅ THỐNG KÊ (hiển thị page thật thay vì demo)
+      // ✅ THỐNG KÊ
       { path: "dashboard", name: "admin-dashboard", component: ThongKePage },
 
-      // ✅ Bán hàng (UI demo)
+      // ✅ Bán hàng
       { path: "pos", name: "admin-pos", component: SalesPage },
 
       // ✅ Hóa đơn
@@ -79,12 +97,8 @@ const routes = [
       // =========================================================
       // ✅ KHUYẾN MẠI
       // =========================================================
-
-      // ✅ Phiếu giảm giá
       { path: "giam-gia/phieu", name: "admin-voucher", component: VoucherManagePage },
       { path: "giam-gia/phieu/them", name: "admin-voucher-new", component: VoucherFormPage },
-
-      // ✅ id chỉ ăn số => không bao giờ match nhầm "them"
       {
         path: "giam-gia/phieu/:id(\\d+)",
         name: "admin-voucher-detail",
@@ -92,7 +106,6 @@ const routes = [
         props: true,
       },
 
-      // ✅ Đợt giảm giá
       { path: "giam-gia/dot", name: "admin-discount", component: DiscountPage },
       { path: "giam-gia/dot/new", name: "admin-discount-new", component: AddDiscountPage },
       {
@@ -166,10 +179,27 @@ const routes = [
     ],
   },
 
-  { path: "/:pathMatch(.*)*", redirect: "/admin/san-pham" },
+  { path: "/:pathMatch(.*)*", redirect: "/dang-nhap" },
 ];
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(),
   routes,
 });
+
+// ✅ Guard: chặn /admin nếu chưa login
+router.beforeEach((to, from, next) => {
+  if (to.meta?.public) return next();
+
+  const requiresAuth = to.matched.some((r) => r.meta?.requiresAuth);
+  if (!requiresAuth) return next();
+
+  if (isLoggedIn()) return next();
+
+  return next({
+    name: "dang-nhap",
+    query: { redirect: to.fullPath },
+  });
+});
+
+export default router;

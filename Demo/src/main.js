@@ -33,10 +33,8 @@ app.use(PrimeVue, {
   },
 });
 
-// ✅ BẮT BUỘC: ToastService để useToast() hoạt động
 app.use(ToastService);
 
-// ✅ Có thể dùng <Toast /> ở layout/page
 app.component("Toast", Toast);
 
 app.mount("#app");

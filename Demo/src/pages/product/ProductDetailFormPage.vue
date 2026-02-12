@@ -20,12 +20,20 @@
         <div class="ss-card ss-border p-3 h-100">
           <div class="ss-card-title">Thêm thông tin sản phẩm</div>
 
+          <!-- ✅ Mã (đặt trước tên/sản phẩm) -->
+          <div class="mb-3">
+            <label class="form-label mb-1">Mã</label>
+            <input class="form-control" :value="form.maSanPham || '(Tự sinh)'" disabled />
+          </div>
+
           <!-- Sản phẩm -->
           <div class="mb-3">
             <label class="form-label mb-1">
               Sản phẩm
               <span class="ss-required" :title="requiredTooltip">*</span>
             </label>
+
+            <!-- ✅ Combobox: vừa tìm vừa nhập + dấu X nằm trong input (đồng nhất các ô thuộc tính) -->
             <v-select
               v-model="selectedProduct"
               :options="productOptions"
@@ -41,24 +49,27 @@
                   <span>Thêm mới "{{ opt.tenSanPham }}"</span>
                   <small class="text-muted">Sản phẩm</small>
                 </div>
+
+                <!-- ✅ Mã trước tên -->
                 <div v-else class="d-flex justify-content-between" style="gap:10px">
-                  <span class="text-truncate">{{ opt.tenSanPham ?? opt.ten }}</span>
-                  <small class="text-muted">{{ opt.maSanPham ?? opt.ma }}</small>
+                  <span class="text-truncate">{{ opt.maSanPham ?? opt.ma }}</span>
+                  <small class="text-muted">{{ opt.tenSanPham ?? opt.ten }}</small>
                 </div>
               </template>
+
+              <!-- ✅ Mã trước tên -->
               <template #selected-option="opt">
-                <span>{{ opt.tenSanPham ?? opt.ten }}</span>
+                <span>
+                  {{ (opt.maSanPham ?? opt.ma) ? (opt.maSanPham ?? opt.ma) + " - " : "" }}
+                  {{ opt.tenSanPham ?? opt.ten }}
+                </span>
               </template>
             </v-select>
+
             <div v-if="errors.sanPham" class="ss-err">{{ errors.sanPham }}</div>
           </div>
 
           <div class="row g-2">
-            <div class="col-md-12">
-              <label class="form-label">Mã</label>
-              <input class="form-control" :value="form.maSanPham || '(tự tạo)'" disabled />
-            </div>
-
             <div class="col-md-6">
               <label class="form-label">
                 Thương hiệu
@@ -147,7 +158,7 @@
                 placeholder="Chọn hoặc nhập chất liệu..."
                 taggable
                 :clearable="true"
-                :create-option="(label) => createTagOption(label, 'tenChatLieu')"
+                :create-option="(label) => createTagOption(label, 'vtenChatLieu')"
                 @option:created="(opt) => onCreateRef('chatLieu', opt)"
               >
                 <template #option="opt">
@@ -245,22 +256,9 @@
                 Thêm màu
               </button>
             </div>
-            <div class="ss-chip-wrap" v-if="selectedMauSac?.length">
-              <div v-for="c in selectedMauSac" :key="c.id" class="ss-chip">
-                <span
-                  class="ss-dot"
-                  :style="{
-                    background: pickColorHex(c),
-                    borderColor: isLight(pickColorHex(c)) ? 'rgba(17,24,39,0.20)' : 'transparent'
-                  }"
-                ></span>
-                <span class="ss-chip-text">{{ pickTen(c, 'tenMauSac', 'maMauSac') }}</span>
-                <button class="ss-chip-x" type="button" @click="removeSelectedColor(c)" title="Bỏ màu">
-                  <span class="material-icons-outlined">close</span>
-                </button>
-              </div>
-            </div>
-            <div v-else class="ss-muted">Chọn màu để tạo biến thể.</div>
+
+            <!-- ✅ bỏ phần chip hiển thị thừa, chỉ còn 1 nơi hiển thị trong v-select -->
+
             <v-select
               v-model="selectedMauSac"
               :options="mauSacOptions"
@@ -268,6 +266,7 @@
               placeholder="Chọn màu..."
               multiple
               :clearable="true"
+              :close-on-select="false"
             >
               <template #option="opt">
                 <div class="d-flex align-items-center justify-content-between" style="gap:10px">
@@ -284,6 +283,8 @@
                   <small class="text-muted">{{ opt.maMauSac ?? opt.ma }}</small>
                 </div>
               </template>
+
+              <!-- ✅ luôn có chấm màu cạnh tên (trong tag đã chọn) -->
               <template #selected-option="opt">
                 <span class="d-inline-flex align-items-center" style="gap:8px">
                   <span
@@ -297,6 +298,7 @@
                 </span>
               </template>
             </v-select>
+
             <div v-if="errors.mauSac" class="ss-err">{{ errors.mauSac }}</div>
           </div>
 
@@ -320,11 +322,10 @@
                   </button>
                 </div>
               </div>
-              <div v-else class="ss-muted">Chọn size 38 đến 45.</div>
+              
             </div>
             <div v-if="errors.kichThuoc" class="ss-err">{{ errors.kichThuoc }}</div>
           </div>
-
           <!-- Loại sân -->
           <div class="mb-3">
             <label class="form-label mb-1">
@@ -390,9 +391,6 @@
           <button class="btn btn-primary ss-btn ss-generate" type="button" @click="generateVariants" :disabled="loading">
             Tạo biến thể tự động
           </button>
-          <div class="ss-muted mt-2">
-            Chỉ khi bấm “Tạo biến thể tự động” mới sinh danh sách biến thể.
-          </div>
         </div>
       </div>
     </div>
@@ -452,7 +450,7 @@
                 <tr v-for="r in g.items" :key="r.key">
                   <td>
                     <div class="ss-line">
-                      <span class="ss-strong">{{ r.labelKichThuoc }}</span>
+                      <span>{{ r.labelKichThuoc }}</span>
                       <span class="ss-muted">•</span>
                       <span class="ss-muted">{{ r.labelLoaiSan }}</span>
                       <span class="ss-muted">•</span>
@@ -564,26 +562,54 @@
       </div>
     </div>
 
-    <!-- MODAL: CHỌN KÍCH CỠ 38-45 -->
+    <!-- ✅ MODAL: CHỌN KÍCH CỠ 38-45 (1 ô input + chọn nhanh) -->
     <div v-if="sizeModal.open" class="ss-overlay" @click.self="closeSizeModal">
       <div class="ss-modal">
         <div class="ss-modal-head">
           <div class="ss-modal-title">Chọn kích cỡ</div>
         </div>
+
         <div class="ss-modal-body">
-          <div class="ss-size-grid">
+          <!-- ✅ 1 ô input (combobox) giống ảnh: chọn + tìm -->
+          <div class="ss-size-select">
+            <v-select
+              v-model="sizeModal.tempSelected"
+              :options="sizeModal.options"
+              :get-option-label="(o) => pickTen(o, 'tenKichThuoc', 'maKichThuoc')"
+              placeholder="Chọn hoặc tìm kích cỡ (38 - 45)..."
+              multiple
+              :clearable="true"
+              :close-on-select="false"
+              @search="onSizeModalSearch"
+            >
+              <template #option="opt">
+                <span>{{ pickTen(opt, "tenKichThuoc", "maKichThuoc") }}</span>
+              </template>
+              <template #selected-option="opt">
+                <span>{{ pickTen(opt, "tenKichThuoc", "maKichThuoc") }}</span>
+              </template>
+            </v-select>
+          </div>
+
+          <!-- ✅ vẫn giữ chọn nhanh -->
+          <div class="ss-size-grid mt-3">
             <button
-              v-for="s in sizeModal.options"
+              v-for="s in sizeModalFilteredOptions"
               :key="s.id"
               class="ss-size-item"
               type="button"
-              :class="{ active: sizeModal.tempIds.has(s.id) }"
+              :class="{ active: sizeModalTempIds.has(s.id) }"
               @click="toggleSizeTemp(s.id)"
             >
               {{ pickTen(s, "tenKichThuoc", "maKichThuoc") }}
             </button>
           </div>
+
+          <div v-if="!sizeModalFilteredOptions.length" class="ss-size-empty">
+            Không có kết quả phù hợp
+          </div>
         </div>
+
         <div class="ss-modal-foot">
           <button class="btn btn-outline-secondary ss-btn" type="button" @click="closeSizeModal">
             Hủy bỏ
@@ -609,13 +635,16 @@
             </label>
             <input v-model="addColor.ten" class="form-control" placeholder="Ví dụ: Đỏ, Trắng, Xanh lá..." />
           </div>
+
+          <!-- ✅ không phải nhập tay HEX nữa: chỉ chọn bằng color picker -->
           <div class="mb-2">
-            <label class="form-label">Mã màu (HEX)</label>
+            <label class="form-label">Chọn màu</label>
             <div class="d-flex align-items-center gap-2">
               <input v-model="addColor.hex" type="color" class="form-control form-control-color" />
-              <input v-model="addColor.hex" class="form-control" placeholder="#RRGGBB" />
+              <div class="ss-muted">{{ addColor.hex }}</div>
             </div>
           </div>
+
           <div v-if="addColor.err" class="ss-err">{{ addColor.err }}</div>
         </div>
         <div class="ss-modal-foot">
@@ -882,7 +911,7 @@ const confirmCount = computed(() => (rows.value || []).length || 0);
 function openConfirm() {
   if (loading.value) return;
   if (!validateRequiredTop()) return;
-  if (!rows.value.length) return stopWithError("Bạn chưa tạo biến thể. Hãy bấm “Tạo biến thể tự động”.");
+  if (!rows.value.length) return stopWithError('Bạn chưa tạo biến thể. Hãy bấm “Tạo biến thể tự động”.');
   const bad = rows.value.find((r) => !isValidNonNeg(r.soLuong) || !isValidNonNeg(r.gia));
   if (bad) return stopWithError("Vui lòng nhập Số lượng/Giá hợp lệ (>= 0) cho tất cả biến thể.");
   confirm.open = true;
@@ -969,15 +998,23 @@ function asHexColor(raw) {
   return "";
 }
 
-function pickColorHex(m) {
+function extractColorHex(m) {
   const candidates = [
     m?.maMau, m?.ma_mau, m?.maHex, m?.ma_hex, m?.hex, m?.hexCode, m?.hex_code,
     m?.giaTri, m?.gia_tri, m?.color, m?.colorHex, m?.color_hex,
+    m?.mauHex, m?.mau_hex, m?.maMauHex, m?.ma_mau_hex, m?.giaTriHex, m?.gia_tri_hex,
   ];
   for (const c of candidates) {
     const hex = asHexColor(c);
     if (hex) return hex;
   }
+  return "";
+}
+
+function pickColorHex(m) {
+  const stored = extractColorHex(m);
+  if (stored) return stored;
+
   const name = (m?.tenMauSac || m?.ten || "").toLowerCase().trim();
   if (name.includes("trắng") || name.includes("trang") || name.includes("white")) return "#ffffff";
   if (name.includes("đen") || name.includes("den") || name.includes("black")) return "#111827";
@@ -1069,6 +1106,7 @@ const selectedProduct = computed({
 });
 
 function onCreateProductTag() {}
+
 function resetProduct() {
   form.idSanPham = null;
   form.maSanPham = "";
@@ -1147,11 +1185,11 @@ const refConfig = {
     selectedRef: selectedViTriThiDau,
     getter: () => refDataService.getViTriThiDau(),
     creator: (name) => refDataService.createViTriThiDau({
-      tenViTri: name,           // ĐÚNG tên field trong entity
+      tenViTri: name,
       trangThai: true,
       xoaMem: false
     }),
-    nameField: "tenViTriThiDau", // giữ để hiển thị trên UI (vẫn dùng label cũ)
+    nameField: "tenViTriThiDau",
   },
   phongCachChoi: {
     label: "Phong cách chơi",
@@ -1159,11 +1197,11 @@ const refConfig = {
     selectedRef: selectedPhongCachChoi,
     getter: () => refDataService.getPhongCachChoi(),
     creator: (name) => refDataService.createPhongCachChoi({
-      tenPhongCach: name,       // ĐÚNG tên field trong entity
+      tenPhongCach: name,
       trangThai: true,
       xoaMem: false
     }),
-    nameField: "tenPhongCachChoi", // giữ để hiển thị trên UI
+    nameField: "tenPhongCachChoi",
   },
   loaiSan: {
     label: "Loại sân",
@@ -1246,15 +1284,16 @@ function clearErrors() {
 
 function validateRequiredTop() {
   clearErrors();
-  if (!String(form.tenSanPham || "").trim()) errors.sanPham = requiredTooltip;
-  if (!selectedThuongHieu.value?.id) errors.thuongHieu = requiredTooltip;
-  if (!selectedMauSac.value?.length) errors.mauSac = requiredTooltip;
-  if (!selectedKichThuoc.value?.length) errors.kichThuoc = requiredTooltip;
-  if (!selectedLoaiSan.value?.length) errors.loaiSan = requiredTooltip;
-  if (!selectedFormChan.value?.length) errors.formChan = requiredTooltip;
+
+  if (!String(form.tenSanPham || "").trim()) errors.sanPham = "Vui lòng chọn hoặc nhập tên sản phẩm.";
+  if (!selectedThuongHieu.value?.id) errors.thuongHieu = "Vui lòng chọn thương hiệu.";
+  if (!selectedMauSac.value?.length) errors.mauSac = "Vui lòng chọn ít nhất 1 màu sắc.";
+  if (!selectedKichThuoc.value?.length) errors.kichThuoc = "Vui lòng chọn ít nhất 1 kích cỡ.";
+  if (!selectedLoaiSan.value?.length) errors.loaiSan = "Vui lòng chọn ít nhất 1 loại sân.";
+  if (!selectedFormChan.value?.length) errors.formChan = "Vui lòng chọn ít nhất 1 form chân.";
 
   const ok = !Object.values(errors).some(Boolean);
-  if (!ok) toastError("Vui lòng nhập đủ các trường bắt buộc (*).");
+  if (!ok) toastError("Vui lòng kiểm tra các trường bắt buộc (*).");
   return ok;
 }
 
@@ -1262,8 +1301,25 @@ function validateRequiredTop() {
 const sizeModal = reactive({
   open: false,
   options: [],
-  tempIds: new Set(),
+  tempSelected: [],
+  keyword: "",
 });
+
+const sizeModalFilteredOptions = computed(() => {
+  const q = lc(sizeModal.keyword);
+  const list = sizeModal.options || [];
+  if (!q) return list;
+  return list.filter((x) => {
+    const label = String(pickTen(x, "tenKichThuoc", "maKichThuoc") ?? "");
+    return lc(label).includes(q) || label.includes(q);
+  });
+});
+
+const sizeModalTempIds = computed(() => new Set((sizeModal.tempSelected || []).map((x) => x.id)));
+
+function onSizeModalSearch(q) {
+  sizeModal.keyword = String(q ?? "");
+}
 
 function openSizeModal() {
   const list = (kichThuocOptions.value || []).filter((x) => {
@@ -1272,22 +1328,27 @@ function openSizeModal() {
     return Number.isFinite(n) && n >= 38 && n <= 45;
   });
   sizeModal.options = list.sort((a, b) => Number(pickTen(a, "tenKichThuoc")) - Number(pickTen(b, "tenKichThuoc")));
-  sizeModal.tempIds = new Set((selectedKichThuoc.value || []).map((x) => x.id));
+  const selectedIds = new Set((selectedKichThuoc.value || []).map((x) => x.id));
+  sizeModal.tempSelected = sizeModal.options.filter((x) => selectedIds.has(x.id));
+  sizeModal.keyword = "";
   sizeModal.open = true;
 }
 
 function closeSizeModal() {
   sizeModal.open = false;
+  sizeModal.keyword = "";
 }
 
 function toggleSizeTemp(id) {
-  if (sizeModal.tempIds.has(id)) sizeModal.tempIds.delete(id);
-  else sizeModal.tempIds.add(id);
+  const opt = (sizeModal.options || []).find((x) => x.id === id);
+  if (!opt) return;
+  const idx = (sizeModal.tempSelected || []).findIndex((x) => x.id === id);
+  if (idx >= 0) sizeModal.tempSelected.splice(idx, 1);
+  else sizeModal.tempSelected.push(opt);
 }
 
 function confirmSizeModal() {
-  const ids = Array.from(sizeModal.tempIds);
-  selectedKichThuoc.value = sizeModal.options.filter((x) => ids.includes(x.id));
+  selectedKichThuoc.value = (sizeModal.tempSelected || []).slice();
   sizeModal.open = false;
   onVariantSelectionChanged();
 }
@@ -1295,78 +1356,6 @@ function confirmSizeModal() {
 function removeSelectedSize(s) {
   selectedKichThuoc.value = (selectedKichThuoc.value || []).filter((x) => x.id !== s.id);
   onVariantSelectionChanged();
-}
-
-// ====== Màu sắc remove ======
-function removeSelectedColor(c) {
-  selectedMauSac.value = (selectedMauSac.value || []).filter((x) => x.id !== c.id);
-  onVariantSelectionChanged();
-  const key = String(c?.id ?? "");
-  if (key) clearColorImage(key);
-}
-
-// ====== Thêm màu modal ======
-const addColor = reactive({
-  open: false,
-  ten: "",
-  hex: "#ff4d4f",
-  err: "",
-});
-
-function openAddColor() {
-  addColor.open = true;
-  addColor.ten = "";
-  addColor.hex = "#ff4d4f";
-  addColor.err = "";
-}
-
-function closeAddColor() {
-  addColor.open = false;
-}
-
-async function confirmAddColor() {
-  const ten = String(addColor.ten || "").trim();
-  if (!ten) {
-    addColor.err = requiredTooltip;
-    return;
-  }
-  addColor.err = "";
-
-  const existed = (mauSacOptions.value || []).find((x) => lc(x.tenMauSac ?? x.ten) === lc(ten));
-  if (existed) {
-    selectedMauSac.value = Array.from(new Set([...(selectedMauSac.value || []), existed]));
-    addColor.open = false;
-    toastInfo(`"${ten}" đã tồn tại.`);
-    onVariantSelectionChanged();
-    return;
-  }
-
-  try {
-    loading.value = true;
-    const payload = { tenMauSac: ten, maMau: addColor.hex };
-    await refDataService.createMauSac(payload);
-
-    const fresh = await refDataService.getMauSac();
-    mauSacOptions.value = normalizeArr(fresh);
-
-    const found = mauSacOptions.value.find((x) => lc(x.tenMauSac ?? x.ten) === lc(ten)) || null;
-    if (found) {
-      selectedMauSac.value = Array.from(new Set([...(selectedMauSac.value || []), found]));
-      if (colorFiles[String(found.id)] == null) {
-        colorFiles[String(found.id)] = { file: null, fileName: "", previewUrl: "" };
-      }
-    }
-
-    addColor.open = false;
-    toastSuccess(`Thêm màu "${ten}" thành công`);
-    onVariantSelectionChanged();
-  } catch (e) {
-    console.error(e);
-    const msg = e?.userMessage || e?.response?.data?.message || e?.message || "Lỗi không xác định";
-    toastError(`Không thêm được màu. ${msg}`);
-  } finally {
-    loading.value = false;
-  }
 }
 
 // ====== Tạo biến thể ======
@@ -1382,7 +1371,30 @@ function onVariantSelectionChanged() {
   toastInfo("Bạn vừa thay đổi thuộc tính biến thể. Vui lòng bấm “Tạo biến thể tự động” để sinh lại.");
 }
 
-watch([selectedMauSac, selectedLoaiSan, selectedFormChan], onVariantSelectionChanged, { deep: true });
+/**
+ * ✅ Khi bỏ chọn màu trong v-select, cần:
+ * - dọn ảnh theo màu (revoke objectURL)
+ * - reset biến thể (nếu đã generate)
+ */
+watch(
+  selectedMauSac,
+  (nv, ov) => {
+    const nextIds = new Set((nv || []).map((x) => String(x?.id ?? "")));
+    const prevIds = new Set((ov || []).map((x) => String(x?.id ?? "")));
+
+    for (const pid of prevIds) {
+      if (pid && !nextIds.has(pid)) clearColorImage(pid);
+    }
+    for (const nid of nextIds) {
+      if (nid) ensureColorFileKey(nid);
+    }
+
+    onVariantSelectionChanged();
+  },
+  { deep: true }
+);
+
+watch([selectedLoaiSan, selectedFormChan], onVariantSelectionChanged, { deep: true });
 
 function clearVariantsOnly() {
   selectedMauSac.value = [];
@@ -1407,6 +1419,18 @@ function ensureColorFileKey(colorId) {
   const k = String(colorId);
   if (!k) return;
   if (colorFiles[k] == null) colorFiles[k] = { file: null, fileName: "", previewUrl: "" };
+}
+
+function dedupeById(list = []) {
+  const seen = new Set();
+  const out = [];
+  for (const it of list) {
+    const key = it?.id != null ? String(it.id) : `name:${lc(it?.tenMauSac ?? it?.ten ?? "")}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(it);
+  }
+  return out;
 }
 
 function generateVariants() {
@@ -1458,8 +1482,8 @@ function generateVariants() {
 function validateRow(r) {
   r.errSoLuong = "";
   r.errGia = "";
-  if (!isValidNonNeg(r.soLuong)) r.errSoLuong = requiredTooltip;
-  if (!isValidNonNeg(r.gia)) r.errGia = requiredTooltip;
+  if (!isValidNonNeg(r.soLuong)) r.errSoLuong = "Vui lòng nhập số lượng (>= 0).";
+  if (!isValidNonNeg(r.gia)) r.errGia = "Vui lòng nhập giá bán (>= 0).";
 }
 
 function removeRow(row) {
@@ -1521,7 +1545,7 @@ function closeBulkAll() {
 
 function applyBulkAll() {
   if (!isValidNonNeg(bulkAll.soLuong) || !isValidNonNeg(bulkAll.gia)) {
-    bulkAll.err = "Vui lòng nhập Số lượng và Giá hợp lệ.";
+    bulkAll.err = "Vui lòng nhập Số lượng và Giá hợp lệ (>= 0).";
     return;
   }
   bulkAll.err = "";
@@ -1562,7 +1586,7 @@ function closeBulkColor() {
 
 function applyBulkColor() {
   if (!isValidNonNeg(bulkColor.soLuong) || !isValidNonNeg(bulkColor.gia)) {
-    bulkColor.err = "Vui lòng nhập Số lượng và Giá hợp lệ.";
+    bulkColor.err = "Vui lòng nhập Số lượng và Giá hợp lệ (>= 0).";
     return;
   }
   bulkColor.err = "";
@@ -1605,6 +1629,81 @@ function clearColorImage(colorId) {
   colorFiles[key].file = null;
   colorFiles[key].fileName = "";
   colorFiles[key].previewUrl = "";
+}
+
+// ====== Thêm màu modal ======
+const addColor = reactive({
+  open: false,
+  ten: "",
+  hex: "#ff4d4f",
+  err: "",
+});
+
+function openAddColor() {
+  addColor.open = true;
+  addColor.ten = "";
+  addColor.hex = "#ff4d4f";
+  addColor.err = "";
+}
+
+function closeAddColor() {
+  addColor.open = false;
+}
+
+async function confirmAddColor() {
+  const ten = String(addColor.ten || "").trim();
+  if (!ten) {
+    addColor.err = "Vui lòng nhập tên màu.";
+    return;
+  }
+  addColor.err = "";
+
+  const pickedHex = asHexColor(addColor.hex) || "#e5e7eb";
+  addColor.hex = pickedHex;
+
+  const existed = (mauSacOptions.value || []).find((x) => lc(x.tenMauSac ?? x.ten) === lc(ten));
+  if (existed) {
+    // ✅ nếu màu tồn tại mà backend chưa trả hex, vẫn đảm bảo UI có màu theo picker
+    if (!extractColorHex(existed)) existed.maMau = pickedHex;
+
+    selectedMauSac.value = dedupeById([...(selectedMauSac.value || []), existed]);
+    ensureColorFileKey(String(existed.id));
+    addColor.open = false;
+    toastInfo(`"${ten}" đã tồn tại.`);
+    onVariantSelectionChanged();
+    return;
+  }
+
+  try {
+    loading.value = true;
+
+    // ✅ vẫn gửi mã màu lên BE (nhưng user không phải gõ tay)
+    const payload = { tenMauSac: ten, maMau: pickedHex };
+    await refDataService.createMauSac(payload);
+
+    const fresh = await refDataService.getMauSac();
+    mauSacOptions.value = normalizeArr(fresh);
+
+    const found = mauSacOptions.value.find((x) => lc(x.tenMauSac ?? x.ten) === lc(ten)) || null;
+
+    if (found) {
+      // ✅ nếu BE chưa trả/không lưu hex -> inject để UI hiển thị đúng ngay
+      if (!extractColorHex(found)) found.maMau = pickedHex;
+
+      selectedMauSac.value = dedupeById([...(selectedMauSac.value || []), found]);
+      ensureColorFileKey(String(found.id));
+    }
+
+    addColor.open = false;
+    toastSuccess(`Thêm màu "${ten}" thành công`);
+    onVariantSelectionChanged();
+  } catch (e) {
+    console.error(e);
+    const msg = e?.userMessage || e?.response?.data?.message || e?.message || "Lỗi không xác định";
+    toastError(`Không thêm được màu. ${msg}`);
+  } finally {
+    loading.value = false;
+  }
 }
 
 // ===== upload ảnh =====
@@ -1802,7 +1901,7 @@ async function createProductIfNeeded() {
 
   const ten = String(form.tenSanPham || "").trim();
   if (!ten) throw new Error("Vui lòng nhập tên sản phẩm.");
-  if (!selectedThuongHieu.value?.id) throw new Error("Vui lòng chọn/nhập Thương hiệu.");
+  if (!selectedThuongHieu.value?.id) throw new Error("Vui lòng chọn Thương hiệu.");
 
   const payload = {
     tenSanPham: ten,
@@ -1911,6 +2010,29 @@ async function submitReal() {
   font-weight: 400 !important;
 }
 
+/* ===== Vue Select: đồng nhất dấu X (clear) như các ô thuộc tính ===== */
+:deep(.vs__clear) {
+  opacity: 1 !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-right: 6px !important;
+  padding: 0 !important;
+  color: rgba(17, 24, 39, 0.35) !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+}
+:deep(.vs__clear:hover) {
+  color: rgba(17, 24, 39, 0.55) !important;
+  background: rgba(17, 24, 39, 0.04);
+}
+:deep(.vs__deselect) {
+  color: rgba(17, 24, 39, 0.45) !important;
+}
+
 /* ===== Layout ===== */
 .ss-page-title {
   font-size: 18px;
@@ -1921,29 +2043,19 @@ async function submitReal() {
   margin-bottom: 12px;
   color: rgba(17, 24, 39, 0.92);
 }
-.ss-strong { font-weight: 600 !important; }
 
-.ss-btn {
-  border-radius: 10px;
-  padding: 10px 14px;
+/* ✅ note validate */
+.ss-note {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(17, 24, 39, 0.16);
+  background: rgba(17, 24, 39, 0.02);
+  margin-bottom: 12px;
 }
-.ss-btn-sm {
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 13px;
-}
-.ss-generate {
-  width: fit-content;
-  min-width: 210px;
-}
-.ss-muted {
-  color: rgba(17, 24, 39, 0.6);
-  font-size: 13px;
-}
-.ss-empty {
-  padding: 20px 10px;
-  text-align: center;
-  color: rgba(17, 24, 39, 0.6);
+.ss-note-line {
+  color: rgba(17, 24, 39, 0.70);
+  font-size: 12.5px;
+  line-height: 1.45;
 }
 
 /* ===== required star ===== */
@@ -1958,24 +2070,6 @@ async function submitReal() {
   margin-top: 6px;
   color: #ff4d4f;
   font-size: 12.5px;
-}
-
-/* ===== reset button (X) ===== */
-.ss-xreset {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: #fff;
-  border: 1px solid rgba(17, 24, 39, 0.16);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  color: rgba(17, 24, 39, 0.88);
-}
-.ss-xreset:hover {
-  background: rgba(17, 24, 39, 0.04);
-  border-color: rgba(17, 24, 39, 0.24);
 }
 
 /* ===== Chips ===== */
@@ -2040,7 +2134,31 @@ async function submitReal() {
   flex-wrap: wrap;
 }
 
-/* ===== Variant bar (màu chủ đạo đỏ/đen/trắng) ===== */
+/* ===== Buttons ===== */
+.ss-btn {
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.ss-btn-sm {
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.ss-generate {
+  width: fit-content;
+  min-width: 210px;
+}
+.ss-muted {
+  color: rgba(17, 24, 39, 0.6);
+  font-size: 13px;
+}
+.ss-empty {
+  padding: 20px 10px;
+  text-align: center;
+  color: rgba(17, 24, 39, 0.6);
+}
+
+/* ===== Variant bar ===== */
 .ss-variant-bar {
   padding: 12px 14px;
   display: flex;
@@ -2210,7 +2328,7 @@ async function submitReal() {
   margin-top: 12px;
 }
 
-/* ===== Buttons palette đỏ/đen/trắng ===== */
+/* ===== Buttons palette ===== */
 .btn-primary {
   border: none !important;
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%) !important;
@@ -2271,6 +2389,12 @@ async function submitReal() {
   border-top: 1px solid rgba(17, 24, 39, 0.08);
 }
 
+/* ===== Size select in modal ===== */
+.ss-size-select :deep(.vs__dropdown-toggle) {
+  min-height: 42px;
+  border-radius: 10px;
+}
+
 /* ===== Size grid ===== */
 .ss-size-grid {
   display: grid;
@@ -2288,6 +2412,11 @@ async function submitReal() {
 .ss-size-item.active {
   border-color: rgba(255, 77, 79, 0.75);
   background: rgba(255, 77, 79, 0.08);
+}
+.ss-size-empty {
+  margin-top: 10px;
+  color: rgba(17, 24, 39, 0.60);
+  font-size: 13px;
 }
 
 /* ===== Bulk preview ===== */

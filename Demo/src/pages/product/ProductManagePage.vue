@@ -55,24 +55,92 @@
           </div>
         </div>
 
+        <!-- ✅ Combobox: vừa search vừa nhập (Chất liệu) -->
         <div class="ss-field ss-field-select">
           <div class="ss-filter-label">Chất liệu</div>
-          <select v-model="chatLieuFilter" class="form-select ss-select" :disabled="loading">
-            <option value="">Chất liệu</option>
-            <option v-for="cl in chatLieuOptions" :key="cl.id" :value="String(cl.id)">
-              {{ cl.ten }}
-            </option>
-          </select>
+
+          <div class="ss-combo" :class="{ disabled: loading }">
+            <input
+              v-model="chatLieuFilterText"
+              class="form-control ss-combo-input"
+              placeholder="Chất liệu"
+              :disabled="loading"
+              @focus="openChatLieuCombo"
+              @blur="closeChatLieuCombo"
+              @input="onChatLieuInput"
+            />
+            <span class="material-icons-outlined ss-combo-ic">expand_more</span>
+
+            <div v-if="combo.clOpen && !loading" class="ss-combo-list" @mousedown.prevent>
+              <div
+                class="ss-combo-item"
+                :class="{ active: !chatLieuSelectedId && !chatLieuFilterText }"
+                @mousedown.prevent="selectChatLieu(null)"
+                title="Bỏ lọc chất liệu"
+              >
+                Tất cả
+              </div>
+
+              <div
+                v-for="cl in chatLieuSuggest"
+                :key="`cl-${cl.id}`"
+                class="ss-combo-item"
+                :class="{ active: Number(chatLieuSelectedId) === Number(cl.id) }"
+                @mousedown.prevent="selectChatLieu(cl)"
+                :title="cl.ten"
+              >
+                {{ cl.ten }}
+              </div>
+
+              <div v-if="!chatLieuSuggest.length" class="ss-combo-empty">
+                Không có gợi ý phù hợp
+              </div>
+            </div>
+          </div>
         </div>
 
+        <!-- ✅ Combobox: vừa search vừa nhập (Thương hiệu) -->
         <div class="ss-field ss-field-select">
           <div class="ss-filter-label">Thương hiệu</div>
-          <select v-model="thuongHieuFilter" class="form-select ss-select" :disabled="loading">
-            <option value="">Thương hiệu</option>
-            <option v-for="th in thuongHieuOptions" :key="th.id" :value="String(th.id)">
-              {{ th.ten }}
-            </option>
-          </select>
+
+          <div class="ss-combo" :class="{ disabled: loading }">
+            <input
+              v-model="thuongHieuFilterText"
+              class="form-control ss-combo-input"
+              placeholder="Thương hiệu"
+              :disabled="loading"
+              @focus="openThuongHieuCombo"
+              @blur="closeThuongHieuCombo"
+              @input="onThuongHieuInput"
+            />
+            <span class="material-icons-outlined ss-combo-ic">expand_more</span>
+
+            <div v-if="combo.thOpen && !loading" class="ss-combo-list" @mousedown.prevent>
+              <div
+                class="ss-combo-item"
+                :class="{ active: !thuongHieuSelectedId && !thuongHieuFilterText }"
+                @mousedown.prevent="selectThuongHieu(null)"
+                title="Bỏ lọc thương hiệu"
+              >
+                Tất cả
+              </div>
+
+              <div
+                v-for="th in thuongHieuSuggest"
+                :key="`th-${th.id}`"
+                class="ss-combo-item"
+                :class="{ active: Number(thuongHieuSelectedId) === Number(th.id) }"
+                @mousedown.prevent="selectThuongHieu(th)"
+                :title="th.ten"
+              >
+                {{ th.ten }}
+              </div>
+
+              <div v-if="!thuongHieuSuggest.length" class="ss-combo-empty">
+                Không có gợi ý phù hợp
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -135,12 +203,13 @@
                 <span v-else>{{ qtyMap[p.id] ?? 0 }}</span>
               </td>
 
+              <!-- ✅ Khoảng giá màu đỏ -->
               <td class="ss-td col-gia">
                 <span v-if="priceLoadingIds.has(p.id)" class="ss-muted">...</span>
                 <span v-else class="ss-money">{{ getPriceRangeText(p.id) }}</span>
               </td>
 
-              <!-- ✅ Trạng thái = Kinh doanh/Ngừng kinh doanh -->
+              <!-- ✅ Trạng thái: Kinh doanh màu đỏ, Ngừng KD giữ nguyên -->
               <td class="text-center col-tt">
                 <span class="ss-badge" :class="getTrangThaiKinhDoanh(p) ? 'ss-badge-on' : 'ss-badge-off'">
                   {{ getTrangThaiKinhDoanh(p) ? "Kinh doanh" : "Ngừng kinh doanh" }}
@@ -241,8 +310,12 @@ const loading = ref(false);
 const products = ref([]);
 const keyword = ref("");
 
-const chatLieuFilter = ref("");
-const thuongHieuFilter = ref("");
+/** ✅ Combobox (vừa search vừa nhập) */
+const chatLieuFilterText = ref("");
+const thuongHieuFilterText = ref("");
+const chatLieuSelectedId = ref(null);
+const thuongHieuSelectedId = ref(null);
+
 const stockFilter = ref("all"); // all | in_stock | out_stock  (in_stock=kinh_doanh, out_stock=ngung)
 
 const page = ref(1);
@@ -353,11 +426,6 @@ function getPriceRangeText(productId) {
   return `${formatMoney(min)} - ${formatMoney(max)}`;
 }
 
-function isInStock(productId) {
-  const q = Number(qtyMap[productId] ?? 0);
-  return Number.isFinite(q) && q > 0;
-}
-
 function getTrangThaiKinhDoanh(p) {
   const v =
     p?.trangThaiKinhDoanh ??
@@ -383,18 +451,102 @@ function pickMaCtsp(d) {
   return d?.maChiTietSanPham ?? d?.ma_chi_tiet_san_pham ?? d?.maCtsp ?? d?.ma ?? "";
 }
 
+/** ✅ Combobox state */
+const combo = reactive({ clOpen: false, thOpen: false });
+let clCloseT = 0;
+let thCloseT = 0;
+
+function openChatLieuCombo() {
+  if (loading.value) return;
+  combo.clOpen = true;
+}
+function closeChatLieuCombo() {
+  clearTimeout(clCloseT);
+  clCloseT = window.setTimeout(() => {
+    combo.clOpen = false;
+  }, 140);
+}
+function onChatLieuInput() {
+  chatLieuSelectedId.value = null; // gõ tay => lọc theo text
+  combo.clOpen = true;
+}
+function selectChatLieu(opt) {
+  if (!opt) {
+    chatLieuSelectedId.value = null;
+    chatLieuFilterText.value = "";
+  } else {
+    chatLieuSelectedId.value = Number(opt.id);
+    chatLieuFilterText.value = String(opt.ten ?? "");
+  }
+  combo.clOpen = false;
+}
+
+function openThuongHieuCombo() {
+  if (loading.value) return;
+  combo.thOpen = true;
+}
+function closeThuongHieuCombo() {
+  clearTimeout(thCloseT);
+  thCloseT = window.setTimeout(() => {
+    combo.thOpen = false;
+  }, 140);
+}
+function onThuongHieuInput() {
+  thuongHieuSelectedId.value = null;
+  combo.thOpen = true;
+}
+function selectThuongHieu(opt) {
+  if (!opt) {
+    thuongHieuSelectedId.value = null;
+    thuongHieuFilterText.value = "";
+  } else {
+    thuongHieuSelectedId.value = Number(opt.id);
+    thuongHieuFilterText.value = String(opt.ten ?? "");
+  }
+  combo.thOpen = false;
+}
+
+const chatLieuSuggest = computed(() => {
+  const q = lc(chatLieuFilterText.value);
+  const list = chatLieuOptions.value || [];
+  if (!q) return list.slice(0, 50);
+  return list
+    .filter((x) => lc(x.ten).includes(q) || String(x.id).includes(q))
+    .slice(0, 50);
+});
+
+const thuongHieuSuggest = computed(() => {
+  const q = lc(thuongHieuFilterText.value);
+  const list = thuongHieuOptions.value || [];
+  if (!q) return list.slice(0, 50);
+  return list
+    .filter((x) => lc(x.ten).includes(q) || String(x.id).includes(q))
+    .slice(0, 50);
+});
+
 const filteredProducts = computed(() => {
   const kw = lc(keyword.value);
-  const clId = chatLieuFilter.value ? Number(chatLieuFilter.value) : null;
-  const thId = thuongHieuFilter.value ? Number(thuongHieuFilter.value) : null;
+
+  const clId = chatLieuSelectedId.value != null ? Number(chatLieuSelectedId.value) : null;
+  const thId = thuongHieuSelectedId.value != null ? Number(thuongHieuSelectedId.value) : null;
+
+  const clText = lc(chatLieuFilterText.value);
+  const thText = lc(thuongHieuFilterText.value);
 
   return (products.value || []).filter((p) => {
     const ma = lc(getMaSanPham(p));
     const ten = lc(getTenSanPham(p));
     const matchKw = !kw || ma.includes(kw) || ten.includes(kw);
 
-    const matchCL = !clId || Number(getChatLieuId(p)) === clId;
-    const matchTH = !thId || Number(getThuongHieuId(p)) === thId;
+    const matchCL =
+      (!clId && !clText) ||
+      (clId && Number(getChatLieuId(p)) === clId) ||
+      (!clId && clText && lc(getChatLieuTen(p)).includes(clText));
+
+    const matchTH =
+      (!thId && !thText) ||
+      (thId && Number(getThuongHieuId(p)) === thId) ||
+      (!thId && thText && lc(getThuongHieuTen(p)).includes(thText));
 
     const kd = getTrangThaiKinhDoanh(p);
 
@@ -413,7 +565,7 @@ const pagedProducts = computed(() => {
   return filteredProducts.value.slice(start, start + pageSize.value);
 });
 
-watch([keyword, chatLieuFilter, thuongHieuFilter, stockFilter], () => (page.value = 1));
+watch([keyword, chatLieuFilterText, thuongHieuFilterText, chatLieuSelectedId, thuongHieuSelectedId, stockFilter], () => (page.value = 1));
 watch(
   () => filteredProducts.value.length,
   () => {
@@ -450,8 +602,12 @@ function goPage(p) {
 
 function resetFilter() {
   keyword.value = "";
-  chatLieuFilter.value = "";
-  thuongHieuFilter.value = "";
+
+  chatLieuFilterText.value = "";
+  thuongHieuFilterText.value = "";
+  chatLieuSelectedId.value = null;
+  thuongHieuSelectedId.value = null;
+
   stockFilter.value = "all";
   page.value = 1;
 }
@@ -921,6 +1077,61 @@ onMounted(async () => {
   border: 1px solid rgba(17, 24, 39, 0.14);
 }
 
+/* ✅ Combobox (search + nhập) */
+.ss-combo {
+  position: relative;
+}
+.ss-combo.disabled {
+  opacity: 0.98;
+}
+.ss-combo-input {
+  height: 40px;
+  border-radius: 10px !important;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  padding-right: 34px !important;
+}
+.ss-combo-ic {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: rgba(17, 24, 39, 0.55);
+  pointer-events: none;
+}
+.ss-combo-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.12);
+  max-height: 260px;
+  overflow: auto;
+  padding: 6px;
+}
+.ss-combo-item {
+  padding: 10px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: rgba(17, 24, 39, 0.82);
+  cursor: pointer;
+}
+.ss-combo-item:hover {
+  background: rgba(17, 24, 39, 0.05);
+}
+.ss-combo-item.active {
+  background: rgba(255, 77, 79, 0.10);
+}
+.ss-combo-empty {
+  padding: 10px 10px;
+  font-size: 13px;
+  color: rgba(17, 24, 39, 0.55);
+}
+
 /* Radio */
 .ss-radio {
   display: inline-flex;
@@ -1036,7 +1247,9 @@ onMounted(async () => {
 .ss-td { color: rgba(17, 24, 39, 0.78); font-weight: 400; }
 .ss-td-strong { color: rgba(17, 24, 39, 0.88); font-weight: 600; }
 .ss-muted { color: rgba(17, 24, 39, 0.55); }
-.ss-money { color: #16a34a; }
+
+/* ✅ Khoảng giá màu đỏ */
+.ss-money { color: #ff4d4f; font-weight: 600; }
 
 /* Badge */
 .ss-badge {
@@ -1049,11 +1262,15 @@ onMounted(async () => {
   font-weight: 500;
   border: 1px solid rgba(17, 24, 39, 0.10);
 }
+
+/* ✅ Kinh doanh: màu đỏ */
 .ss-badge-on {
-  color: rgba(17, 24, 39, 0.82);
-  background: rgba(34, 197, 94, 0.12);
-  border-color: rgba(34, 197, 94, 0.22);
+  color: rgba(180, 35, 36, 0.95);
+  background: rgba(255, 77, 79, 0.12);
+  border-color: rgba(255, 77, 79, 0.25);
 }
+
+/* ✅ Ngừng kinh doanh: giữ nguyên */
 .ss-badge-off {
   color: rgba(17, 24, 39, 0.65);
   background: rgba(17, 24, 39, 0.06);

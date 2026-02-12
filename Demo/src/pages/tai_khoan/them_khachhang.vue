@@ -58,7 +58,6 @@
         <div class="block-head">
           <div class="block-title">Địa chỉ (có thể thêm nhiều) <span class="req">*</span></div>
 
-          <!-- ✅ FIX icon: dùng Bootstrap Icons để không hiện chữ add -->
           <button class="btn btn-outline" type="button" @click="addAddress">
             <i class="fa-solid fa-plus"></i> Thêm địa chỉ
           </button>
@@ -71,7 +70,6 @@
               <span>Đặt làm mặc định</span>
             </label>
 
-            <!-- ✅ FIX icon: dùng Bootstrap Icons để không hiện chữ delete -->
             <button
               class="btn btn-outline danger"
               type="button"
@@ -171,11 +169,7 @@ const form = ref({
   soDienThoai: "",
   gioiTinh: null,
   ngaySinh: "",
-<<<<<<< HEAD
-  trangThai: true
-=======
   trangThai: true,
->>>>>>> 02bb122 (init update new UI)
 });
 
 const provinces = ref([]);

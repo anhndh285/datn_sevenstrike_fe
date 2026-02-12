@@ -1,10 +1,6 @@
 <!-- File: src/pages/tai_khoan/khach_hang/taikhoan_khachhang.vue -->
 <template>
-<<<<<<< HEAD
-  <h2 class="page-title">Quản lý khách hàng</h2>
-=======
   <h2 class="page-title">Quản lý tài khoản/ Quản lý khách hàng</h2>
->>>>>>> 02bb122 (init update new UI)
 
   <div class="taikhoan-khachhang-container" v-if="!isPage">
     <div class="panel">
@@ -12,31 +8,16 @@
         <div class="toolbar-left">
           <div class="search-wrapper">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
-<<<<<<< HEAD
-            <input v-model="filters.keyword" type="text" placeholder="Tìm theo tên, SĐT, email,... "
-              class="search-input" />
-=======
             <input
               v-model="filters.keyword"
               type="text"
               placeholder="Tìm theo tên, SĐT, email,... "
               class="search-input"
             />
->>>>>>> 02bb122 (init update new UI)
           </div>
         </div>
 
         <div class="toolbar-right">
-<<<<<<< HEAD
-          <button class="btn btn-reset" @click="resetFilters">
-            <i class="fa-solid fa-rotate-left"></i> Đặt lại bộ lọc
-          </button>
-
-          <button class="btn-export" @click="exportExcel">
-            <i class="fa-solid fa-file-excel"></i> Xuất Excel
-          </button>
-          <button class="btn btn-newaccount" @click="themkh">
-=======
           <!-- ✅ Đặt lại: icon + màu y hệt ChatLieuPage (ss-btn-dark) -->
           <button class="btn btn-reset" @click="resetFilters" type="button">
             <span class="material-icons-outlined btn-mi">restart_alt</span>
@@ -50,7 +31,6 @@
           </button>
 
           <button class="btn btn-newaccount" @click="themkh" type="button">
->>>>>>> 02bb122 (init update new UI)
             <i class="fa-solid fa-plus"></i> Thêm khách hàng
           </button>
         </div>
@@ -115,16 +95,12 @@
               <td class="text-center">
                 <div class="action-group">
                   <label class="switch">
-<<<<<<< HEAD
-                    <input type="checkbox" v-model="item.trangThai" @change="toggleStatus(item)" />
-=======
                     <input
                       type="checkbox"
                       :checked="!!item.trangThai"
                       :disabled="dangCapNhatTrangThai.has(item.id)"
                       @change="(e) => toggleStatus(item, e)"
                     />
->>>>>>> 02bb122 (init update new UI)
                     <span class="slider"></span>
                   </label>
 
@@ -133,44 +109,12 @@
                   </button>
                 </div>
               </td>
-
             </tr>
           </tbody>
         </table>
       </div>
 
       <div class="pagination-container">
-<<<<<<< HEAD
-  <button
-    class="page-btn"
-    :class="{ disabled: pageNo === 0 }"
-    :disabled="pageNo === 0"
-    @click="changePage(pageNo - 1)"
-  >
-    <i class="fa-solid fa-chevron-left"></i>
-  </button>
-
-  <button
-    v-for="p in visiblePages"
-    :key="p"
-    class="page-btn"
-    :class="{ active: pageNo === p }"
-    @click="changePage(p)"
-  >
-    {{ p + 1 }}
-  </button>
-
-  <button
-    class="page-btn"
-    :class="{ disabled: pageNo >= totalPages - 1 }"
-    :disabled="pageNo >= totalPages - 1"
-    @click="changePage(pageNo + 1)"
-  >
-    <i class="fa-solid fa-chevron-right"></i>
-  </button>
-</div>
-
-=======
         <button
           class="page-btn"
           :class="{ disabled: pageNo === 0 }"
@@ -202,12 +146,12 @@
           <i class="fa-solid fa-chevron-right"></i>
         </button>
       </div>
->>>>>>> 02bb122 (init update new UI)
     </div>
   </div>
 
   <router-view />
 </template>
+
 <script setup>
 import { searchKhachHang, pagingKhachHang, updateKhachHang, getAllKhachHang } from "@/services/tai_khoan/khach_hang/khach_hangService";
 import { getAllDiaChiKhachHang } from "@/services/tai_khoan/khach_hang/diaChiKhachHangService";
@@ -228,13 +172,10 @@ const khachhangOrigin = ref([]);
 const addrMap = ref(new Map()); // idKhachHang -> "text"
 
 const filters = ref({ keyword: "", status: "", gender: "" });
-<<<<<<< HEAD
-=======
 
 // ✅ Khóa theo id khi đang cập nhật + chống out-of-order khi bấm nhanh
 const dangCapNhatTrangThai = ref(new Set()); // Set<id>
 const trangThaiSeqMap = ref(new Map()); // Map<id, seq>
->>>>>>> 02bb122 (init update new UI)
 
 const themkh = () => router.push({ name: "tai-khoan-khach-hang-them" });
 const updatedkh = (id) => router.push({ name: "tai-khoan-khach-hang-cap-nhat", params: { id } });
@@ -293,30 +234,6 @@ const applyStatusFilter = () => {
 };
 
 const applyGenderFilter = () => {
-<<<<<<< HEAD
-  const source = Array.isArray(khachhangList.value)
-    ? khachhangList.value
-    : [];
-
-  if (!filters.value.gender) return;
-
-  const isMale = filters.value.gender === "male";
-
-  khachhangList.value = source.filter(
-    (item) => Boolean(item.gioiTinh) === isMale
-  );
-};
-
-const toggleStatus = async (item) => {
-  const old = item.trangThai;
-  try {
-    await updateKhachHang(item.id, {
-      trangThai: item.trangThai,
-    });
-  } catch (e) {
-    item.trangThai = old;
-    alert("Không thể cập nhật trạng thái");
-=======
   const source = Array.isArray(khachhangList.value) ? khachhangList.value : [];
   if (!filters.value.gender) return;
 
@@ -372,7 +289,6 @@ const toggleStatus = async (item, e) => {
     if (trangThaiSeqMap.value.get(id) === nextSeq) {
       dangCapNhatTrangThai.value.delete(id);
     }
->>>>>>> 02bb122 (init update new UI)
   }
 };
 
@@ -403,15 +319,6 @@ const exportExcel = async () => {
     const sortedData = sortNewestFirst(filteredData);
 
     const dataToExport = sortedData.map((item, index) => ({
-<<<<<<< HEAD
-      'STT': index + 1,
-      'Mã khách hàng': item.maKhachHang ?? "---",
-      'Họ tên': item.tenKhachHang ?? "---",
-      'SĐT': item.soDienThoai ?? "---",
-      'Email': item.email ?? "---",
-      'Địa chỉ': addrMap.value.get(item.id) ?? "---",
-      'Trạng thái': item.trangThai ? "Hoạt động" : "Ngừng hoạt động",
-=======
       STT: index + 1,
       "Mã khách hàng": item.maKhachHang ?? "---",
       "Họ tên": item.tenKhachHang ?? "---",
@@ -419,7 +326,6 @@ const exportExcel = async () => {
       Email: item.email ?? "---",
       "Địa chỉ": addrMap.value.get(item.id) ?? "---",
       "Trạng thái": item.trangThai ? "Hoạt động" : "Ngừng hoạt động",
->>>>>>> 02bb122 (init update new UI)
     }));
 
     if (dataToExport.length === 0) {
@@ -431,12 +337,6 @@ const exportExcel = async () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Danh sách khách hàng");
 
-<<<<<<< HEAD
-    worksheet['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 30 }, { wch: 50 }, { wch: 20 }];
-
-    XLSX.writeFile(workbook, "DanhSachKhachHang.xlsx");
-
-=======
     worksheet["!cols"] = [
       { wch: 5 },
       { wch: 15 },
@@ -448,17 +348,12 @@ const exportExcel = async () => {
     ];
 
     XLSX.writeFile(workbook, "DanhSachKhachHang.xlsx");
->>>>>>> 02bb122 (init update new UI)
   } catch (error) {
     console.error("Lỗi khi xuất Excel:", error);
     alert("Đã xảy ra lỗi khi xuất file Excel.");
   }
 };
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 02bb122 (init update new UI)
 const handleFilter = async () => {
   try {
     if (filters.value.keyword.trim()) {
@@ -486,29 +381,10 @@ const resetFilters = async () => {
   filters.value = {
     keyword: "",
     status: "",
-<<<<<<< HEAD
-    roleId: "",
-  };
-
-  pageNo.value = 0;
-  await handleFilter();
-};
-
-const changePage = async (page) => {
-  if (page < 0 || page >= totalPages.value) return;
-  pageNo.value = page;
-  await handleFilter();
-};
-
-const prevPage = async () => {
-  if (pageNo.value === 0) return;
-  pageNo.value--;
-=======
     gender: "",
   };
 
   pageNo.value = 0;
->>>>>>> 02bb122 (init update new UI)
   await handleFilter();
 };
 
@@ -526,27 +402,12 @@ const visiblePages = computed(() => {
   let start = Math.max(current - 2, 0);
   let end = Math.min(start + 4, max - 1);
 
-<<<<<<< HEAD
-  if (end - start < 4) {
-    start = Math.max(end - 4, 0);
-  }
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
-
-  return pages;
-});
-
-
-=======
   if (end - start < 4) start = Math.max(end - 4, 0);
 
   for (let i = start; i <= end; i++) pages.push(i);
   return pages;
 });
 
->>>>>>> 02bb122 (init update new UI)
 watch(
   filters,
   async () => {
@@ -629,8 +490,6 @@ onMounted(async () => {
   align-items: center;
 }
 
-<<<<<<< HEAD
-=======
 /* ✅ Material icon trong button */
 .btn-mi {
   font-size: 18px;
@@ -642,7 +501,6 @@ onMounted(async () => {
 }
 
 /* Base button */
->>>>>>> 02bb122 (init update new UI)
 .btn {
   height: 34px;
   padding: 0 14px;
@@ -659,14 +517,7 @@ onMounted(async () => {
   opacity: 0.96;
 }
 
-<<<<<<< HEAD
-.btn:hover {
-  opacity: 0.96;
-}
-
-=======
 /* ✅ Thêm khách hàng (giữ nguyên) */
->>>>>>> 02bb122 (init update new UI)
 .btn-newaccount {
   height: 34px;
   padding: 0 14px;
@@ -678,31 +529,15 @@ onMounted(async () => {
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
   box-shadow: 0 10px 18px rgba(255, 77, 79, 0.16);
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> 02bb122 (init update new UI)
 .btn-newaccount i {
   font-size: 12px;
 }
 
-<<<<<<< HEAD
-=======
 /* ✅ XUẤT EXCEL: đổi sang style ss-btn-lite của ChatLieuPage */
->>>>>>> 02bb122 (init update new UI)
 .btn-export {
   height: 34px;
   padding: 0 14px;
   border-radius: 10px;
-<<<<<<< HEAD
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #107c41;
-  box-shadow: 0 4px 12px rgba(16, 124, 65, 0.2);
-  border: none;
-=======
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -711,48 +546,20 @@ onMounted(async () => {
   color: rgba(17, 24, 39, 0.88) !important;
   border: 1px solid rgba(17, 24, 39, 0.10) !important;
 
->>>>>>> 02bb122 (init update new UI)
   cursor: pointer;
   font-weight: 600;
   font-size: 13px;
   transition: all 0.2s;
 }
-<<<<<<< HEAD
-
-.btn-export:hover {
-  background: #0e6b38;
-}
-
-=======
 .btn-export:hover {
   background: #eef0f3 !important;
 }
 
 /* ✅ ĐẶT LẠI BỘ LỌC: đổi sang style ss-btn-dark của ChatLieuPage */
->>>>>>> 02bb122 (init update new UI)
 .btn-reset {
   height: 34px;
   padding: 0 14px;
   border-radius: 10px;
-<<<<<<< HEAD
-  background: #e5e7eb;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: 0.2s;
-}
-
-.btn-reset:hover {
-  background: #d1d5db;
-}
-
-.filter-pill{
-=======
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -771,7 +578,6 @@ onMounted(async () => {
 }
 
 .filter-pill {
->>>>>>> 02bb122 (init update new UI)
   height: 38px;
   min-width: 150px;
 }
@@ -819,67 +625,32 @@ table {
 th:first-child {
   border-top-left-radius: 16px;
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> 02bb122 (init update new UI)
 th:last-child {
   border-top-right-radius: 16px;
 }
 
 th {
   padding: 16px;
-  background: #F9FAFB;
+  background: #f9fafb;
   font-size: 13.5px;
   font-weight: 600;
   text-align: left;
   color: rgba(17, 24, 39, 0.88);
-  border-bottom: 1px solid #E5E7EB;
+  border-bottom: 1px solid #e5e7eb;
   white-space: nowrap;
   text-transform: none;
 }
 
 td {
   padding: 16px;
-  border-bottom: 1px solid #F3F4F6;
+  border-bottom: 1px solid #f3f4f6;
   font-size: 13.5px;
   vertical-align: middle;
   color: rgba(17, 24, 39, 0.72);
-<<<<<<< HEAD
 }
 
 tbody tr:hover {
-  background: #F9FAFB;
-}
-
-/* Avatar placeholder */
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid rgba(17, 24, 39, 0.14);
-  background: #fff;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.avatar-fallback {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(17, 24, 39, 0.04);
-  color: rgba(17, 24, 39, 0.78);
-  font-weight: 700;
-=======
-}
-
-tbody tr:hover {
-  background: #F9FAFB;
->>>>>>> 02bb122 (init update new UI)
+  background: #f9fafb;
 }
 
 /* Pagination */
@@ -895,7 +666,7 @@ tbody tr:hover {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid #e5e7eb;
   background: #fff;
   color: #374151;
   display: flex;
@@ -908,8 +679,8 @@ tbody tr:hover {
 }
 
 .page-btn:hover:not(.disabled) {
-  background: #F3F4F6;
-  border-color: #D1D5DB;
+  background: #f3f4f6;
+  border-color: #d1d5db;
 }
 
 .page-btn.active {
@@ -919,8 +690,8 @@ tbody tr:hover {
 }
 
 .page-btn.disabled {
-  color: #D1D5DB;
-  background: #F9FAFB;
+  color: #d1d5db;
+  background: #f9fafb;
 }
 
 /* Search */
@@ -933,7 +704,7 @@ tbody tr:hover {
 .search-icon {
   position: absolute;
   left: 12px;
-  color: #9CA3AF;
+  color: #9ca3af;
   font-size: 14px;
   pointer-events: none;
 }
@@ -942,12 +713,12 @@ tbody tr:hover {
   height: 40px;
   padding: 0 16px 0 36px;
   border-radius: 10px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid #e5e7eb;
   outline: none;
   min-width: 465px;
   color: rgba(17, 24, 39, 0.78);
   font-size: 14px;
-  background: #F9FAFB;
+  background: #f9fafb;
 }
 
 .search-input:focus {
@@ -997,11 +768,18 @@ tbody tr:hover {
   margin-bottom: 24px;
 }
 
+.action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Switch */
 .switch {
   position: relative;
   display: inline-block;
-  width: 40px;
-  height: 22px;
+  width: 32px;
+  height: 18px;
 }
 
 .switch input {
@@ -1014,74 +792,38 @@ tbody tr:hover {
   z-index: 2;
 }
 
-<<<<<<< HEAD
-=======
 .switch input:disabled {
   cursor: not-allowed;
 }
->>>>>>> 02bb122 (init update new UI)
 
 .slider {
   position: absolute;
   cursor: pointer;
   inset: 0;
   background-color: #e5e7eb;
-  border-radius: 20px;
-  transition: .3s;
+  border-radius: 18px;
+  transition: 0.3s;
 }
 
-<<<<<<< HEAD
-=======
 .switch input:disabled + .slider {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
->>>>>>> 02bb122 (init update new UI)
 .slider:before {
   position: absolute;
   content: "";
-  height: 18px;
-  width: 18px;
-  left: 2px;
-  bottom: 2px;
-  background-color: white;
-  border-radius: 50%;
-  transition: .3s;
-}
-
-.switch input:checked + .slider {
-  background-color: #22c55e;
-}
-
-.switch input:checked + .slider:before {
-  transform: translateX(18px);
-}
-
-.action-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-<<<<<<< HEAD
-=======
-/* thu nhỏ switch như trước */
->>>>>>> 02bb122 (init update new UI)
-.switch {
-  width: 32px;
-  height: 18px;
-}
-
-.slider {
-  border-radius: 18px;
-}
-
-.slider:before {
   height: 14px;
   width: 14px;
   left: 2px;
   bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.switch input:checked + .slider {
+  background-color: #22c55e;
 }
 
 .switch input:checked + .slider:before {

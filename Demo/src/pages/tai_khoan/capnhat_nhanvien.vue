@@ -65,7 +65,7 @@
               <select class="form-control ss-input" v-model.number="nv.idQuyenHan">
                 <option value="">-- Chọn quyền hạn --</option>
                 <option v-for="q in listQuyenHan" :key="q.id" :value="Number(q.id)">
-                  {{ q.ten ?? q.tenQuyenHan ?? q.ma ?? ("Quyền " + q.id) }}
+                  {{ mapTenQuyenHan(q.ten ?? q.tenQuyenHan ?? q.ma ?? ("Quyền " + q.id)) }}
                 </option>
               </select>
             </div>
@@ -76,7 +76,7 @@
                 class="form-control ss-input"
                 style="height:auto; min-height: 92px; padding-top: 10px"
                 v-model="nv.ghiChu"
-              />
+              ></textarea>
             </div>
           </div>
 
@@ -134,14 +134,10 @@
         </div>
 
         <!-- ACTIONS -->
-<<<<<<< HEAD
-        <div class="d-flex justify-content-end align-items-center mt-4 actions">
-=======
         <div class="d-flex justify-content-between align-items-center mt-4 actions">
           <button type="button" class="ss-btn ss-btn-state" @click="toggleStatus">
             {{ nv.trangThai ? "Hủy hoạt động" : "Kích hoạt" }}
           </button>
->>>>>>> 02bb122 (init update new UI)
 
           <div class="d-flex gap-2">
             <button type="submit" class="ss-btn ss-btn-primary ss-btn-submit">
@@ -175,14 +171,27 @@ const fileInput = ref(null);
 const listQuyenHan = ref([]);
 const BASE_URL = "http://localhost:8080";
 
+/** ✅ Map mã quyền -> text hiển thị */
+const mapTenQuyenHan = (raw) => {
+  const v = String(raw ?? "").trim();
+  if (!v) return v;
+
+  const k = v.toUpperCase().replace(/\s+/g, "");
+
+  if (k === "NHAN_VIEN" || k === "NHANVIEN" || k === "ROLE_NHAN_VIEN" || k === "ROLENHAN_VIEN") return "Nhân viên";
+  if (k === "ADMIN" || k === "ROLE_ADMIN" || k === "ROLEADMIN") return "Admin";
+
+  return v;
+};
+
 /** ====== VN Address list (name + code) ====== */
 const provinces = ref([]);
 const districts = ref([]);
 const wards = ref([]);
 
 const thanhphoOptions = ref([]); // ["Hà Nội", ...]
-const quanOptions = ref([]);     // ["Huyện Gia Lâm", ...]
-const phuongOptions = ref([]);   // ["Xã Dương Xá", ...]
+const quanOptions = ref([]); // ["Huyện Gia Lâm", ...]
+const phuongOptions = ref([]); // ["Xã Dương Xá", ...]
 
 const nv = ref({
   idQuyenHan: null,
@@ -313,8 +322,6 @@ const loadNhanVien = async () => {
   }
 };
 
-<<<<<<< HEAD
-=======
 const openFilePicker = () => fileInput.value?.click();
 
 const onFileChange = (event) => {
@@ -339,7 +346,7 @@ const onFileChange = (event) => {
   reader.readAsDataURL(file);
 };
 
-/** luôn gửi FormData (data) để đồng nhất với “CÁCH B” */
+/** luôn gửi FormData (data) để đồng nhất */
 const buildFormData = () => {
   const payload = { ...nv.value };
 
@@ -370,7 +377,6 @@ const toggleStatus = async () => {
   }
 };
 
->>>>>>> 02bb122 (init update new UI)
 const submit = async () => {
   try {
     await updateNhanVien(id, buildFormData());

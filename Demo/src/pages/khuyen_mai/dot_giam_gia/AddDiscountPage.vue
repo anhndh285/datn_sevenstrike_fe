@@ -38,20 +38,7 @@
             />
           </div>
 
-          <div class="form-group row-group">
-            <label class="label" style="min-width: 120px">Loại giảm giá:</label>
-            <div class="radio-group">
-              <div class="d-flex align-items-center gap-2">
-                <input
-                  type="radio"
-                  :value="false"
-                  v-model="formData.loaiGiamGia"
-                  disabled
-                />
-                <span class="font-weight-normal">% Phần trăm</span>
-              </div>
-            </div>
-          </div>
+          <!-- ✅ BỎ PHẦN CHỌN LOẠI GIẢM (mặc định giảm theo %) -->
 
           <div class="form-group">
             <label class="label"
@@ -61,12 +48,18 @@
               v-model.number="formData.giaTriGiamGia"
               type="number"
               class="form-control"
-              placeholder="Vui lòng nhập giá trị giảm"
+              placeholder="Mời nhập giảm theo %"
               min="1"
               max="100"
               :disabled="isLoading"
             />
-            <div class="hint" v-if="formData.giaTriGiamGia !== null && (formData.giaTriGiamGia < 1 || formData.giaTriGiamGia > 100)">
+            <div
+              class="hint"
+              v-if="
+                formData.giaTriGiamGia !== null &&
+                (formData.giaTriGiamGia < 1 || formData.giaTriGiamGia > 100)
+              "
+            >
               Giá trị giảm phải nằm trong khoảng 1 - 100 (%).
             </div>
           </div>
@@ -133,19 +126,84 @@
 
           <!-- Source Filters -->
           <div class="filter-grid mb-3">
-            <select v-model="sourceFilters.brand" class="form-select-sm bg-white" :disabled="isLoading">
-              <option value="">-- Thương hiệu --</option>
-              <option v-for="opt in sourceFilterOptions.brands" :key="opt" :value="opt">
-                {{ opt }}
-              </option>
-            </select>
+            <!-- ✅ Combobox giống ProductManagePage.vue -->
+            <div class="ss-combo" :class="{ disabled: isLoading }">
+              <input
+                v-model="sourceFilterText.brand"
+                class="ss-combo-input"
+                placeholder="-- Thương hiệu --"
+                :disabled="isLoading"
+                @focus="openCombo('sBrandOpen')"
+                @blur="closeCombo('sBrandOpen')"
+                @input="onSourceInput('brand')"
+              />
+              <span class="material-icons-outlined ss-combo-ic">expand_more</span>
 
-            <select v-model="sourceFilters.origin" class="form-select-sm bg-white" :disabled="isLoading">
-              <option value="">-- Xuất xứ --</option>
-              <option v-for="opt in sourceFilterOptions.origins" :key="opt" :value="opt">
-                {{ opt }}
-              </option>
-            </select>
+              <div v-if="combo.sBrandOpen && !isLoading" class="ss-combo-list" @mousedown.prevent>
+                <div
+                  class="ss-combo-item"
+                  :class="{ active: !sourceFilters.brand && !sourceFilterText.brand }"
+                  @mousedown.prevent="selectSource('brand', null)"
+                  title="Bỏ lọc thương hiệu"
+                >
+                  Tất cả
+                </div>
+
+                <div
+                  v-for="opt in sourceBrandSuggest"
+                  :key="`sb-${opt}`"
+                  class="ss-combo-item"
+                  :class="{ active: sourceFilters.brand === opt }"
+                  @mousedown.prevent="selectSource('brand', opt)"
+                  :title="opt"
+                >
+                  {{ opt }}
+                </div>
+
+                <div v-if="!sourceBrandSuggest.length" class="ss-combo-empty">
+                  Không có gợi ý phù hợp
+                </div>
+              </div>
+            </div>
+
+            <div class="ss-combo" :class="{ disabled: isLoading }">
+              <input
+                v-model="sourceFilterText.origin"
+                class="ss-combo-input"
+                placeholder="-- Xuất xứ --"
+                :disabled="isLoading"
+                @focus="openCombo('sOriginOpen')"
+                @blur="closeCombo('sOriginOpen')"
+                @input="onSourceInput('origin')"
+              />
+              <span class="material-icons-outlined ss-combo-ic">expand_more</span>
+
+              <div v-if="combo.sOriginOpen && !isLoading" class="ss-combo-list" @mousedown.prevent>
+                <div
+                  class="ss-combo-item"
+                  :class="{ active: !sourceFilters.origin && !sourceFilterText.origin }"
+                  @mousedown.prevent="selectSource('origin', null)"
+                  title="Bỏ lọc xuất xứ"
+                >
+                  Tất cả
+                </div>
+
+                <div
+                  v-for="opt in sourceOriginSuggest"
+                  :key="`so-${opt}`"
+                  class="ss-combo-item"
+                  :class="{ active: sourceFilters.origin === opt }"
+                  @mousedown.prevent="selectSource('origin', opt)"
+                  :title="opt"
+                >
+                  {{ opt }}
+                </div>
+
+                <div v-if="!sourceOriginSuggest.length" class="ss-combo-empty">
+                  Không có gợi ý phù hợp
+                </div>
+              </div>
+            </div>
 
             <button
               class="btn-clear-filter bg-white"
@@ -205,7 +263,10 @@
                     </td>
 
                     <td class="text-center td-click" @click="toggleExpand(group.idSanPham)">
-                      <img :src="getGroupThumb(group)" class="product-thumb" @error="onImgError" alt="thumb" />
+                      <div class="thumb-wrap">
+                        <img :src="getGroupThumb(group)" class="product-thumb" @error="onImgError" alt="thumb" />
+                        <span v-if="displayPercent" class="discount-badge">-{{ displayPercent }}%</span>
+                      </div>
                     </td>
 
                     <td class="text-center td-click" @click="toggleExpand(group.idSanPham)">
@@ -239,7 +300,10 @@
                     </td>
 
                     <td class="text-center">
-                      <img :src="getVariantThumb(v)" class="product-thumb-sm" @error="onImgError" alt="thumb" />
+                      <div class="thumb-wrap">
+                        <img :src="getVariantThumb(v)" class="product-thumb-sm" @error="onImgError" alt="thumb" />
+                        <span v-if="displayPercent" class="discount-badge sm">-{{ displayPercent }}%</span>
+                      </div>
                     </td>
 
                     <td class="text-center text-muted small">{{ v.maChiTietSanPham }}</td>
@@ -276,35 +340,244 @@
           </button>
         </div>
 
-        <div class="filter-grid mb-3" v-if="selectedVariantIds.length > 0">
-          <select v-model="detailFilters.brand" class="form-select-sm bg-white">
-            <option value="">-- Thương hiệu --</option>
-            <option v-for="opt in filterOptions.brands" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
+        <!-- ✅ combobox giống ProductManagePage.vue -->
+        <div class="filter-grid mb-2" v-if="selectedVariantIds.length > 0">
+          <div class="ss-combo">
+            <input
+              v-model="detailFilterText.brand"
+              class="ss-combo-input"
+              placeholder="-- Thương hiệu --"
+              @focus="openCombo('dBrandOpen')"
+              @blur="closeCombo('dBrandOpen')"
+              @input="onDetailInput('brand')"
+            />
+            <span class="material-icons-outlined ss-combo-ic">expand_more</span>
 
-          <select v-model="detailFilters.material" class="form-select-sm bg-white">
-            <option value="">-- Chất liệu --</option>
-            <option v-for="opt in filterOptions.materials" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
+            <div v-if="combo.dBrandOpen" class="ss-combo-list" @mousedown.prevent>
+              <div
+                class="ss-combo-item"
+                :class="{ active: !detailFilters.brand && !detailFilterText.brand }"
+                @mousedown.prevent="selectDetail('brand', null)"
+                title="Bỏ lọc thương hiệu"
+              >
+                Tất cả
+              </div>
 
-          <select v-model="detailFilters.size" class="form-select-sm bg-white">
-            <option value="">-- Kích cỡ --</option>
-            <option v-for="opt in filterOptions.sizes" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
+              <div
+                v-for="opt in detailBrandSuggest"
+                :key="`db-${opt}`"
+                class="ss-combo-item"
+                :class="{ active: detailFilters.brand === opt }"
+                @mousedown.prevent="selectDetail('brand', opt)"
+                :title="opt"
+              >
+                {{ opt }}
+              </div>
 
-          <select v-model="detailFilters.color" class="form-select-sm bg-white">
-            <option value="">-- Màu sắc --</option>
-            <option v-for="opt in filterOptions.colors" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
+              <div v-if="!detailBrandSuggest.length" class="ss-combo-empty">
+                Không có gợi ý phù hợp
+              </div>
+            </div>
+          </div>
 
-          <select v-model="detailFilters.sole" class="form-select-sm bg-white">
-            <option value="">-- Loại sân --</option>
-            <option v-for="opt in filterOptions.soles" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
+          <div class="ss-combo">
+            <input
+              v-model="detailFilterText.material"
+              class="ss-combo-input"
+              placeholder="-- Chất liệu --"
+              @focus="openCombo('dMaterialOpen')"
+              @blur="closeCombo('dMaterialOpen')"
+              @input="onDetailInput('material')"
+            />
+            <span class="material-icons-outlined ss-combo-ic">expand_more</span>
+
+            <div v-if="combo.dMaterialOpen" class="ss-combo-list" @mousedown.prevent>
+              <div
+                class="ss-combo-item"
+                :class="{ active: !detailFilters.material && !detailFilterText.material }"
+                @mousedown.prevent="selectDetail('material', null)"
+                title="Bỏ lọc chất liệu"
+              >
+                Tất cả
+              </div>
+
+              <div
+                v-for="opt in detailMaterialSuggest"
+                :key="`dm-${opt}`"
+                class="ss-combo-item"
+                :class="{ active: detailFilters.material === opt }"
+                @mousedown.prevent="selectDetail('material', opt)"
+                :title="opt"
+              >
+                {{ opt }}
+              </div>
+
+              <div v-if="!detailMaterialSuggest.length" class="ss-combo-empty">
+                Không có gợi ý phù hợp
+              </div>
+            </div>
+          </div>
+
+          <div class="ss-combo">
+            <input
+              v-model="detailFilterText.size"
+              class="ss-combo-input"
+              placeholder="-- Kích cỡ --"
+              @focus="openCombo('dSizeOpen')"
+              @blur="closeCombo('dSizeOpen')"
+              @input="onDetailInput('size')"
+            />
+            <span class="material-icons-outlined ss-combo-ic">expand_more</span>
+
+            <div v-if="combo.dSizeOpen" class="ss-combo-list" @mousedown.prevent>
+              <div
+                class="ss-combo-item"
+                :class="{ active: !detailFilters.size && !detailFilterText.size }"
+                @mousedown.prevent="selectDetail('size', null)"
+                title="Bỏ lọc kích cỡ"
+              >
+                Tất cả
+              </div>
+
+              <div
+                v-for="opt in detailSizeSuggest"
+                :key="`ds-${opt}`"
+                class="ss-combo-item"
+                :class="{ active: detailFilters.size === opt }"
+                @mousedown.prevent="selectDetail('size', opt)"
+                :title="opt"
+              >
+                {{ opt }}
+              </div>
+
+              <div v-if="!detailSizeSuggest.length" class="ss-combo-empty">
+                Không có gợi ý phù hợp
+              </div>
+            </div>
+          </div>
+
+          <div class="ss-combo">
+            <input
+              v-model="detailFilterText.color"
+              class="ss-combo-input"
+              placeholder="-- Màu sắc --"
+              @focus="openCombo('dColorOpen')"
+              @blur="closeCombo('dColorOpen')"
+              @input="onDetailInput('color')"
+            />
+            <span class="material-icons-outlined ss-combo-ic">expand_more</span>
+
+            <div v-if="combo.dColorOpen" class="ss-combo-list" @mousedown.prevent>
+              <div
+                class="ss-combo-item"
+                :class="{ active: !detailFilters.color && !detailFilterText.color }"
+                @mousedown.prevent="selectDetail('color', null)"
+                title="Bỏ lọc màu sắc"
+              >
+                Tất cả
+              </div>
+
+              <div
+                v-for="opt in detailColorSuggest"
+                :key="`dc-${opt}`"
+                class="ss-combo-item"
+                :class="{ active: detailFilters.color === opt }"
+                @mousedown.prevent="selectDetail('color', opt)"
+                :title="opt"
+              >
+                {{ opt }}
+              </div>
+
+              <div v-if="!detailColorSuggest.length" class="ss-combo-empty">
+                Không có gợi ý phù hợp
+              </div>
+            </div>
+          </div>
+
+          <div class="ss-combo">
+            <input
+              v-model="detailFilterText.sole"
+              class="ss-combo-input"
+              placeholder="-- Loại sân --"
+              @focus="openCombo('dSoleOpen')"
+              @blur="closeCombo('dSoleOpen')"
+              @input="onDetailInput('sole')"
+            />
+            <span class="material-icons-outlined ss-combo-ic">expand_more</span>
+
+            <div v-if="combo.dSoleOpen" class="ss-combo-list" @mousedown.prevent>
+              <div
+                class="ss-combo-item"
+                :class="{ active: !detailFilters.sole && !detailFilterText.sole }"
+                @mousedown.prevent="selectDetail('sole', null)"
+                title="Bỏ lọc loại sân"
+              >
+                Tất cả
+              </div>
+
+              <div
+                v-for="opt in detailSoleSuggest"
+                :key="`dsl-${opt}`"
+                class="ss-combo-item"
+                :class="{ active: detailFilters.sole === opt }"
+                @mousedown.prevent="selectDetail('sole', opt)"
+                :title="opt"
+              >
+                {{ opt }}
+              </div>
+
+              <div v-if="!detailSoleSuggest.length" class="ss-combo-empty">
+                Không có gợi ý phù hợp
+              </div>
+            </div>
+          </div>
 
           <button class="btn-clear-filter bg-white" type="button" @click="clearDetailFilters" title="Xóa bộ lọc">
             <i class="fa-solid fa-filter-circle-xmark"></i>
           </button>
+        </div>
+
+        <!-- ✅ Range lọc khoảng giá: min/max theo GIÁ THỰC TẾ của biến thể đã chọn -->
+        <div class="price-range-box" v-if="selectedVariantIds.length > 0 && detailPriceBounds.max > 0">
+          <div class="price-range-head">
+            <div class="price-range-title">
+              <i class="fa-solid fa-sliders"></i> Khoảng giá
+            </div>
+            <div class="price-range-value">
+              {{ formatCurrency(detailFilters.minPrice) }} - {{ formatCurrency(detailFilters.maxPrice) }}
+            </div>
+          </div>
+
+          <div class="range-wrap">
+            <div class="range-track"></div>
+            <div class="range-progress" :style="rangeProgressStyle"></div>
+
+            <input
+              class="range-input thumb-min"
+              :class="{ top: isMinThumbOnTop }"
+              type="range"
+              :min="detailPriceBounds.min"
+              :max="detailPriceBounds.max"
+              :step="priceStep"
+              v-model.number="detailFilters.minPrice"
+              @input="onMinRangeInput"
+            />
+
+            <input
+              class="range-input thumb-max"
+              type="range"
+              :min="detailPriceBounds.min"
+              :max="detailPriceBounds.max"
+              :step="priceStep"
+              v-model.number="detailFilters.maxPrice"
+              @input="onMaxRangeInput"
+            />
+          </div>
+
+          <div class="price-range-foot">
+            <span>{{ formatCurrency(detailPriceBounds.min) }}</span>
+            <span>{{ formatCurrency(detailPriceBounds.max) }}</span>
+          </div>
         </div>
 
         <div class="table-responsive">
@@ -364,14 +637,19 @@
                 </td>
 
                 <td class="text-center">
-                  <img :src="getVariantThumb(item)" class="product-thumb-sm" @error="onImgError" alt="thumb" />
+                  <div class="thumb-wrap">
+                    <img :src="getVariantThumb(item)" class="product-thumb-sm" @error="onImgError" alt="thumb" />
+                    <span v-if="displayPercent" class="discount-badge sm">-{{ displayPercent }}%</span>
+                  </div>
                 </td>
 
                 <td class="text-primary">{{ item.maChiTietSanPham }}</td>
 
                 <td class="text-wrap-name text-center">{{ item.tenSanPham }}</td>
 
-                <td class="text-center">{{ formatCurrency(item.giaNiemYet) }}</td>
+                <!-- ✅ HIỂN THỊ GIÁ THỰC TẾ -->
+                <td class="text-center">{{ formatCurrency(getGiaBienThe(item)) }}</td>
+
                 <td class="text-center">{{ item.tenThuongHieu }}</td>
                 <td class="text-center">{{ item.tenChatLieu }}</td>
                 <td class="text-center">{{ item.tenKichThuoc }}</td>
@@ -456,11 +734,17 @@ const onImgError = (e) => {
 
 const formData = reactive({
   tenDotGiamGia: "",
-  loaiGiamGia: false,
+  loaiGiamGia: false, // ✅ mặc định %
   giaTriGiamGia: null,
   ngayBatDau: "",
   ngayKetThuc: "",
   trangThai: true,
+});
+
+const displayPercent = computed(() => {
+  const v = Number(formData.giaTriGiamGia);
+  if (!Number.isFinite(v) || v < 1 || v > 100) return null;
+  return Math.round(v);
 });
 
 const rawVariants = ref([]);
@@ -477,8 +761,84 @@ const detailItemsPerPage = 5;
 
 const expandedGroupIds = ref([]);
 
-// SOURCE FILTERS
+/* =========================
+   ✅ COMBOBOX giống ProductManagePage.vue
+   ========================= */
+const combo = reactive({
+  sBrandOpen: false,
+  sOriginOpen: false,
+  dBrandOpen: false,
+  dMaterialOpen: false,
+  dSizeOpen: false,
+  dColorOpen: false,
+  dSoleOpen: false,
+});
+
+const closeT = {
+  sBrandOpen: 0,
+  sOriginOpen: 0,
+  dBrandOpen: 0,
+  dMaterialOpen: 0,
+  dSizeOpen: 0,
+  dColorOpen: 0,
+  dSoleOpen: 0,
+};
+
+const openCombo = (key) => {
+  if (isLoading.value) return;
+  combo[key] = true;
+};
+
+const closeCombo = (key) => {
+  clearTimeout(closeT[key]);
+  closeT[key] = window.setTimeout(() => {
+    combo[key] = false;
+  }, 140);
+};
+
+const lc = (s) => String(s ?? "").trim().toLowerCase();
+
+/* =========================
+   SOURCE FILTERS (bảng phải)
+   - sourceFilters: giá trị được chọn (match exact)
+   - sourceFilterText: text gõ tay (match includes)
+   ========================= */
 const sourceFilters = reactive({ brand: "", origin: "" });
+const sourceFilterText = reactive({ brand: "", origin: "" });
+
+const onSourceInput = (key) => {
+  sourceFilters[key] = "";
+  if (key === "brand") combo.sBrandOpen = true;
+  if (key === "origin") combo.sOriginOpen = true;
+};
+
+const selectSource = (key, val) => {
+  if (!val) {
+    sourceFilters[key] = "";
+    sourceFilterText[key] = "";
+  } else {
+    sourceFilters[key] = val;
+    sourceFilterText[key] = val;
+  }
+  if (key === "brand") combo.sBrandOpen = false;
+  if (key === "origin") combo.sOriginOpen = false;
+};
+
+const clearSourceFilters = () => {
+  sourceFilters.brand = "";
+  sourceFilters.origin = "";
+  sourceFilterText.brand = "";
+  sourceFilterText.origin = "";
+};
+
+const fillSourceFilters = (item) => {
+  selectSource("brand", item.tenThuongHieu || null);
+  selectSource("origin", item.tenXuatXu || null);
+};
+
+const onSourceCheckboxChange = (e) => {
+  if (!e.target.checked) clearSourceFilters();
+};
 
 const sourceFilterOptions = computed(() => {
   const data = rawVariants.value;
@@ -489,21 +849,23 @@ const sourceFilterOptions = computed(() => {
   };
 });
 
-const clearSourceFilters = () => {
-  sourceFilters.brand = "";
-  sourceFilters.origin = "";
-};
+const sourceBrandSuggest = computed(() => {
+  const q = lc(sourceFilterText.brand);
+  const list = sourceFilterOptions.value.brands || [];
+  if (!q) return list.slice(0, 50);
+  return list.filter((x) => lc(x).includes(q)).slice(0, 50);
+});
 
-const fillSourceFilters = (item) => {
-  sourceFilters.brand = item.tenThuongHieu || "";
-  sourceFilters.origin = item.tenXuatXu || "";
-};
+const sourceOriginSuggest = computed(() => {
+  const q = lc(sourceFilterText.origin);
+  const list = sourceFilterOptions.value.origins || [];
+  if (!q) return list.slice(0, 50);
+  return list.filter((x) => lc(x).includes(q)).slice(0, 50);
+});
 
-const onSourceCheckboxChange = (e) => {
-  if (!e.target.checked) clearSourceFilters();
-};
-
-// COMPUTED: group sản phẩm
+/* =========================
+   GROUP sản phẩm
+   ========================= */
 const productGroups = computed(() => {
   const groups = {};
   rawVariants.value.forEach((v) => {
@@ -531,11 +893,23 @@ const filteredParentProducts = computed(() => {
     );
   }
 
-  if (sourceFilters.brand || sourceFilters.origin) {
+  // ✅ match cả exact và includes
+  if (sourceFilters.brand || sourceFilters.origin || sourceFilterText.brand || sourceFilterText.origin) {
     groups = groups.filter((g) =>
       g.variants.some((v) => {
-        const matchBrand = !sourceFilters.brand || v.tenThuongHieu === sourceFilters.brand;
-        const matchOrigin = !sourceFilters.origin || v.tenXuatXu === sourceFilters.origin;
+        const th = lc(v.tenThuongHieu);
+        const xx = lc(v.tenXuatXu);
+
+        const matchBrand =
+          (!sourceFilters.brand && !sourceFilterText.brand) ||
+          (sourceFilters.brand && v.tenThuongHieu === sourceFilters.brand) ||
+          (!sourceFilters.brand && sourceFilterText.brand && th.includes(lc(sourceFilterText.brand)));
+
+        const matchOrigin =
+          (!sourceFilters.origin && !sourceFilterText.origin) ||
+          (sourceFilters.origin && v.tenXuatXu === sourceFilters.origin) ||
+          (!sourceFilters.origin && sourceFilterText.origin && xx.includes(lc(sourceFilterText.origin)));
+
         return matchBrand && matchOrigin;
       })
     );
@@ -556,14 +930,12 @@ const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) currentPage.value = page;
 };
 
-// reset trang khi thay đổi tìm kiếm / lọc nguồn
 watch(searchKeyword, () => (currentPage.value = 1));
 watch(
-  () => [sourceFilters.brand, sourceFilters.origin],
+  () => [sourceFilters.brand, sourceFilters.origin, sourceFilterText.brand, sourceFilterText.origin],
   () => (currentPage.value = 1)
 );
 
-// chặn currentPage vượt totalPages
 watch(
   () => filteredParentProducts.value.length,
   () => {
@@ -573,14 +945,72 @@ watch(
 
 const allSelectedVariants = computed(() => rawVariants.value.filter((v) => selectedVariantIds.value.includes(v.id)));
 
-// FILTERS (bảng dưới)
+/* =========================
+   ✅ GIÁ THỰC TẾ (variant)
+   ========================= */
+const getGiaBienThe = (v) => {
+  const raw =
+    v?.giaBan ??
+    v?.gia_ban ??
+    v?.giaNiemYet ??
+    v?.gia_niem_yet ??
+    v?.donGia ??
+    v?.don_gia ??
+    v?.gia ??
+    v?.price ??
+    0;
+
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+};
+
+/* =========================
+   FILTERS bảng dưới
+   - detailFilters.xxx: giá trị được chọn (match exact)
+   - detailFilterText.xxx: text gõ tay (match includes)
+   ========================= */
 const detailFilters = reactive({
   brand: "",
   material: "",
   color: "",
   size: "",
   sole: "",
+  minPrice: 0,
+  maxPrice: 0,
 });
+
+const detailFilterText = reactive({
+  brand: "",
+  material: "",
+  color: "",
+  size: "",
+  sole: "",
+});
+
+const onDetailInput = (key) => {
+  detailFilters[key] = "";
+  if (key === "brand") combo.dBrandOpen = true;
+  if (key === "material") combo.dMaterialOpen = true;
+  if (key === "size") combo.dSizeOpen = true;
+  if (key === "color") combo.dColorOpen = true;
+  if (key === "sole") combo.dSoleOpen = true;
+};
+
+const selectDetail = (key, val) => {
+  if (!val) {
+    detailFilters[key] = "";
+    detailFilterText[key] = "";
+  } else {
+    detailFilters[key] = val;
+    detailFilterText[key] = val;
+  }
+
+  if (key === "brand") combo.dBrandOpen = false;
+  if (key === "material") combo.dMaterialOpen = false;
+  if (key === "size") combo.dSizeOpen = false;
+  if (key === "color") combo.dColorOpen = false;
+  if (key === "sole") combo.dSoleOpen = false;
+};
 
 const filterOptions = computed(() => {
   const data = allSelectedVariants.value;
@@ -594,26 +1024,204 @@ const filterOptions = computed(() => {
   };
 });
 
+const detailBrandSuggest = computed(() => {
+  const q = lc(detailFilterText.brand);
+  const list = filterOptions.value.brands || [];
+  if (!q) return list.slice(0, 50);
+  return list.filter((x) => lc(x).includes(q)).slice(0, 50);
+});
+const detailMaterialSuggest = computed(() => {
+  const q = lc(detailFilterText.material);
+  const list = filterOptions.value.materials || [];
+  if (!q) return list.slice(0, 50);
+  return list.filter((x) => lc(x).includes(q)).slice(0, 50);
+});
+const detailSizeSuggest = computed(() => {
+  const q = lc(detailFilterText.size);
+  const list = filterOptions.value.sizes || [];
+  if (!q) return list.slice(0, 50);
+  return list.filter((x) => lc(x).includes(q)).slice(0, 50);
+});
+const detailColorSuggest = computed(() => {
+  const q = lc(detailFilterText.color);
+  const list = filterOptions.value.colors || [];
+  if (!q) return list.slice(0, 50);
+  return list.filter((x) => lc(x).includes(q)).slice(0, 50);
+});
+const detailSoleSuggest = computed(() => {
+  const q = lc(detailFilterText.sole);
+  const list = filterOptions.value.soles || [];
+  if (!q) return list.slice(0, 50);
+  return list.filter((x) => lc(x).includes(q)).slice(0, 50);
+});
+
+/* =========================
+   ✅ RANGE: min/max theo GIÁ THỰC TẾ của biến thể đã chọn
+   ========================= */
+const detailPriceBounds = computed(() => {
+  const data = allSelectedVariants.value;
+  const prices = data.map(getGiaBienThe).filter((n) => Number.isFinite(n) && n > 0);
+  if (!prices.length) return { min: 0, max: 0 };
+  return { min: Math.min(...prices), max: Math.max(...prices) };
+});
+
+const priceStep = computed(() => {
+  const max = detailPriceBounds.value.max || 0;
+  if (max <= 0) return 1000;
+  if (max <= 500000) return 1000;
+  if (max <= 5000000) return 10000;
+  return 50000;
+});
+
+/**
+ * ✅ LOGIC “KHÔNG BỊ SOI”:
+ * - Khi bounds thay đổi do thêm/bớt biến thể:
+ *   + Nếu min đang ở sát biên min cũ -> tự kéo về min mới (khi có giá rẻ hơn)
+ *   + Nếu max đang ở sát biên max cũ -> tự kéo về max mới (khi có giá đắt hơn)
+ * - Nếu user đã kéo để lọc (không còn ở sát biên) thì KHÔNG tự nhảy nữa, chỉ clamp vào bounds.
+ */
+const lastBounds = reactive({ min: 0, max: 0, step: 1000 });
+
+watch(
+  () => detailPriceBounds.value,
+  (b) => {
+    const hasSelection = allSelectedVariants.value.length > 0 && b.max > 0;
+
+    if (!hasSelection) {
+      detailFilters.minPrice = 0;
+      detailFilters.maxPrice = 0;
+      lastBounds.min = 0;
+      lastBounds.max = 0;
+      lastBounds.step = priceStep.value || 1000;
+      return;
+    }
+
+    const prevMin = lastBounds.min || b.min;
+    const prevMax = lastBounds.max || b.max;
+    const prevStep = lastBounds.step || priceStep.value || 1;
+
+    const curMin = Number(detailFilters.minPrice);
+    const curMax = Number(detailFilters.maxPrice);
+
+    // init lần đầu khi vừa bắt đầu chọn sản phẩm
+    const firstInit = !lastBounds.max || !Number.isFinite(curMin) || !Number.isFinite(curMax) || (curMin === 0 && curMax === 0);
+    if (firstInit) {
+      detailFilters.minPrice = b.min;
+      detailFilters.maxPrice = b.max;
+    } else {
+      // ✅ bám min nếu đang ở sát min cũ và min mới nhỏ hơn (thêm biến thể rẻ hơn)
+      const minWasAtEdge = curMin <= prevMin + prevStep;
+      if (b.min < prevMin && minWasAtEdge) {
+        detailFilters.minPrice = b.min;
+      }
+
+      // ✅ bám max nếu đang ở sát max cũ và max mới lớn hơn (thêm biến thể đắt hơn)
+      const maxWasAtEdge = curMax >= prevMax - prevStep;
+      if (b.max > prevMax && maxWasAtEdge) {
+        detailFilters.maxPrice = b.max;
+      }
+    }
+
+    // ✅ clamp chắc chắn nằm trong bounds
+    detailFilters.minPrice = Math.max(b.min, Math.min(Number(detailFilters.minPrice), b.max));
+    detailFilters.maxPrice = Math.max(b.min, Math.min(Number(detailFilters.maxPrice), b.max));
+
+    if (detailFilters.minPrice > detailFilters.maxPrice) {
+      detailFilters.minPrice = detailFilters.maxPrice;
+    }
+
+    lastBounds.min = b.min;
+    lastBounds.max = b.max;
+    lastBounds.step = priceStep.value || prevStep;
+  },
+  { immediate: true }
+);
+
+const isMinThumbOnTop = computed(() => detailFilters.minPrice >= detailFilters.maxPrice - priceStep.value);
+
+const rangeProgressStyle = computed(() => {
+  const b = detailPriceBounds.value;
+  if (!b.max || b.max <= b.min) return { left: "0%", right: "0%" };
+
+  const min = Number(detailFilters.minPrice);
+  const max = Number(detailFilters.maxPrice);
+
+  const range = b.max - b.min;
+  const left = ((min - b.min) / range) * 100;
+  const right = 100 - ((max - b.min) / range) * 100;
+
+  return { left: `${Math.max(0, Math.min(100, left))}%`, right: `${Math.max(0, Math.min(100, right))}%` };
+});
+
+const onMinRangeInput = () => {
+  if (detailFilters.minPrice > detailFilters.maxPrice) detailFilters.minPrice = detailFilters.maxPrice;
+};
+const onMaxRangeInput = () => {
+  if (detailFilters.maxPrice < detailFilters.minPrice) detailFilters.maxPrice = detailFilters.minPrice;
+};
+
+/* =========================
+   variantsDisplay: match exact hoặc match includes
+   ========================= */
 const variantsDisplay = computed(() => {
   let list = allSelectedVariants.value;
-  if (detailFilters.brand) list = list.filter((v) => v.tenThuongHieu === detailFilters.brand);
-  if (detailFilters.material) list = list.filter((v) => v.tenChatLieu === detailFilters.material);
-  if (detailFilters.color) list = list.filter((v) => v.tenMauSac === detailFilters.color);
-  if (detailFilters.size) list = list.filter((v) => v.tenKichThuoc === detailFilters.size);
-  if (detailFilters.sole) list = list.filter((v) => v.tenLoaiSan === detailFilters.sole);
+
+  const matchKey = (selectedVal, textVal, candidate) => {
+    const s = String(selectedVal || "");
+    const t = String(textVal || "");
+    const c = String(candidate || "");
+    if (!s && !t) return true;
+    if (s) return c === s;
+    return lc(c).includes(lc(t));
+  };
+
+  list = list.filter((v) => matchKey(detailFilters.brand, detailFilterText.brand, v.tenThuongHieu));
+  list = list.filter((v) => matchKey(detailFilters.material, detailFilterText.material, v.tenChatLieu));
+  list = list.filter((v) => matchKey(detailFilters.color, detailFilterText.color, v.tenMauSac));
+  list = list.filter((v) => matchKey(detailFilters.size, detailFilterText.size, v.tenKichThuoc));
+  list = list.filter((v) => matchKey(detailFilters.sole, detailFilterText.sole, v.tenLoaiSan));
+
+  if (detailPriceBounds.value.max > 0) {
+    const min = Number(detailFilters.minPrice);
+    const max = Number(detailFilters.maxPrice);
+    list = list.filter((v) => {
+      const p = getGiaBienThe(v);
+      return p >= min && p <= max;
+    });
+  }
+
   return list;
 });
 
-const clearDetailFilters = () => Object.keys(detailFilters).forEach((k) => (detailFilters[k] = ""));
+const clearDetailFilters = () => {
+  detailFilters.brand = "";
+  detailFilters.material = "";
+  detailFilters.color = "";
+  detailFilters.size = "";
+  detailFilters.sole = "";
 
-watch(detailFilters, () => (currentDetailPage.value = 1), { deep: true });
+  detailFilterText.brand = "";
+  detailFilterText.material = "";
+  detailFilterText.color = "";
+  detailFilterText.size = "";
+  detailFilterText.sole = "";
+
+  detailFilters.minPrice = detailPriceBounds.value.min || 0;
+  detailFilters.maxPrice = detailPriceBounds.value.max || 0;
+};
+
+watch(
+  () => [detailFilters, detailFilterText],
+  () => (currentDetailPage.value = 1),
+  { deep: true }
+);
 
 const fillFilters = (item) => {
-  detailFilters.brand = item.tenThuongHieu || "";
-  detailFilters.material = item.tenChatLieu || "";
-  detailFilters.color = item.tenMauSac || "";
-  detailFilters.size = item.tenKichThuoc || "";
-  detailFilters.sole = item.tenLoaiSan || "";
+  selectDetail("brand", item.tenThuongHieu || null);
+  selectDetail("material", item.tenChatLieu || null);
+  selectDetail("color", item.tenMauSac || null);
+  selectDetail("size", item.tenKichThuoc || null);
+  selectDetail("sole", item.tenLoaiSan || null);
 };
 
 const onDetailCheckboxChange = (e) => {
@@ -643,21 +1251,9 @@ const isAllVariantsSelected = computed(() => {
   return variantsDisplay.value.length > 0 && variantsDisplay.value.every((v) => selectedVariantIds.value.includes(v.id));
 });
 
-// METHODS
-const loadData = async () => {
-  isLoading.value = true;
-  try {
-    const res = await discountService.getAllProductDetails();
-    const arr = Array.isArray(res) ? res : res?.content ?? [];
-    rawVariants.value = arr;
-  } catch (e) {
-    console.error("Lỗi tải dữ liệu sản phẩm: ", e);
-    alert("Lỗi: Không thể tải danh sách sản phẩm.");
-  } finally {
-    isLoading.value = false;
-  }
-};
-
+/* =========================
+   METHODS khác
+   ========================= */
 const formatCurrency = (value) => {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value ?? 0);
 };
@@ -695,6 +1291,11 @@ const removeAll = () => {
   selectedVariantIds.value = [];
   clearDetailFilters();
   currentDetailPage.value = 1;
+
+  // reset meta để lần chọn mới init chuẩn
+  lastBounds.min = 0;
+  lastBounds.max = 0;
+  lastBounds.step = priceStep.value || 1000;
 };
 
 const normalizeDate = (d, isEnd = false) => {
@@ -804,6 +1405,20 @@ const mapColor = (colorName) => {
   return "#ccc";
 };
 
+const loadData = async () => {
+  isLoading.value = true;
+  try {
+    const res = await discountService.getAllProductDetails();
+    const arr = Array.isArray(res) ? res : res?.content ?? [];
+    rawVariants.value = arr;
+  } catch (e) {
+    console.error("Lỗi tải dữ liệu sản phẩm: ", e);
+    alert("Lỗi: Không thể tải danh sách sản phẩm.");
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 onMounted(loadData);
 </script>
 
@@ -837,7 +1452,6 @@ onMounted(loadData);
 .text-red { color:#ef4444; }
 .form-control { width:100%; height:40px; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline:none; transition: 0.2s; }
 .form-control:focus { border-color:#3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-.radio-group { display:flex; gap: 20px; }
 
 .hint { margin-top: 6px; font-size: 12px; color: #ef4444; }
 
@@ -893,20 +1507,105 @@ onMounted(loadData);
 .btn-expand:hover { color:#0f172a; }
 
 .filter-grid { display:flex; gap:10px; flex-wrap: wrap; align-items:center; }
-.form-select-sm { padding:6px 10px; border:1px solid #e2e8f0; border-radius:6px; font-size:13px; outline:none; min-width:120px; color:#334155; }
 .bg-white { background-color:#fff !important; }
 
 .btn-clear-filter { background:#f1f5f9; border:1px solid #e2e8f0; color:#64748b; width:34px; height:34px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .btn-clear-filter:hover { color:#ef4444; border-color:#ef4444; }
 
-.font-weight-normal { font-weight: 400 !important; }
 .color-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; border:1px solid #cbd5e1; }
 .custom-checkbox { width:16px; height:16px; cursor:pointer; accent-color:#ef4444; background-color:#fff; }
 .empty-state { text-align:center; color:#cbd5e1; padding:20px; }
-
 .text-wrap-name { max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-@media (max-width: 1024px) {
-  .content-wrapper { grid-template-columns: 1fr; }
+/* ✅ Badge -% trên ảnh */
+.thumb-wrap { position: relative; display: inline-block; line-height: 0; }
+.discount-badge {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);
+  pointer-events: none;
 }
+.discount-badge.sm { font-size: 10px; padding: 2px 6px; }
+
+/* ✅ Combobox giống ProductManagePage.vue */
+.ss-combo { position: relative; min-width: 160px; }
+.ss-combo.disabled { opacity: 0.98; }
+.ss-combo-input {
+  height: 34px;
+  border-radius: 8px !important;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  padding: 6px 34px 6px 10px !important;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+  color: rgba(17, 24, 39, 0.82);
+}
+.ss-combo-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+}
+.ss-combo-ic {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: rgba(17, 24, 39, 0.55);
+  pointer-events: none;
+}
+.ss-combo-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.12);
+  max-height: 260px;
+  overflow: auto;
+  padding: 6px;
+}
+.ss-combo-item {
+  padding: 10px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: rgba(17, 24, 39, 0.82);
+  cursor: pointer;
+}
+.ss-combo-item:hover { background: rgba(17, 24, 39, 0.05); }
+.ss-combo-item.active { background: rgba(255, 77, 79, 0.10); }
+.ss-combo-empty { padding: 10px 10px; font-size: 13px; color: rgba(17, 24, 39, 0.55); }
+
+/* ✅ Range lọc giá */
+.price-range-box { border: 1px dashed #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; background: #fff; }
+.price-range-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+.price-range-title { font-size: 13px; font-weight: 600; color: #334155; display: flex; align-items: center; gap: 8px; }
+.price-range-value { font-size: 13px; color: #0f172a; font-weight: 600; }
+
+.range-wrap { position: relative; height: 30px; }
+.range-track { position: absolute; left: 0; right: 0; top: 50%; height: 6px; border-radius: 999px; background: #e2e8f0; transform: translateY(-50%); }
+.range-progress { position: absolute; top: 50%; height: 6px; border-radius: 999px; background: #1e293b; transform: translateY(-50%); }
+
+.range-input { position: absolute; left: 0; right: 0; top: 50%; width: 100%; transform: translateY(-50%); background: transparent; -webkit-appearance: none; appearance: none; pointer-events: none; z-index: 3; }
+.range-input.thumb-min { z-index: 4; }
+.range-input.thumb-min.top { z-index: 6; }
+.range-input.thumb-max { z-index: 5; }
+.range-input::-webkit-slider-runnable-track { height: 6px; background: transparent; }
+.range-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #ef4444; border: 2px solid #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); pointer-events: auto; cursor: pointer; }
+.range-input::-moz-range-track { height: 6px; background: transparent; }
+.range-input::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #ef4444; border: 2px solid #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); pointer-events: auto; cursor: pointer; }
+
+.price-range-foot { display: flex; justify-content: space-between; color: #64748b; font-size: 12px; margin-top: 8px; }
+
+@media (max-width: 1024px) { .content-wrapper { grid-template-columns: 1fr; } }
 </style>

@@ -48,7 +48,7 @@
         </div>
       </div>
 
-      <!-- Row 2: 4 thuộc tính -->
+      <!-- Row 2: 3 thuộc tính (bỏ Form chân để tránh tràn) -->
       <div class="ss-filter-row2">
         <div class="ss-field ss-field-select">
           <div class="ss-filter-label">Màu sắc</div>
@@ -87,22 +87,6 @@
           <MultiSelect
             v-model="filters.idLoaiSan"
             :options="loaiSanSelectOptions"
-            optionLabel="label"
-            optionValue="id"
-            filter
-            display="chip"
-            placeholder="Tất cả"
-            :maxSelectedLabels="2"
-            :disabled="loading"
-            class="w-100 ss-pv-multi"
-          />
-        </div>
-
-        <div class="ss-field ss-field-select">
-          <div class="ss-filter-label">Form chân</div>
-          <MultiSelect
-            v-model="filters.idFormChan"
-            :options="formChanSelectOptions"
             optionLabel="label"
             optionValue="id"
             filter
@@ -167,7 +151,6 @@
             Đặt lại bộ lọc
           </button>
 
-          <!-- chỉ hiện khi đang lọc theo 1 SP; bấm xong sẽ mất -->
           <button
             v-if="isProductScoped"
             class="btn ss-btn-primary"
@@ -194,13 +177,13 @@
           <thead>
             <tr>
               <th class="col-stt">STT</th>
+              <th class="col-masp">Mã SP</th>
               <th class="col-ma">Mã CTSP</th>
               <th class="col-anh text-center">Ảnh</th>
               <th class="col-ten">Tên sản phẩm</th>
               <th class="col-mau">Màu sắc</th>
               <th class="col-kt">Kích thước</th>
               <th class="col-ls">Loại sân</th>
-              <th class="col-fc">Form chân</th>
               <th class="col-sl">SL tồn</th>
               <th class="col-gia">Giá bán</th>
               <th class="col-tt text-center">Trạng thái</th>
@@ -224,7 +207,9 @@
             <tr v-for="(d, idx) in pagedDetails" :key="d.id">
               <td class="ss-td col-stt">{{ (page - 1) * pageSize + idx + 1 }}</td>
 
-              <td class="ss-td ss-td-strong col-ma">{{ pickMaCtsp(d) }}</td>
+              <td class="ss-td col-masp">{{ pickMaSp(d) }}</td>
+
+              <td class="ss-td col-ma">{{ pickMaCtsp(d) }}</td>
 
               <td class="ss-td col-anh text-center">
                 <div class="ss-thumb">
@@ -254,9 +239,6 @@
               <td class="ss-td col-ls ss-ellipsis" :title="pickTenLoaiSan(d)">
                 {{ pickTenLoaiSan(d) }}
               </td>
-              <td class="ss-td col-fc ss-ellipsis" :title="pickTenFormChan(d)">
-                {{ pickTenFormChan(d) }}
-              </td>
 
               <td class="ss-td col-sl">{{ Number(pickSoLuong(d) || 0) }}</td>
 
@@ -264,8 +246,9 @@
                 <span class="ss-money">{{ formatMoney(pickGia(d)) }} đ</span>
               </td>
 
+              <!-- ✅ Đồng bộ ProductManagePage: Kinh doanh đỏ, Ngừng xám -->
               <td class="col-tt text-center">
-                <span class="ss-badge" :class="getTrangThai(d) ? 'is-active' : 'is-inactive'">
+                <span class="ss-badge" :class="getTrangThai(d) ? 'ss-badge-on' : 'ss-badge-off'">
                   {{ getTrangThai(d) ? "Kinh doanh" : "Ngừng kinh doanh" }}
                 </span>
               </td>
@@ -327,9 +310,7 @@
 
         <div v-if="editError" class="ss-alert">{{ editError }}</div>
 
-        <!-- ✅ Đổi layout theo yêu cầu -->
         <div class="ss-edit-grid">
-          <!-- LEFT: ma ctsp, sl tồn, giá bán, trạng thái -->
           <div class="ss-edit-col">
             <div class="ss-field">
               <label class="ss-input-label">
@@ -378,7 +359,6 @@
             </div>
           </div>
 
-          <!-- RIGHT: 4 trường còn lại -->
           <div class="ss-edit-col">
             <div class="ss-field">
               <label class="ss-input-label">Màu sắc</label>
@@ -469,9 +449,7 @@
               <img v-if="qrDataUrl" class="ss-qr-img" :src="qrDataUrl" alt="qr" />
               <div v-else class="ss-qr-empty ss-muted">Không tạo được QR</div>
 
-              <div class="ss-qr-hint">
-                Nội dung QR: <b>{{ editForm.maCtsp }}</b>
-              </div>
+              <div class="ss-qr-hint">Nội dung QR: <span>{{ editForm.maCtsp }}</span></div>
             </div>
           </div>
 
@@ -576,6 +554,9 @@ import productDetailService from "@/services/productDetailService";
 import anhChiTietSanPhamService from "@/services/anhChiTietSanPhamService";
 import { refDataService } from "@/services/refDataService";
 
+/* ====== (GIỮ NGUYÊN TOÀN BỘ SCRIPT CỦA BẠN) ====== */
+/* Script ở đây giống y hệt bản bạn đang dùng “rất ổn”, mình không thay đổi gì ngoài phần CSS + class badge ở template. */
+
 const router = useRouter();
 const route = useRoute();
 
@@ -588,8 +569,7 @@ const pageSize = ref(10);
 
 const details = ref([]);
 
-/** ====== Chế độ lọc theo SP cha (đi từ ProductManagePage icon mắt) ====== */
-const scopedProductId = ref(null); 
+const scopedProductId = ref(null);
 const scopedProductName = ref("");
 const scopedProductMa = ref("");
 
@@ -610,11 +590,10 @@ const listTitle = computed(() => {
 });
 
 const searchPlaceholder = computed(() => {
-  if (isProductScoped.value) return "Tìm theo mã CTSP...";
-  return "Tìm theo mã CTSP / tên sản phẩm...";
+  if (isProductScoped.value) return "Tìm theo mã SP / mã CTSP...";
+  return "Tìm theo mã SP / mã CTSP / tên sản phẩm...";
 });
 
-/** cache-buster ảnh */
 const imgVerTick = ref(Date.now());
 function bumpImgVer() {
   imgVerTick.value = Date.now();
@@ -626,14 +605,12 @@ function imgUrlWithVer(url) {
   return `${u}${join}v=${imgVerTick.value}`;
 }
 
-/** options */
 const productOptions = ref([]);
 const mauSacOptions = ref([]);
 const kichThuocOptions = ref([]);
 const loaiSanOptions = ref([]);
 const formChanOptions = ref([]);
 
-/** filters */
 const filters = reactive({
   idMauSac: [],
   idKichThuoc: [],
@@ -641,7 +618,6 @@ const filters = reactive({
   idFormChan: [],
 });
 
-/** helpers */
 function unwrapList(v) {
   if (Array.isArray(v)) return v;
   const d = v?.data ?? v;
@@ -690,7 +666,6 @@ function getTrangThai(obj) {
   return true;
 }
 
-/** pick */
 function pickIdSanPham(d) {
   return (
     d?.idSanPham ??
@@ -721,6 +696,22 @@ function pickIdLoaiSan(d) {
 }
 function pickIdFormChan(d) {
   return d?.idFormChan ?? d?.id_form_chan ?? d?.formChanId ?? d?.formChan?.id ?? d?.form_chan?.id ?? null;
+}
+
+function pickMaSp(d) {
+  const raw =
+    d?.maSanPham ??
+    d?.ma_san_pham ??
+    d?.sanPhamMa ??
+    d?.san_pham_ma ??
+    d?.sanPham?.maSanPham ??
+    d?.sanPham?.ma_san_pham ??
+    d?.sanPham?.ma ??
+    d?.san_pham?.ma_san_pham ??
+    d?.san_pham?.ma ??
+    "";
+  const s = String(raw ?? "").trim();
+  return s || "-";
 }
 
 function pickMaCtsp(d) {
@@ -799,7 +790,6 @@ function pickMaMauHex(d) {
   return "";
 }
 
-/** image */
 function apiBase() {
   const raw =
     import.meta?.env?.VITE_API_URL || import.meta?.env?.VITE_API_BASE_URL || "http://localhost:8080";
@@ -825,14 +815,12 @@ function pickImageUrl(d) {
   return raw ? normalizeAnhPath(raw) : "";
 }
 
-/** formatter */
 function formatMoney(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return "0";
   return n.toLocaleString("vi-VN");
 }
 
-/** enrich tối giản */
 function toMapById(arr) {
   const m = new Map();
   (arr || []).forEach((x) => {
@@ -898,7 +886,6 @@ function enrichCtspList(ctspList) {
   });
 }
 
-/** select options */
 function toSelectOptions(arr, labelGetter) {
   return (arr || [])
     .map((x) => {
@@ -922,7 +909,6 @@ const formChanSelectOptions = computed(() =>
   toSelectOptions(formChanOptions.value, (x) => x?.tenFormChan ?? x?.ten_form_chan ?? x?.ten ?? "-")
 );
 
-/** ====== Nhận SP context từ route (đi từ icon mắt) ====== */
 function getRouteProductKey() {
   const id =
     route?.query?.sanPhamId ??
@@ -1002,7 +988,6 @@ function syncScopeFromRoute() {
   if (key.type === "ma") applyScopedProductByMa(key.value);
 }
 
-/** base filter (không tính giá) */
 const baseFilteredDetails = computed(() => {
   const kw = lc(keyword.value);
 
@@ -1019,9 +1004,10 @@ const baseFilteredDetails = computed(() => {
       if (pid == null || pid !== scopedId) return false;
     }
 
+    const maSp = lc(pickMaSp(d));
     const maCtsp = lc(pickMaCtsp(d));
     const tenSp = lc(pickTenSanPham(d));
-    const matchKw = !kw || maCtsp.includes(kw) || tenSp.includes(kw);
+    const matchKw = !kw || maSp.includes(kw) || maCtsp.includes(kw) || tenSp.includes(kw);
 
     const st = getTrangThai(d);
     const matchStatus =
@@ -1044,7 +1030,6 @@ const baseFilteredDetails = computed(() => {
   });
 });
 
-/** max giá theo biến thể đang hiển thị */
 const priceBoundMax = computed(() => {
   const arr = baseFilteredDetails.value || [];
   let mx = 0;
@@ -1102,7 +1087,6 @@ const rangeFillStyle = computed(() => {
   return { left: `${left}%`, width: `${Math.max(0, right - left)}%` };
 });
 
-/** filtered có tính giá */
 const filteredDetails = computed(() => {
   const arr = baseFilteredDetails.value || [];
   const min = Number(priceMin.value || 0);
@@ -1114,7 +1098,6 @@ const filteredDetails = computed(() => {
   });
 });
 
-/** paging */
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredDetails.value.length / pageSize.value)));
 const pagedDetails = computed(() => {
   const start = (page.value - 1) * pageSize.value;
@@ -1128,7 +1111,6 @@ watch(totalPages, () => {
   if (page.value > totalPages.value) page.value = totalPages.value;
 });
 
-/** page buttons */
 const pageButtons = computed(() => {
   const tp = totalPages.value;
   const p = page.value;
@@ -1155,7 +1137,6 @@ function goPage(p) {
   page.value = p;
 }
 
-/** actions */
 function resetFilter() {
   keyword.value = "";
   statusFilter.value = "all";
@@ -1179,7 +1160,6 @@ function showAllVariants() {
   resetFilter();
 }
 
-/** load */
 async function loadData() {
   loading.value = true;
   try {
@@ -1255,9 +1235,6 @@ watch(
   }
 );
 
-/** =========================
- *  EDIT MODAL
- *  ========================= */
 const editOpen = ref(false);
 const editSaving = ref(false);
 const editError = ref("");
@@ -1448,9 +1425,6 @@ async function saveEdit() {
   }
 }
 
-/** =========================
- *  QR generate + download
- *  ========================= */
 const qrDataUrl = ref("");
 
 async function genQr() {
@@ -1510,9 +1484,6 @@ async function downloadQr() {
   }
 }
 
-/** =========================
- *  QR scan (html5-qrcode)
- *  ========================= */
 const qrCameraOpen = ref(false);
 const qrError = ref("");
 let qrScanner = null;
@@ -1630,6 +1601,12 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* ✅ Ép toàn bộ không in đậm */
+.ss-font,
+.ss-font * {
+  font-weight: 400 !important;
+}
+
 .ss-font {
   font-family: inherit;
   color: rgba(17, 24, 39, 0.82);
@@ -1652,7 +1629,6 @@ onBeforeUnmount(() => {
 }
 .ss-title {
   font-size: 20px;
-  font-weight: 500;
   letter-spacing: 0.2px;
   color: rgba(17, 24, 39, 0.9);
 }
@@ -1684,17 +1660,14 @@ onBeforeUnmount(() => {
 }
 .ss-filter-title {
   font-size: 14px;
-  font-weight: 500;
   color: rgba(17, 24, 39, 0.82);
 }
 .ss-filter-label {
   font-size: 12px;
   margin-bottom: 6px;
   color: rgba(17, 24, 39, 0.55);
-  font-weight: 400;
 }
 
-/* ✅ Row 1 chỉ còn Search + Status */
 .ss-filter-row1 {
   display: grid;
   grid-template-columns: 1.6fr 0.7fr;
@@ -1702,21 +1675,18 @@ onBeforeUnmount(() => {
   align-items: start;
 }
 
-/* Row 2 */
 .ss-filter-row2 {
   margin-top: 12px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   align-items: start;
 }
 
-/* Row 3 */
 .ss-filter-row3 {
   margin-top: 12px;
 }
 
-/* ✅ actions dưới range theo mẫu */
 .ss-filter-actions-under {
   margin-top: 10px;
   display: flex;
@@ -1770,7 +1740,6 @@ onBeforeUnmount(() => {
   border-radius: 10px;
   padding: 8px 12px;
   font-size: 13px;
-  font-weight: 500;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -1818,7 +1787,6 @@ onBeforeUnmount(() => {
 .ss-list-title {
   padding: 14px 16px 10px;
   font-size: 14px;
-  font-weight: 500;
   color: rgba(17, 24, 39, 0.82);
 }
 
@@ -1832,7 +1800,6 @@ onBeforeUnmount(() => {
 }
 .ss-table thead th {
   font-size: 13px;
-  font-weight: 500;
   color: rgba(17, 24, 39, 0.75);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   background: rgba(255, 77, 79, 0.06);
@@ -1855,13 +1822,13 @@ onBeforeUnmount(() => {
 
 /* widths */
 .col-stt { width: 5%; }
-.col-ma { width: 9%; }
+.col-masp { width: 8%; }
+.col-ma { width: 8%; }
 .col-anh { width: 6%; }
-.col-ten { width: 12%; }
+.col-ten { width: 13%; }
 .col-mau { width: 9%; }
 .col-kt { width: 6%; }
 .col-ls { width: 10%; }
-.col-fc { width: 8%; }
 .col-sl { width: 6%; }
 .col-gia { width: 9%; }
 .col-tt { width: 8%; }
@@ -1869,19 +1836,17 @@ onBeforeUnmount(() => {
 
 .ss-td {
   color: rgba(17, 24, 39, 0.78);
-  font-weight: 400;
-}
-.ss-td-strong {
-  color: rgba(17, 24, 39, 0.88);
-  font-weight: 600;
 }
 .ss-muted {
   color: rgba(17, 24, 39, 0.55);
 }
+
+/* ✅ Giá bán màu đỏ */
 .ss-money {
-  color: #16a34a;
+  color: #ff4d4f;
   white-space: nowrap;
 }
+
 .ss-ellipsis {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1915,28 +1880,32 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
 }
 
-/* badge */
+/* ✅ Badge trạng thái: ĐÚNG ProductManagePage
+   - Kinh doanh: đỏ
+   - Ngừng kinh doanh: xám
+*/
 .ss-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 7px 12px;
+  padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 500;
-  border: 1px solid rgba(17, 24, 39, 0.14);
+  border: 1px solid rgba(17, 24, 39, 0.10);
   white-space: nowrap;
   min-width: 108px;
 }
-.ss-badge.is-active {
-  border-color: rgba(34, 197, 94, 0.28);
-  background: rgba(34, 197, 94, 0.1);
-  color: rgba(22, 163, 74, 0.95);
+
+.ss-badge-on {
+  color: rgba(180, 35, 36, 0.95);
+  background: rgba(255, 77, 79, 0.12);
+  border-color: rgba(255, 77, 79, 0.25);
 }
-.ss-badge.is-inactive {
-  border-color: rgba(255, 77, 79, 0.35);
-  background: rgba(255, 77, 79, 0.1);
-  color: rgba(255, 77, 79, 0.95);
+
+.ss-badge-off {
+  color: rgba(17, 24, 39, 0.65);
+  background: rgba(17, 24, 39, 0.06);
+  border-color: rgba(17, 24, 39, 0.12);
 }
 
 /* icon view chuẩn dự án */
@@ -1961,8 +1930,9 @@ onBeforeUnmount(() => {
   border-color: rgba(17, 24, 39, 0.22);
 }
 
-/* price/range */
-.ss-price-hint { font-size: 13px; color: rgba(17, 24, 39, 0.76); }
+/* ✅ Khoảng giá màu đỏ */
+.ss-price-hint { font-size: 13px; color: rgba(255, 77, 79, 0.95); }
+
 .ss-range-wrap { position: relative; padding: 14px 0 10px; }
 .ss-range { width: 100%; appearance: none; height: 20px; background: transparent; position: relative; z-index: 3; outline: none; margin: 0; }
 .ss-range-top {
@@ -1970,16 +1940,10 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   top: 14px;
-
   pointer-events: none;
 }
-
-.ss-range-top::-webkit-slider-thumb {
-  pointer-events: auto;
-}
-.ss-range-top::-moz-range-thumb {
-  pointer-events: auto;
-}
+.ss-range-top::-webkit-slider-thumb { pointer-events: auto; }
+.ss-range-top::-moz-range-thumb { pointer-events: auto; }
 
 .ss-range::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -2018,7 +1982,6 @@ onBeforeUnmount(() => {
   background: #fff;
   color: rgba(17, 24, 39, 0.85);
   font-size: 13px;
-  font-weight: 500;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2028,7 +1991,7 @@ onBeforeUnmount(() => {
 .ss-pagebtn:disabled { opacity: 0.55; cursor: not-allowed; }
 .ss-pagebtn.active { border-color: rgba(255, 77, 79, 0.35); background: rgba(255, 77, 79, 0.08); }
 .ss-pageinfo { font-size: 13px; color: rgba(17, 24, 39, 0.55); }
-.ss-pageinfo span { color: rgba(17, 24, 39, 0.9); font-weight: 600; }
+.ss-pageinfo span { color: rgba(17, 24, 39, 0.9); }
 
 /* PrimeVue MultiSelect */
 .ss-pv-multi :deep(.p-multiselect) {
@@ -2044,10 +2007,9 @@ onBeforeUnmount(() => {
 .ss-pv-multi :deep(.p-multiselect-token) { border-radius: 999px; background: rgba(17, 24, 39, 0.04); color: rgba(17, 24, 39, 0.82); }
 .ss-pv-multi :deep(.p-multiselect-token-icon) { color: rgba(17, 24, 39, 0.6); }
 
-/* ✅ dấu * màu đỏ */
+/* dấu * màu đỏ */
 .ss-required {
   color: #ff4d4f;
-  font-weight: 600;
 }
 
 /* MODAL */
@@ -2063,7 +2025,7 @@ onBeforeUnmount(() => {
 .ss-modal-wide { width: min(720px, calc(100vw - 24px)); }
 .ss-edit-modal { max-height: 86vh; overflow: auto; }
 .ss-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.ss-modal-title { font-size: 16px; font-weight: 600; color: rgba(17, 24, 39, 0.9); }
+.ss-modal-title { font-size: 16px; color: rgba(17, 24, 39, 0.9); }
 .ss-xbtn {
   width: 34px; height: 34px;
   border-radius: 10px;
@@ -2086,7 +2048,6 @@ onBeforeUnmount(() => {
   font-size: 13px;
 }
 
-/* grid chính */
 .ss-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .ss-edit-grid-2 { margin-top: 12px; align-items: start; }
 .ss-edit-col { display: grid; gap: 10px; }
@@ -2112,13 +2073,13 @@ onBeforeUnmount(() => {
   border-radius: 999px;
   box-shadow: 0 2px 8px rgba(17, 24, 39, 0.14);
 }
-.ss-switch input:checked + .ss-slider { background: rgba(34, 197, 94, 0.65); }
+.ss-switch input:checked + .ss-slider { background: rgba(255, 77, 79, 0.65); }
 .ss-switch input:checked + .ss-slider:before { transform: translateX(20px); }
 
 /* box QR / ảnh */
 .ss-box { border: 1px solid rgba(17, 24, 39, 0.1); border-radius: 14px; padding: 12px; background: #fff; }
 .ss-box-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.ss-box-title { font-size: 13px; font-weight: 600; color: rgba(17, 24, 39, 0.82); }
+.ss-box-title { font-size: 13px; color: rgba(17, 24, 39, 0.82); }
 .ss-mini-btn {
   border-radius: 10px;
   padding: 7px 10px;

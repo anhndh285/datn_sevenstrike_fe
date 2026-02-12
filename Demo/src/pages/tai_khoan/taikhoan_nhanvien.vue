@@ -1,155 +1,5 @@
 <!-- File: src/pages/tai_khoan/nhan_vien/taikhoan_nhanvien.vue -->
 <template>
-<<<<<<< HEAD
-  <h2 class="page-title">Quản lý nhân viên</h2>
-
-  <div class="taikhoan-nhanvien-container" v-if="!isPage">
-    <div class="panel">
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <div class="search-wrapper">
-            <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input v-model="filters.keyword" type="text" placeholder="Tìm theo tên, SĐT, email,... " class="search-input" />
-          </div>
-        </div>
-
-        <div class="toolbar-right">
-          <button class="btn btn-reset" @click="resetFilters">
-  <i class="fa-solid fa-rotate-left"></i> Đặt lại bộ lọc
-</button>
-
-          <button class="btn-export" @click="exportExcel">
-            <i class="fa-solid fa-file-excel"></i> Xuất Excel
-          </button>
-
-          <button class="btn btn-newaccount" @click="themnv">
-            <i class="fa-solid fa-plus"></i> Thêm nhân viên
-          </button>
-        </div>
-      </div>
-
-      <div class="filters-bar">
-        <div class="filter-group">
-          <label>Chức vụ:</label>
-          <select v-model="filters.roleId" class="form-select rounded-3 filter-pill">
-            <option value="">Tất cả</option>
-            <option v-for="[id, name] in roleMap" :key="id" :value="id">
-              {{ name }}
-            </option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label>Trạng thái:</label>
-          <select v-model="filters.status" class="form-select rounded-3 filter-pill">
-            <option value="">Tất cả</option>
-            <option value="active">Hoạt động</option>
-            <option value="inactive">Ngừng hoạt động</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>STT</th>
-              <th>Ảnh</th>
-              <th>Mã nhân viên</th>
-              <th>Họ và tên</th>
-              <th>SĐT</th>
-              <th>Email</th>
-              <th>Địa chỉ</th>
-              <th>Quyền hạn</th>
-              <th>Trạng thái</th>
-              <th class="text-center">Thao tác</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr v-for="(item, index) in nhanVienList" :key="item.id">
-              <td class="text-gray">{{ pageNo * pageSize + index + 1 }}</td>
-
-              <td>
-                <div class="avatar">
-                  <img v-if="isImg(item.anhNhanVien)" :src="item.anhNhanVien" alt="avatar" />
-                  <div v-else class="avatar-fallback">{{ initials(item.tenNhanVien) }}</div>
-                </div>
-              </td>
-
-              <td class="text-dark fw-700">{{ item.maNhanVien ?? "---" }}</td>
-
-              <td class="text-dark fw-700">{{ item.tenNhanVien ?? "---" }}</td>
-              <td class="text-gray">{{ item.soDienThoai ?? "---" }}</td>
-              <td class="text-gray">{{ item.email ?? "---" }}</td>
-
-              <td class="text-gray">
-                {{ buildDiaChi(item) }}
-              </td>
-
-              <td>
-                <span class="badge badge-role">
-                  {{ getRoleName(item.idQuyenHan) }}
-                </span>
-              </td>
-
-              <td>
-                <span class="badge" :class="item.trangThai ? 'status-active' : 'status-ended'">
-                  {{ item.trangThai ? "Hoạt động" : "Ngừng hoạt động" }}
-                </span>
-              </td>
-
-              <td class="text-center">
-                <div class="action-group">
-                  <label class="switch">
-                    <input type="checkbox" v-model="item.trangThai" @change="toggleStatus(item)" />
-                    <span class="slider"></span>
-                  </label>
-
-                  <button class="ss-icon-btn-view" @click="updatednv(item.id)" title="Xem" type="button">
-                    <span class="material-icons-outlined">visibility</span>
-                  </button>
-                </div>
-              </td>
-
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="pagination-container">
-  <button
-    class="page-btn"
-    :class="{ disabled: pageNo === 0 }"
-    :disabled="pageNo === 0"
-    @click="changePage(pageNo - 1)"
-  >
-    <i class="fa-solid fa-chevron-left"></i>
-  </button>
-
-  <button
-    v-for="p in visiblePages"
-    :key="p"
-    class="page-btn"
-    :class="{ active: pageNo === p }"
-    @click="changePage(p)"
-  >
-    {{ p + 1 }}
-  </button>
-
-  <button
-    class="page-btn"
-    :class="{ disabled: pageNo >= totalPages - 1 }"
-    :disabled="pageNo >= totalPages - 1"
-    @click="changePage(pageNo + 1)"
-  >
-    <i class="fa-solid fa-chevron-right"></i>
-  </button>
-</div>
-    </div>
-=======
   <div class="ss-page ss-font">
     <div class="ss-head">
       <div class="ss-head-left">
@@ -317,7 +167,6 @@
     </div>
 
     <router-view />
->>>>>>> 02bb122 (init update new UI)
   </div>
 </template>
 
@@ -326,10 +175,6 @@ import { searchNhanVien, pagingNhanVien, updateNhanVien, getAllNhanVien } from "
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import * as XLSX from "xlsx";
-<<<<<<< HEAD
-
-=======
->>>>>>> 02bb122 (init update new UI)
 
 const router = useRouter();
 const route = useRoute();
@@ -347,8 +192,20 @@ const filters = ref({
   roleId: "",
 });
 
-
 const roleMap = ref(new Map());
+
+/** ✅ Map mã quyền -> text hiển thị */
+const mapTenQuyenHan = (raw) => {
+  const v = String(raw ?? "").trim();
+  if (!v) return v;
+
+  const k = v.toUpperCase().replace(/\s+/g, "");
+
+  if (k === "NHAN_VIEN" || k === "NHANVIEN" || k === "ROLE_NHAN_VIEN" || k === "ROLENHAN_VIEN") return "Nhân viên";
+  if (k === "ADMIN" || k === "ROLE_ADMIN" || k === "ROLEADMIN") return "Admin";
+
+  return v;
+};
 
 const loadQuyenHan = async () => {
   try {
@@ -358,7 +215,8 @@ const loadQuyenHan = async () => {
     const list = Array.isArray(data) ? data : data?.content ?? [];
     const m = new Map();
     list.forEach((x) => {
-      const name = x.ten ?? x.tenQuyenHan ?? x.ma ?? `Quyền ${x.id}`;
+      const rawName = x.ten ?? x.tenQuyenHan ?? x.ma ?? `Quyền ${x.id}`;
+      const name = mapTenQuyenHan(rawName);
       m.set(Number(x.id), name);
     });
     roleMap.value = m;
@@ -387,6 +245,8 @@ const isPage = computed(() => {
   );
 });
 
+const sortNewestFirst = (arr) => (arr || []).slice().sort((a, b) => (b?.id ?? 0) - (a?.id ?? 0));
+
 const applyStatusFilter = () => {
   const source = Array.isArray(nhanVienOrigin.value) ? nhanVienOrigin.value : (nhanVienOrigin.value ?? []);
   if (!filters.value.status) {
@@ -400,15 +260,10 @@ const applyStatusFilter = () => {
 const applyRoleFilter = () => {
   const source = Array.isArray(nhanVienList.value) ? nhanVienList.value : [];
   if (!filters.value.roleId) return;
-<<<<<<< HEAD
 
-=======
->>>>>>> 02bb122 (init update new UI)
   const roleId = Number(filters.value.roleId);
   nhanVienList.value = source.filter((item) => Number(item.idQuyenHan) === roleId);
 };
-
-const sortNewestFirst = (arr) => (arr || []).slice().sort((a, b) => (b?.id ?? 0) - (a?.id ?? 0));
 
 const handleFilter = async () => {
   try {
@@ -431,30 +286,8 @@ const handleFilter = async () => {
 };
 
 const resetFilters = async () => {
-<<<<<<< HEAD
-  filters.value = {
-    keyword: "",
-    status: "",
-    roleId: "",
-  };
-
-  pageNo.value = 0;
-  await handleFilter();
-};
-
-const changePage = async (page) => {
-  if (page < 0 || page >= totalPages.value) return;
-  pageNo.value = page;
-  await handleFilter();
-};
-
-const prevPage = async () => {
-  if (pageNo.value === 0) return;
-  pageNo.value--;
-=======
   filters.value = { keyword: "", status: "", roleId: "" };
   pageNo.value = 0;
->>>>>>> 02bb122 (init update new UI)
   await handleFilter();
 };
 
@@ -472,20 +305,9 @@ const visiblePages = computed(() => {
   let start = Math.max(current - 2, 0);
   let end = Math.min(start + 4, max - 1);
 
-<<<<<<< HEAD
-  if (end - start < 4) {
-    start = Math.max(end - 4, 0);
-  }
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
-
-=======
   if (end - start < 4) start = Math.max(end - 4, 0);
 
   for (let i = start; i <= end; i++) pages.push(i);
->>>>>>> 02bb122 (init update new UI)
   return pages;
 });
 
@@ -512,13 +334,7 @@ const initials = (name) => {
 
 const toggleStatus = async (item) => {
   try {
-<<<<<<< HEAD
-    await updateNhanVien(item.id, {
-      trangThai: item.trangThai,
-    });
-=======
     await updateNhanVien(item.id, { trangThai: item.trangThai });
->>>>>>> 02bb122 (init update new UI)
   } catch (e) {
     console.log(e);
     alert("Không thể cập nhật trạng thái");
@@ -529,30 +345,15 @@ const toggleStatus = async (item) => {
 const exportExcel = async () => {
   try {
     let allData = [];
-<<<<<<< HEAD
-    if (filters.value.keyword.trim()) {
-      allData = await searchNhanVien(filters.value.keyword.trim());
-    } else {
-      allData = await getAllNhanVien();
-    }
-
-    let filteredData = allData;
-    if (filters.value.status) {
-      const isActive = filters.value.status === "active";
-      filteredData = allData.filter((item) => Boolean(item.trangThai) === isActive);
-=======
     if (filters.value.keyword.trim()) allData = await searchNhanVien(filters.value.keyword.trim());
     else allData = await getAllNhanVien();
 
-    // normalize array/content
     const base = Array.isArray(allData) ? allData : (allData?.content ?? []);
-
     let filteredData = base;
 
     if (filters.value.status) {
       const isActive = filters.value.status === "active";
       filteredData = filteredData.filter((item) => Boolean(item.trangThai) === isActive);
->>>>>>> 02bb122 (init update new UI)
     }
 
     if (filters.value.roleId) {
@@ -563,25 +364,14 @@ const exportExcel = async () => {
     const sortedData = sortNewestFirst(filteredData);
 
     const dataToExport = sortedData.map((item, index) => ({
-<<<<<<< HEAD
-      'STT': index + 1,
-      'Mã nhân viên': item.maNhanVien ?? "---",
-      'Họ và tên': item.tenNhanVien ?? "---",
-      'SĐT': item.soDienThoai ?? "---",
-      'Email': item.email ?? "---",
-      'Địa chỉ': buildDiaChi(item),
-      'Quyền hạn': getRoleName(item.idQuyenHan),
-      'Trạng thái': item.trangThai ? "Hoạt động" : "Ngừng hoạt động",
-=======
       STT: index + 1,
       "Mã nhân viên": item.maNhanVien ?? "---",
       "Họ và tên": item.tenNhanVien ?? "---",
       "SĐT": item.soDienThoai ?? "---",
-      "Email": item.email ?? "---",
+      Email: item.email ?? "---",
       "Địa chỉ": buildDiaChi(item),
       "Quyền hạn": getRoleName(item.idQuyenHan),
       "Trạng thái": item.trangThai ? "Hoạt động" : "Ngừng hoạt động",
->>>>>>> 02bb122 (init update new UI)
     }));
 
     if (dataToExport.length === 0) {
@@ -593,12 +383,6 @@ const exportExcel = async () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Danh sách nhân viên");
 
-<<<<<<< HEAD
-    worksheet['!cols'] = [ {wch:5}, {wch:15}, {wch:25}, {wch:15}, {wch:30}, {wch:50}, {wch:15}, {wch:20} ];
-
-    XLSX.writeFile(workbook, "DanhSachNhanVien.xlsx");
-
-=======
     worksheet["!cols"] = [
       { wch: 5 },
       { wch: 15 },
@@ -611,7 +395,6 @@ const exportExcel = async () => {
     ];
 
     XLSX.writeFile(workbook, "DanhSachNhanVien.xlsx");
->>>>>>> 02bb122 (init update new UI)
   } catch (error) {
     console.error("Lỗi khi xuất Excel:", error);
     alert("Đã xảy ra lỗi khi xuất file Excel.");
@@ -644,37 +427,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-<<<<<<< HEAD
-.taikhoan-nhanvien-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin: 20px;
-}
-
-.panel {
-  font-family: var(--admin-font);
-  color: var(--ss-text);
-  background: #fff;
-  border-radius: 18px;
-  padding: 24px;
-  border: 1px solid var(--ss-border);
-  box-shadow: var(--ss-shadow-soft);
-}
-
-.page-title {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 30px;
-  margin-top: 10px;
-  color: rgba(17, 24, 39, 0.92);
-}
-
-.text-center { text-align: center; }
-.text-gray { color: var(--ss-text-muted); }
-.text-dark { color: rgba(17,24,39,0.88); }
-.fw-700 { font-weight: 600; }
-=======
 /* ===== SevenStrike default wrapper ===== */
 .ss-page { padding: 16px; }
 .ss-font { font-family: inherit; color: rgba(17,24,39,0.82); }
@@ -706,7 +458,6 @@ onMounted(async () => {
   border: 1px solid rgba(255,77,79,0.18);
   box-shadow: 0 18px 50px rgba(17,24,39,0.08);
 }
->>>>>>> 02bb122 (init update new UI)
 
 /* ===== Toolbar ===== */
 .toolbar {
@@ -720,135 +471,16 @@ onMounted(async () => {
 .toolbar-left, .toolbar-right { display: flex; align-items: center; }
 .toolbar-right { gap: 10px; }
 
-<<<<<<< HEAD
-/* Button */
-.btn { height: 34px; padding: 0 14px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s; }
-.btn:hover { opacity: 0.96; }
-
-.btn-newaccount{
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 10px;
-  color:#fff;
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
-  box-shadow: 0 10px 18px rgba(255,77,79,0.16);
-}
-.btn-newaccount i { font-size: 12px; }
-
-.btn-export {
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 10px;
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #107c41;
-  box-shadow: 0 4px 12px rgba(16, 124, 65, 0.2);
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
-  transition: all 0.2s;
-}
-.btn-export:hover {
-  background: #0e6b38;
-}
-.btn-export i { font-size: 12px; }
-
-.btn-reset {
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 10px;
-  background: #e5e7eb;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: 0.2s;
-}
-
-.btn-reset:hover {
-  background: #d1d5db;
-}
-
-.filter-pill{
-  height: 38px;
-  min-width: 150px;
-}
-
-.filters-bar {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
-.filter-group{
-  display:flex; align-items:center; gap:10px;
-  font-size:14px; color: rgba(17,24,39,0.78); font-weight:600;
-  white-space:nowrap;
-}
-
-.filter-pill{
-  height: 38px;
-  min-width: 150px;
-}
-
-
-/* Badge */
-.badge{
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 700;
-  white-space: nowrap;
-=======
 /* ✅ Material icon trong button (đồng bộ trang Khách hàng) */
 .btn-mi {
   font-size: 18px;
   line-height: 1;
->>>>>>> 02bb122 (init update new UI)
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: currentColor;
 }
 
-<<<<<<< HEAD
-/* Table */
-.table-wrapper {
-  overflow-x: auto;
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 10px 30px rgba(17,24,39,0.06);
-  border: 1px solid rgba(17,24,39,0.08);
-}
-
-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-
-th:first-child {
-  border-top-left-radius: 16px;
-}
-
-th:last-child {
-  border-top-right-radius: 16px;
-}
-
-
-th{
-  padding: 16px;
-  background:#F9FAFB;
-  font-size: 13.5px;
-  font-weight: 600;
-  text-align:left;
-=======
 /* ===== Buttons (13px, không in đậm) ===== */
 .btn, .btn-export, .btn-newaccount {
   height: 36px;
@@ -856,7 +488,6 @@ th{
   border-radius: 10px;
   border: 1px solid rgba(17,24,39,0.14);
   background: #fff;
->>>>>>> 02bb122 (init update new UI)
   color: rgba(17,24,39,0.88);
   font-size: 13px;
   font-weight: 400;
@@ -914,7 +545,6 @@ th{
   gap: 8px;
   white-space: nowrap;
 }
-
 .filter-group label{
   white-space: nowrap;
   margin: 0;
@@ -924,7 +554,6 @@ th{
   color: rgba(17,24,39,0.82);
   flex: 0 0 auto;
 }
-
 .filter-pill{
   height: 36px;
   min-width: 160px;
@@ -962,7 +591,6 @@ th{
   background: #fff;
   border: 1px solid rgba(17,24,39,0.08);
 }
-
 .ss-table { width: 100%; border-collapse: separate; border-spacing: 0; }
 .ss-table thead th{
   padding: 14px 16px;
@@ -1005,12 +633,8 @@ th{
   display:flex; align-items:center; justify-content:center;
   background: rgba(17,24,39,0.04);
   color: rgba(17,24,39,0.78);
-<<<<<<< HEAD
-  font-weight: 700;
-=======
   font-weight: 500;
   font-size: 13px;
->>>>>>> 02bb122 (init update new UI)
 }
 
 /* ===== Badge (nhẹ) ===== */
@@ -1059,54 +683,13 @@ th{
   align-items:center;
   justify-content:center;
   cursor:pointer;
-<<<<<<< HEAD
-  transition: 0.2s;
-  font-size: 14px;
-  font-weight: 500;
-=======
   transition: 0.15s ease;
   font-size: 13px;
   font-weight: 400;
->>>>>>> 02bb122 (init update new UI)
 }
 .page-btn:hover:not(.disabled){ background: rgba(17,24,39,0.04); }
 .page-btn.active{ background:#111827; color:#fff; border-color:#111827; }
-<<<<<<< HEAD
-.page-btn.disabled{ color:#D1D5DB; background:#F9FAFB; }
-
-/* Search */
-.search-wrapper { 
-  position: relative; 
-  display:flex; 
-  align-items:center; 
-}
-
-.search-icon { 
-  position:absolute; 
-  left:12px; color:#9CA3AF; 
-  font-size: 14px; 
-  pointer-events:none; 
-}
-
-.search-input{
-  height: 40px;
-  padding: 0 16px 0 36px;
-  border-radius: 10px;
-  border: 1px solid #E5E7EB;
-  outline: none;
-  min-width: 465px;
-  color: rgba(17,24,39,0.78);
-  font-size: 14px;
-  background:#F9FAFB;
-}
-.search-input:focus{
-  border-color: rgba(255,77,79,0.65);
-  background:#fff;
-  box-shadow: 0 0 0 3px rgba(255,77,79,0.10);
-}
-=======
 .page-btn.disabled{ color: rgba(17,24,39,0.25); background:#F9FAFB; cursor:not-allowed; }
->>>>>>> 02bb122 (init update new UI)
 
 /* ✅ Eye icon unified (SevenStrike) */
 .ss-icon-btn-view{
@@ -1130,54 +713,7 @@ th{
   border-color: rgba(17,24,39,0.22);
 }
 
-<<<<<<< HEAD
-
 /* ===== switch ===== */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 22px;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  inset: 0;
-  background-color: #e5e7eb;
-  border-radius: 20px;
-  transition: .3s;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 2px;
-  bottom: 2px;
-  background-color: white;
-  border-radius: 50%;
-  transition: .3s;
-}
-
-.switch input:checked + .slider {
-  background-color: #22c55e;
-}
-
-.switch input:checked + .slider:before {
-  transform: translateX(18px);
-}
-
-=======
-/* ===== switch ===== */
->>>>>>> 02bb122 (init update new UI)
 .action-group{
   display: inline-flex;
   align-items: center;
@@ -1185,17 +721,6 @@ th{
 }
 
 .switch {
-<<<<<<< HEAD
-  width: 32px;
-  height: 18px;
-}
-
-.slider {
-  border-radius: 18px;
-}
-
-.slider:before {
-=======
   position: relative;
   display: inline-block;
   width: 32px;
@@ -1214,19 +739,10 @@ th{
 .slider:before {
   position: absolute;
   content: "";
->>>>>>> 02bb122 (init update new UI)
   height: 14px;
   width: 14px;
   left: 2px;
   bottom: 2px;
-<<<<<<< HEAD
-}
-
-.switch input:checked + .slider:before {
-  transform: translateX(14px);
-}
-
-=======
   background-color: #fff;
   border-radius: 50%;
   transition: .3s;
@@ -1240,5 +756,4 @@ th{
   .search-input{ min-width: 260px; width: 100%; }
   .filters-bar{ gap: 10px; }
 }
->>>>>>> 02bb122 (init update new UI)
 </style>

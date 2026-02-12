@@ -1,6 +1,6 @@
+<!-- File: src/pages/thong_ke/ThongKePage.vue -->
 <template>
   <div class="thong-ke-page container-fluid p-4">
-
     <h4 class="title mb-4">Bộ Lọc Thống Kê</h4>
 
     <!-- Filter Bar -->
@@ -11,11 +11,17 @@
         </div>
 
         <div class="col-md-6 text-end">
-          <input type="date" class="form-control d-inline w-auto me-2" />
-          <select class="form-select d-inline w-auto me-2">
-            <option>Tháng này</option>
-            <option>Tuần này</option>
-            <option>Hôm nay</option>
+          <input
+            type="date"
+            class="form-control d-inline w-auto me-2"
+            v-model="selectedDate"
+          />
+
+          <select class="form-select d-inline w-auto me-2" v-model="filterType">
+            <option value="MONTH">Tháng này</option>
+            <option value="WEEK">Tuần này</option>
+            <option value="TODAY">Hôm nay</option>
+            <option value="CUSTOM">Tùy chọn</option>
           </select>
 
           <button class="btn btn-outline-success me-2">Đường</button>
@@ -30,33 +36,44 @@
         <div class="col-md-4">
           <div class="stat-box">
             <div class="stat-title">Số đơn hàng</div>
-            <div class="stat-value">0</div>
+            <div class="stat-value">{{ totalOrders }}</div>
           </div>
         </div>
 
         <div class="col-md-4">
           <div class="stat-box">
             <div class="stat-title">Tổng doanh thu</div>
-            <div class="stat-value text-success">0 đ</div>
+            <div class="stat-value text-success">
+              {{ formatMoney(totalRevenue) }}
+            </div>
           </div>
         </div>
 
         <div class="col-md-4">
           <div class="stat-box">
             <div class="stat-title">Doanh thu thực tế</div>
-            <div class="stat-value text-primary">0 đ</div>
+            <div class="stat-value text-primary">
+              {{ formatMoney(realRevenue) }}
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 4 Cards -->
+    <!-- 4 Cards Dynamic -->
     <div class="row mb-4">
-      <div class="col-md-3" v-for="i in 4" :key="i">
+      <div class="col-md-3" v-for="(card, index) in miniCards" :key="index">
         <div class="card p-3 mini-card">
-          <div class="mini-title">Hôm nay</div>
-          <div class="mini-value">0 đ</div>
-          <div class="mini-desc">Sản phẩm: 0 | Đơn hàng: 0</div>
+          <div class="mini-title">{{ card.label }}</div>
+
+          <div class="mini-value">
+            {{ formatMoney(card.revenue) }}
+          </div>
+
+          <div class="mini-desc">
+            Sản phẩm: {{ card.totalProducts }} | Đơn hàng:
+            {{ card.totalOrders }}
+          </div>
         </div>
       </div>
     </div>
@@ -67,8 +84,8 @@
         <div class="card p-3 chart-card">
           <h6>Biểu đồ doanh thu</h6>
 
-          <div class="chart-placeholder">
-            <span>CHART DOANH THU (chỉ giao diện)</span>
+          <div style="height: 300px">
+            <RevenueChart :chart="revenueChart" />
           </div>
         </div>
       </div>
@@ -77,8 +94,8 @@
         <div class="card p-3 chart-card">
           <h6>Phân bố trạng thái đơn hàng</h6>
 
-          <div class="chart-placeholder">
-            <span>CHART TRẠNG THÁI</span>
+          <div style="height: 300px">
+            <OrderStatusChart :statusData="orderStatus" />
           </div>
         </div>
       </div>
@@ -102,12 +119,18 @@
             </thead>
 
             <tbody>
-              <tr v-for="i in 4" :key="i">
-                <td>Hôm nay</td>
-                <td>0 đ</td>
-                <td>0</td>
-                <td>0 đ</td>
-                <td class="text-success">0%</td>
+              <tr v-for="(item, index) in detailTable" :key="index">
+                <td>{{ item.time }}</td>
+
+                <td>{{ formatMoney(item.revenue) }}</td>
+
+                <td>{{ item.totalOrders }}</td>
+
+                <td>{{ formatMoney(item.avgPerOrder) }}</td>
+
+                <td :class="item.growth >= 0 ? 'text-success' : 'text-danger'">
+                  {{ item.growth.toFixed(2) }}%
+                </td>
               </tr>
             </tbody>
           </table>
@@ -128,22 +151,154 @@
             </thead>
 
             <tbody>
-              <tr v-for="i in 5" :key="i">
-                <td>{{ i }}</td>
-                <td>Sản phẩm {{ i }}</td>
-                <td>0</td>
+              <tr v-for="(item, index) in topProducts" :key="index">
+                <td>{{ index + 1 }}</td>
+                <td>{{ item.productName }}</td>
+                <td>{{ item.quantity }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup>
-// Tạm thời chỉ hiển thị giao diện
+import { ref, onMounted, watch } from "vue";
+import axios from "axios";
+import RevenueChart from "./RevenueChart.vue";
+import OrderStatusChart from "./OrderStatusChart.vue";
+
+const totalOrders = ref(0);
+const totalRevenue = ref(0);
+const realRevenue = ref(0);
+
+const revenueChart = ref([]);
+const orderStatus = ref([]);
+const topProducts = ref([]);
+
+const miniCards = ref([]);
+
+const detailTable = ref([]);
+
+const selectedDate = ref("");
+const filterType = ref("MONTH");
+
+const formatMoney = (money) => {
+  if (!money) return "0 đ";
+  return new Intl.NumberFormat("vi-VN").format(money) + " đ";
+};
+
+const getDateRange = () => {
+  let from = "";
+  let to = "";
+
+  const today = new Date();
+
+  if (filterType.value === "TODAY") {
+    from = to = today.toISOString().split("T")[0];
+  } else if (filterType.value === "WEEK") {
+    const current = new Date();
+
+    const first = current.getDate() - current.getDay() + 1;
+    const last = first + 6;
+
+    const startWeek = new Date(current);
+    startWeek.setDate(first);
+
+    const endWeek = new Date(current);
+    endWeek.setDate(last);
+
+    from = startWeek.toISOString().split("T")[0];
+    to = endWeek.toISOString().split("T")[0];
+  } else {
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    from = firstDay.toISOString().split("T")[0];
+    to = lastDay.toISOString().split("T")[0];
+  }
+
+  if (selectedDate.value) {
+    from = to = selectedDate.value;
+  }
+
+  return { from, to };
+};
+
+const loadStatistics = async () => {
+  try {
+    const { from, to } = getDateRange();
+
+    const params = { fromDate: from, toDate: to };
+
+    const [
+      ordersRes,
+      revenueRes,
+      realRevenueRes,
+      chartRes,
+      statusRes,
+      topProductRes,
+    ] = await Promise.all([
+      axios.get("http://localhost:8080/api/statistic/total-orders", { params }),
+      axios.get("http://localhost:8080/api/statistic/total-revenue", {
+        params,
+      }),
+      axios.get("http://localhost:8080/api/statistic/real-revenue", { params }),
+      axios.get("http://localhost:8080/api/statistic/revenue-chart", {
+        params,
+      }),
+      axios.get("http://localhost:8080/api/statistic/order-status", { params }),
+      axios.get("http://localhost:8080/api/statistic/top-products", { params }),
+    ]);
+
+    totalOrders.value = ordersRes.data;
+    totalRevenue.value = revenueRes.data;
+    realRevenue.value = realRevenueRes.data;
+
+    revenueChart.value = chartRes.data;
+    orderStatus.value = statusRes.data;
+    topProducts.value = topProductRes.data;
+
+    // load riêng mini cards
+    try {
+      // load bảng chi tiết
+      const detailRes = await axios.get(
+        "http://localhost:8080/api/statistic/detail-table",
+      );
+
+      detailTable.value = detailRes.data;
+
+      // load mini cards
+      const miniCardRes = await axios.get(
+        "http://localhost:8080/api/statistic/mini-cards",
+      );
+
+      miniCards.value = miniCardRes.data;
+    } catch (e) {
+      console.warn("Mini cards API chưa sẵn sàng:", e);
+
+      // fallback hiển thị tạm
+      miniCards.value = [
+        { label: "Hôm nay", revenue: 0, totalProducts: 0, totalOrders: 0 },
+        { label: "Tuần này", revenue: 0, totalProducts: 0, totalOrders: 0 },
+        { label: "Tháng này", revenue: 0, totalProducts: 0, totalOrders: 0 },
+        { label: "Năm này", revenue: 0, totalProducts: 0, totalOrders: 0 },
+      ];
+    }
+  } catch (error) {
+    console.error("Lỗi load thống kê:", error);
+  }
+};
+
+watch([selectedDate, filterType], () => {
+  loadStatistics();
+});
+
+onMounted(() => {
+  loadStatistics();
+});
 </script>
 
 <style scoped>

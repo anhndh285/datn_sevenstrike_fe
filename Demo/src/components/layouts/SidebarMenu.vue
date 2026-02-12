@@ -1,3 +1,4 @@
+<!-- File: src/components/layouts/SidebarMenu.vue -->
 <template>
   <aside
     class="sidebar bg-white border-end d-flex flex-column position-fixed h-100 ss-sidebar"
