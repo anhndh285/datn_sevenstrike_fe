@@ -1,6 +1,7 @@
+<!-- File: src/pages/khuyen_mai/dot_giam_gia/DiscountPage.vue -->
 <template>
   <div class="discount-page">
-    <h2 class="page-title">QUẢN LÝ ĐỢT GIẢM GIÁ</h2>
+    <h2 class="page-title">Quản lý giảm giá/ Đợt giảm giá</h2>
 
     <div class="card filter-section">
       <div class="filter-header">
@@ -106,28 +107,17 @@
               <td>{{ item.tenDotGiamGia }}</td>
 
               <td class="text-center highlight-text">
-                {{
-                  item.loaiGiamGia
-                    ? formatCurrency(item.giaTriGiamGia)
-                    : item.giaTriGiamGia + "%"
-                }}
+                {{ item.giaTriGiamGia + "%" }}
               </td>
 
               <td class="text-center">
-                <!-- ✅ đổi tag theo palette đỏ/đen -->
-                <span
-                  class="ss-tag"
-                  :class="item.loaiGiamGia ? 'ss-tag-money' : 'ss-tag-percent'"
-                >
-                  {{ item.loaiGiamGia ? "VND" : "%" }}
-                </span>
+                <span class="ss-tag ss-tag-percent">%</span>
               </td>
 
               <td class="text-center">{{ formatDate(item.ngayBatDau) }}</td>
               <td class="text-center">{{ formatDate(item.ngayKetThuc) }}</td>
 
               <td class="text-center">
-                <!-- ✅ badge theo palette chủ đạo -->
                 <span class="ss-badge" :class="item.statusClass">
                   {{ item.statusText }}
                 </span>
@@ -135,9 +125,8 @@
 
               <td class="text-center action-cell">
                 <div class="d-flex align-items-center justify-content-center gap-2">
-                  <!-- Quick Status Toggle -->
-                  <div 
-                    class="form-check form-switch mb-0" 
+                  <div
+                    class="form-check form-switch mb-0"
                     title="Dừng đợt giảm giá"
                     v-if="item.statusKey !== 'ended'"
                   >
@@ -149,6 +138,7 @@
                       style="cursor: pointer;"
                     />
                   </div>
+
                   <button
                     class="ss-icon-btn-view"
                     type="button"
@@ -191,6 +181,7 @@
 import { ref, reactive, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { discountService } from "@/services/khuyen_mai/dot_giam_gia/discountService";
+import { sortDotGiamGia } from "@/services/khuyen_mai/dot_giam_gia/dotGiamGiaSort";
 
 const router = useRouter();
 const rawDiscounts = ref([]);
@@ -204,13 +195,6 @@ const filters = reactive({
 
 const currentPage = ref(1);
 const itemsPerPage = 5;
-
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(value ?? 0);
-};
 
 const parseDateAny = (input) => {
   if (!input) return null;
@@ -282,7 +266,7 @@ const fetchDiscounts = async () => {
 };
 
 const filteredList = computed(() => {
-  return rawDiscounts.value.filter((item) => {
+  const filtered = rawDiscounts.value.filter((item) => {
     const kw = (filters.keyword || "").toLowerCase().trim();
 
     const keywordMatch =
@@ -303,6 +287,9 @@ const filteredList = computed(() => {
 
     return keywordMatch && startMatch && endMatch && statusMatch;
   });
+
+  // ✅ SORT theo rule mới (ưu tiên trong cùng khoảng thời gian)
+  return sortDotGiamGia(filtered);
 });
 
 const totalPages = computed(() =>
@@ -346,28 +333,27 @@ const viewDetail = (id) => {
 const toggleStatus = async (item) => {
   const newStatus = !item.trangThai;
   const action = newStatus ? "kích hoạt" : "ngừng kích hoạt";
-  
+
   if (!confirm(`Bạn có chắc muốn ${action} đợt giảm giá "${item.tenDotGiamGia}"?`)) {
     return;
   }
 
   try {
-    // 1. Lấy thông tin chi tiết đầy đủ (để giữ nguyên danh sách sản phẩm)
     const [fullInfo, details] = await Promise.all([
       discountService.getOne(item.id),
-      discountService.getDiscountDetails(item.id)
+      discountService.getDiscountDetails(item.id),
     ]);
 
-    // 2. Tạo payload cập nhật
     const payload = {
       ...fullInfo,
       trangThai: newStatus,
-      idChiTietSanPhams: (details || []).map(d => d.idChiTietSanPham || d.id_chi_tiet_san_pham).filter(id => id)
+      idChiTietSanPhams: (details || [])
+        .map((d) => d.idChiTietSanPham || d.id_chi_tiet_san_pham)
+        .filter((id) => id),
     };
 
-    // 3. Gọi API update
     await discountService.update(item.id, payload);
-    await fetchDiscounts(); // Reload list
+    await fetchDiscounts();
   } catch (e) {
     console.error(e);
     alert("Lỗi cập nhật trạng thái: " + (e.response?.data?.message || e.message));
@@ -424,7 +410,6 @@ onMounted(() => {
   align-items: end;
 }
 
-/* Responsive Grid */
 @media (max-width: 1200px) {
   .filter-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -529,7 +514,7 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(17, 24, 39, 0.15);
   border: none;
 }
-.btn-filter.search:hover { 
+.btn-filter.search:hover {
   background: #000;
   transform: translateY(-1px);
 }
@@ -546,15 +531,6 @@ onMounted(() => {
   font-size: 16px;
   font-weight: 600;
   color: rgba(17, 24, 39, 0.92);
-}
-
-.count-badge {
-  background: rgba(17, 24, 39, 0.06);
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 500;
-  color: rgba(17, 24, 39, 0.70);
 }
 
 .btn-add {
@@ -603,7 +579,6 @@ onMounted(() => {
   color: rgba(17, 24, 39, 0.82);
 }
 
-/* ✅ Tag loại giảm (palette đỏ/đen) */
 .ss-tag {
   display: inline-flex;
   align-items: center;
@@ -616,23 +591,14 @@ onMounted(() => {
   letter-spacing: 0.2px;
   border: 1px solid transparent;
 }
-.ss-tag-money {
-  background: rgba(255, 77, 79, 0.10);
-  color: #b42324;
-  border-color: rgba(255, 77, 79, 0.28);
-}
 .ss-tag-percent {
   background: rgba(17, 24, 39, 0.06);
   color: rgba(17, 24, 39, 0.88);
   border-color: rgba(17, 24, 39, 0.14);
 }
 
-.highlight-text {
-  font-weight: 400;
-  color: rgba(17, 24, 39, 0.92);
-}
+.highlight-text { font-weight: 400; color: rgba(17, 24, 39, 0.92); }
 
-/* ✅ Badge trạng thái (palette chủ đạo, vừa mắt) */
 .ss-badge {
   display: inline-flex;
   align-items: center;
@@ -647,21 +613,16 @@ onMounted(() => {
   letter-spacing: 0.1px;
 }
 
-/* Đang diễn ra: đỏ dịu */
 .status-active {
   background: rgba(255, 77, 79, 0.10);
   color: #b42324;
   border-color: rgba(255, 77, 79, 0.28);
 }
-
-/* Sắp diễn ra: nền trắng + viền đỏ (nhẹ, chủ đạo) */
 .status-upcoming {
   background: #fff;
   color: rgba(17, 24, 39, 0.86);
   border-color: rgba(255, 77, 79, 0.28);
 }
-
-/* Đã kết thúc: tone đen dịu */
 .status-ended {
   background: rgba(17, 24, 39, 0.06);
   color: rgba(17, 24, 39, 0.72);
@@ -676,7 +637,6 @@ onMounted(() => {
 .empty-row img { margin-bottom: 10px; opacity: 0.5; }
 
 .text-center { text-align: center; }
-.text-right { text-align: right; }
 .action-cell { white-space: nowrap; }
 
 .pagination {
@@ -712,7 +672,6 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-/* Custom Switch Color */
 .form-check-input:checked {
   background-color: #ff4d4f;
   border-color: #ff4d4f;

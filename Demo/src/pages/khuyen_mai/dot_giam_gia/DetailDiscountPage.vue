@@ -1,3 +1,4 @@
+<!-- File: src/pages/khuyen_mai/dot_giam_gia/DetailDiscountPage.vue -->
 <template>
   <div class="discount-page">
     <div class="header-section">
@@ -6,7 +7,6 @@
         <span class="title-light">CHI TIẾT & CẬP NHẬT</span>
       </h2>
 
-      <!-- ✅ Back hoạt động chắc chắn -->
       <button class="btn-back" type="button" @click="goBack">
         <i class="fa-solid fa-arrow-left"></i> Quay lại
       </button>
@@ -41,20 +41,38 @@
             />
           </div>
 
-          <div class="form-group">
-            <label class="label">Giá trị giảm (%):</label>
-            <div class="input-group-percent">
-              <input
-                v-model.number="formData.giaTriGiamGia"
-                type="number"
-                class="form-control"
-                placeholder="Mời nhập giảm theo %"
-                min="1"
-                max="100"
-                :disabled="isEnded"
-              />
-              <span class="input-suffix">%</span>
+          <div class="form-group row-group">
+            <label class="label" style="min-width: 120px">Loại giảm giá:</label>
+            <div class="radio-group">
+              <div class="d-flex align-items-center gap-2">
+                <input type="radio" :value="false" v-model="formData.loaiGiamGia" checked disabled />
+                <span class="font-weight-normal">% Phần trăm</span>
+              </div>
             </div>
+          </div>
+
+          <div class="form-group">
+            <label class="label">Giá trị giảm:</label>
+            <input
+              v-model.number="formData.giaTriGiamGia"
+              type="number"
+              class="form-control"
+              placeholder="Nhập giá trị..."
+              :disabled="isEnded"
+            />
+          </div>
+
+          <!-- ✅ NEW: Mức ưu tiên -->
+          <div class="form-group">
+            <label class="label">Mức ưu tiên:</label>
+            <input
+              v-model.number="formData.mucUuTien"
+              type="number"
+              class="form-control"
+              placeholder="Nhập mức ưu tiên..."
+              :disabled="isEnded"
+              min="0"
+            />
           </div>
 
           <div class="form-group">
@@ -110,7 +128,6 @@
             </div>
           </div>
 
-          <!-- ✅ Source Filters (Bộ lọc cho danh sách sản phẩm) -->
           <div class="filter-grid mb-3">
             <select v-model="sourceFilters.brand" class="form-select-sm bg-white">
               <option value="">-- Thương hiệu --</option>
@@ -151,38 +168,34 @@
                 </tr>
 
                 <template v-for="group in paginatedParentProducts" :key="group.idSanPham">
-                  <!-- Parent Row -->
                   <tr class="parent-row">
                     <td class="text-center">
                       <button class="btn-expand" @click="toggleExpand(group.idSanPham)" type="button">
                         <i class="fa-solid" :class="expandedGroupIds.includes(group.idSanPham) ? 'fa-minus' : 'fa-plus'"></i>
                       </button>
                     </td>
-                  <td class="text-center">
-                    <input
-                      type="checkbox"
-                      class="custom-checkbox"
-                      :checked="isGroupSelected(group.idSanPham)"
-                      @change="
-                        handleParentCheck(group.idSanPham, $event.target.checked)
-                      "
-                      :disabled="isEnded"
-                    />
-                  </td>
+                    <td class="text-center">
+                      <input
+                        type="checkbox"
+                        class="custom-checkbox"
+                        :checked="isGroupSelected(group.idSanPham)"
+                        @change="handleParentCheck(group.idSanPham, $event.target.checked)"
+                        :disabled="isEnded"
+                      />
+                    </td>
                     <td class="text-center" @click="toggleExpand(group.idSanPham)" style="cursor: pointer">
                       <img :src="group.variants[0]?.anh || 'https://via.placeholder.com/40'" class="product-thumb" />
                     </td>
-                  <td class="text-center" @click="toggleExpand(group.idSanPham)" style="cursor: pointer">{{ group.maSanPham }}</td>
+                    <td class="text-center" @click="toggleExpand(group.idSanPham)" style="cursor: pointer">{{ group.maSanPham }}</td>
                     <td class="text-center" @click="toggleExpand(group.idSanPham)" style="cursor: pointer">
-                    {{ group.tenSanPham }}
-                  </td>
-                </tr>
+                      {{ group.tenSanPham }}
+                    </td>
+                  </tr>
 
-                  <!-- Child Rows -->
-                  <tr 
-                    v-if="expandedGroupIds.includes(group.idSanPham)" 
-                    v-for="v in group.variants" 
-                    :key="v.id" 
+                  <tr
+                    v-if="expandedGroupIds.includes(group.idSanPham)"
+                    v-for="v in group.variants"
+                    :key="v.id"
                     class="child-row"
                     @click="fillSourceFilters(v)"
                     style="cursor: pointer"
@@ -190,7 +203,14 @@
                   >
                     <td></td>
                     <td class="text-center" @click.stop>
-                      <input type="checkbox" class="custom-checkbox" :value="v.id" v-model="selectedVariantIds" :disabled="isEnded" @change="onSourceCheckboxChange" />
+                      <input
+                        type="checkbox"
+                        class="custom-checkbox"
+                        :value="v.id"
+                        v-model="selectedVariantIds"
+                        :disabled="isEnded"
+                        @change="onSourceCheckboxChange"
+                      />
                     </td>
                     <td class="text-center">
                       <img :src="v.anh || 'https://via.placeholder.com/40'" class="product-thumb-sm" />
@@ -204,21 +224,11 @@
           </div>
 
           <div class="pagination" v-if="totalPages > 0">
-            <button
-              class="page-btn"
-              type="button"
-              @click="changePage(currentPage - 1)"
-              :disabled="currentPage === 1"
-            >
+            <button class="page-btn" type="button" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">
               <i class="fa-solid fa-chevron-left"></i>
             </button>
             <button class="page-btn active" type="button">{{ currentPage }}</button>
-            <button
-              class="page-btn"
-              type="button"
-              @click="changePage(currentPage + 1)"
-              :disabled="currentPage === totalPages"
-            >
+            <button class="page-btn" type="button" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">
               <i class="fa-solid fa-chevron-right"></i>
             </button>
           </div>
@@ -231,9 +241,7 @@
         <div class="detail-header">
           <h3 class="section-title">
             Danh sách chi tiết sản phẩm được áp dụng
-            <span v-if="selectedVariantIds.length" class="count-tag">
-              ({{ selectedVariantIds.length }})
-            </span>
+            <span v-if="selectedVariantIds.length" class="count-tag">({{ selectedVariantIds.length }})</span>
           </h3>
 
           <div class="d-flex align-items-center gap-2">
@@ -251,79 +259,32 @@
         <div class="filter-grid mb-3" v-if="selectedVariantIds.length > 0">
           <select v-model="detailFilters.brand" class="form-select-sm">
             <option value="">-- Thương hiệu --</option>
-            <option v-for="opt in filterOptions.brands" :key="opt" :value="opt">
-              {{ opt }}
-            </option>
+            <option v-for="opt in filterOptions.brands" :key="opt" :value="opt">{{ opt }}</option>
           </select>
 
           <select v-model="detailFilters.material" class="form-select-sm">
             <option value="">-- Chất liệu --</option>
-            <option
-              v-for="opt in filterOptions.materials"
-              :key="opt"
-              :value="opt"
-            >
-              {{ opt }}
-            </option>
+            <option v-for="opt in filterOptions.materials" :key="opt" :value="opt">{{ opt }}</option>
           </select>
 
           <select v-model="detailFilters.size" class="form-select-sm">
             <option value="">-- Kích cỡ --</option>
-            <option v-for="opt in filterOptions.sizes" :key="opt" :value="opt">
-              {{ opt }}
-            </option>
+            <option v-for="opt in filterOptions.sizes" :key="opt" :value="opt">{{ opt }}</option>
           </select>
 
           <select v-model="detailFilters.color" class="form-select-sm">
             <option value="">-- Màu sắc --</option>
-            <option v-for="opt in filterOptions.colors" :key="opt" :value="opt">
-              {{ opt }}
-            </option>
+            <option v-for="opt in filterOptions.colors" :key="opt" :value="opt">{{ opt }}</option>
           </select>
 
           <select v-model="detailFilters.sole" class="form-select-sm">
             <option value="">-- Loại sân --</option>
-            <option v-for="opt in filterOptions.soles" :key="opt" :value="opt">
-              {{ opt }}
-            </option>
+            <option v-for="opt in filterOptions.soles" :key="opt" :value="opt">{{ opt }}</option>
           </select>
 
-          <button
-            class="btn-clear-filter"
-            type="button"
-            @click="clearDetailFilters"
-            title="Xóa bộ lọc"
-          >
+          <button class="btn-clear-filter" type="button" @click="clearDetailFilters" title="Xóa bộ lọc">
             <i class="fa-solid fa-filter-circle-xmark"></i>
           </button>
-        </div>
-
-        <!-- Price Range Slider -->
-        <div class="price-range-filter mb-3" v-if="selectedVariantIds.length > 0">
-          <label class="label">Khoảng giá: {{ formatCurrency(priceRange.min) }} - {{ formatCurrency(priceRange.max) }}</label>
-          <div class="range-slider-wrapper">
-            <div class="range-track">
-              <div class="range-fill" :style="rangeFillStyle"></div>
-            </div>
-            <input
-              type="range"
-              class="range-input range-min"
-              :min="priceRangeBounds.min"
-              :max="priceRangeBounds.max"
-              :step="priceRangeStep"
-              :value="priceRange.min"
-              @input="onMinRangeInput"
-            />
-            <input
-              type="range"
-              class="range-input range-max"
-              :min="priceRangeBounds.min"
-              :max="priceRangeBounds.max"
-              :step="priceRangeStep"
-              :value="priceRange.max"
-              @input="onMaxRangeInput"
-            />
-          </div>
         </div>
 
         <div class="table-responsive">
@@ -384,17 +345,11 @@
                   {{ (currentDetailPage - 1) * detailItemsPerPage + index + 1 }}
                 </td>
                 <td class="text-center">
-                  <div class="img-badge-wrapper">
-                    <img :src="item.anh || 'https://via.placeholder.com/40'" class="product-thumb-sm" />
-                    <span v-if="formData.giaTriGiamGia" class="discount-badge-img">-{{ formData.giaTriGiamGia }}%</span>
-                  </div>
+                  <img :src="item.anh || 'https://via.placeholder.com/40'" class="product-thumb-sm" />
                 </td>
-                <td class="text-primary">
-                  {{ item.maChiTietSanPham }}
-                </td>
-                <td class="text-wrap-name text-center">
-                  {{ item.tenSanPham }}
-                </td>
+                <td class="text-primary">{{ item.maChiTietSanPham }}</td>
+                <td class="text-wrap-name text-center">{{ item.tenSanPham }}</td>
+
                 <td class="text-center">
                   <div v-if="getProductDisplay(item).hasDiscount">
                     <div class="old-price">
@@ -411,17 +366,13 @@
                     {{ formatCurrency(item.giaNiemYet) }}
                   </div>
                 </td>
+
                 <td class="text-center">{{ item.tenThuongHieu }}</td>
                 <td class="text-center">{{ item.soLuong }}</td>
                 <td class="text-center">{{ item.tenChatLieu }}</td>
+                <td class="text-center">{{ item.tenKichThuoc }}</td>
                 <td class="text-center">
-                  {{ item.tenKichThuoc }}
-                </td>
-                <td class="text-center">
-                  <span
-                    class="color-dot"
-                    :style="{ backgroundColor: mapColor(item.tenMauSac) }"
-                  ></span>
+                  <span class="color-dot" :style="{ backgroundColor: mapColor(item.tenMauSac) }"></span>
                   {{ item.tenMauSac }}
                 </td>
                 <td class="text-center">{{ item.tenLoaiSan }}</td>
@@ -431,21 +382,11 @@
         </div>
 
         <div class="pagination" v-if="totalDetailPages > 0">
-          <button
-            class="page-btn"
-            type="button"
-            @click="changeDetailPage(currentDetailPage - 1)"
-            :disabled="currentDetailPage === 1"
-          >
+          <button class="page-btn" type="button" @click="changeDetailPage(currentDetailPage - 1)" :disabled="currentDetailPage === 1">
             <i class="fa-solid fa-chevron-left"></i>
           </button>
           <button class="page-btn active" type="button">{{ currentDetailPage }}</button>
-          <button
-            class="page-btn"
-            type="button"
-            @click="changeDetailPage(currentDetailPage + 1)"
-            :disabled="currentDetailPage === totalDetailPages"
-          >
+          <button class="page-btn" type="button" @click="changeDetailPage(currentDetailPage + 1)" :disabled="currentDetailPage === totalDetailPages">
             <i class="fa-solid fa-chevron-right"></i>
           </button>
         </div>
@@ -458,12 +399,12 @@
 import { ref, reactive, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { discountService } from "@/services/khuyen_mai/dot_giam_gia/discountService.js";
+import { sortDotGiamGia } from "@/services/khuyen_mai/dot_giam_gia/dotGiamGiaSort";
 
 const route = useRoute();
 const router = useRouter();
 const discountId = route.params.id;
 
-/** ✅ FIX BACK: chắc chắn về đúng list */
 const goBack = async () => {
   try {
     await router.push({ name: "admin-discount" });
@@ -476,7 +417,6 @@ const goBack = async () => {
   }
 };
 
-// --- STATE ---
 const formData = reactive({
   maDotGiamGia: "",
   tenDotGiamGia: "",
@@ -484,6 +424,7 @@ const formData = reactive({
   giaTriGiamGia: null,
   ngayBatDau: "",
   ngayKetThuc: "",
+  mucUuTien: 0, // ✅ NEW
   trangThai: true,
 });
 
@@ -508,7 +449,6 @@ const detailFilters = reactive({
   sole: "",
 });
 
-// --- SOURCE FILTERS ---
 const sourceFilters = reactive({ brand: "", origin: "" });
 
 const sourceFilterOptions = computed(() => {
@@ -531,14 +471,11 @@ const fillSourceFilters = (item) => {
 };
 
 const onSourceCheckboxChange = (e) => {
-  if (!e.target.checked) {
-    clearSourceFilters();
-  }
+  if (!e.target.checked) clearSourceFilters();
 };
 
 const activeDiscountsMap = ref({});
 
-// --- COMPUTED ---
 const productGroups = computed(() => {
   const groups = {};
   rawVariants.value.forEach((v) => {
@@ -588,7 +525,6 @@ const paginatedParentProducts = computed(() => {
 });
 
 const isEnded = computed(() => {
-  // Nếu trạng thái là false (đã ngừng kích hoạt) thì coi như đã kết thúc -> Khóa sửa
   if (formData.trangThai === false) return true;
 
   if (!formData.ngayKetThuc) return false;
@@ -619,21 +555,11 @@ const filterOptions = computed(() => {
 const variantsDisplay = computed(() => {
   let list = allSelectedVariants.value;
 
-  if (detailFilters.brand)
-    list = list.filter((v) => v.tenThuongHieu === detailFilters.brand);
-  if (detailFilters.material)
-    list = list.filter((v) => v.tenChatLieu === detailFilters.material);
-  if (detailFilters.color)
-    list = list.filter((v) => v.tenMauSac === detailFilters.color);
-  if (detailFilters.size)
-    list = list.filter((v) => v.tenKichThuoc === detailFilters.size);
-  if (detailFilters.sole)
-    list = list.filter((v) => v.tenLoaiSan === detailFilters.sole);
-  // Price range filter
-  list = list.filter((v) => {
-    const price = v.giaNiemYet || 0;
-    return price >= priceRange.min && price <= priceRange.max;
-  });
+  if (detailFilters.brand) list = list.filter((v) => v.tenThuongHieu === detailFilters.brand);
+  if (detailFilters.material) list = list.filter((v) => v.tenChatLieu === detailFilters.material);
+  if (detailFilters.color) list = list.filter((v) => v.tenMauSac === detailFilters.color);
+  if (detailFilters.size) list = list.filter((v) => v.tenKichThuoc === detailFilters.size);
+  if (detailFilters.sole) list = list.filter((v) => v.tenLoaiSan === detailFilters.sole);
 
   return list;
 });
@@ -655,7 +581,6 @@ const isAllVariantsSelected = computed(() => {
   );
 });
 
-// --- WATCH ---
 const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) currentPage.value = page;
 };
@@ -694,12 +619,9 @@ const fillFilters = (item) => {
 };
 
 const onDetailCheckboxChange = (e) => {
-  if (!e.target.checked) {
-    clearDetailFilters();
-  }
+  if (!e.target.checked) clearDetailFilters();
 };
 
-// --- HELPERS ---
 const formatDateForInput = (dateInput) => {
   if (!dateInput) return "";
   if (Array.isArray(dateInput)) {
@@ -712,9 +634,7 @@ const formatDateForInput = (dateInput) => {
 };
 
 const parseDate = (input) => {
-  if (Array.isArray(input)) {
-    return new Date(input[0], input[1] - 1, input[2]);
-  }
+  if (Array.isArray(input)) return new Date(input[0], input[1] - 1, input[2]);
   return new Date(input);
 };
 
@@ -733,7 +653,6 @@ const toggleExpand = (groupId) => {
   }
 };
 
-// --- LOAD ---
 const loadData = async () => {
   isLoading.value = true;
   try {
@@ -749,6 +668,9 @@ const loadData = async () => {
       Object.assign(formData, discountInfo);
       formData.ngayBatDau = formatDateForInput(discountInfo.ngayBatDau);
       formData.ngayKetThuc = formatDateForInput(discountInfo.ngayKetThuc);
+      if (typeof discountInfo.mucUuTien !== "undefined" && discountInfo.mucUuTien !== null) {
+        formData.mucUuTien = discountInfo.mucUuTien;
+      }
     }
 
     const appliedDetails = await discountService.getDiscountDetails(discountId);
@@ -780,7 +702,11 @@ const loadData = async () => {
 
 const loadActiveDiscounts = async (allDiscounts) => {
   const now = new Date();
-  const active = allDiscounts.filter((d) => {
+
+  // ✅ sort list trước cho ổn định (không bắt buộc nhưng sạch)
+  const sorted = sortDotGiamGia(allDiscounts);
+
+  const active = sorted.filter((d) => {
     if (!d.trangThai) return false;
     const start = parseDate(d.ngayBatDau);
     const end = parseDate(d.ngayKetThuc);
@@ -802,12 +728,74 @@ const loadActiveDiscounts = async (allDiscounts) => {
 
       if (!map[ctspId]) map[ctspId] = [];
       map[ctspId].push({
+        id: d.id,
+        mucUuTien: d.mucUuTien ?? 0,
         value: d.giaTriGiamGia,
         isMoney: d.loaiGiamGia,
       });
     });
   }
   activeDiscountsMap.value = map;
+};
+
+// ✅ chọn “đợt tốt nhất” theo ưu tiên trước, rồi mới xét giảm giá
+const pickBestDiscount = (price, list) => {
+  if (!Array.isArray(list) || list.length === 0) return null;
+
+  const calcFinal = (d) => {
+    const val = Number(d.value ?? 0);
+    const discountAmount = d.isMoney ? val : (price * val) / 100;
+    return Math.max(0, price - discountAmount);
+  };
+
+  let best = null;
+  let bestFinal = price;
+
+  for (const d of list) {
+    const final = calcFinal(d);
+
+    if (!best) {
+      best = d;
+      bestFinal = final;
+      continue;
+    }
+
+    const pBest = Number(best.mucUuTien ?? 0);
+    const pCur = Number(d.mucUuTien ?? 0);
+
+    // 1) ưu tiên desc
+    if (pCur > pBest) {
+      best = d;
+      bestFinal = final;
+      continue;
+    }
+    if (pCur < pBest) continue;
+
+    // 2) nếu ưu tiên bằng nhau -> giá sau giảm thấp hơn thì tốt hơn
+    if (final < bestFinal) {
+      best = d;
+      bestFinal = final;
+      continue;
+    }
+    if (final > bestFinal) continue;
+
+    // 3) tie-break: value desc, rồi id desc
+    const vBest = Number(best.value ?? 0);
+    const vCur = Number(d.value ?? 0);
+    if (vCur > vBest) {
+      best = d;
+      bestFinal = final;
+      continue;
+    }
+    if (vCur < vBest) continue;
+
+    if (Number(d.id ?? 0) > Number(best.id ?? 0)) {
+      best = d;
+      bestFinal = final;
+    }
+  }
+
+  return { best, bestFinal };
 };
 
 const getProductDisplay = (variant) => {
@@ -823,45 +811,33 @@ const getProductDisplay = (variant) => {
     };
   }
 
-  let minPrice = price;
-  let bestDiscount = null;
+  const picked = pickBestDiscount(price, discounts);
+  if (!picked?.best) {
+    return { hasDiscount: false, finalPrice: price, originalPrice: price, badge: null };
+  }
 
-  discounts.forEach((d) => {
-    const discountAmount = d.isMoney ? d.value : (price * d.value) / 100;
-    const currentPrice = price - discountAmount;
-    if (currentPrice < minPrice) {
-      minPrice = currentPrice;
-      bestDiscount = d;
-    }
-  });
+  const best = picked.best;
+  const finalPrice = picked.bestFinal;
 
   let badge = "";
-  if (!bestDiscount) badge = "";
-  else if (bestDiscount.isMoney) {
-    badge =
-      price > 0
-        ? `-${Math.round((bestDiscount.value / price) * 100)}%`
-        : `-${bestDiscount.value}đ`;
+  if (best.isMoney) {
+    badge = price > 0 ? `-${Math.round((best.value / price) * 100)}%` : `-${best.value}đ`;
   } else {
-    badge = `-${bestDiscount.value}%`;
+    badge = `-${best.value}%`;
   }
 
   return {
     hasDiscount: true,
-    finalPrice: Math.max(0, minPrice),
+    finalPrice,
     originalPrice: price,
     badge,
   };
 };
 
-// --- SELECT GROUP / VARIANTS ---
 const isGroupSelected = (parentId) => {
   const group = productGroups.value.find((g) => g.idSanPham === parentId);
   if (!group) return false;
-  return (
-    group.variants.length > 0 &&
-    group.variants.every((v) => selectedVariantIds.value.includes(v.id))
-  );
+  return group.variants.length > 0 && group.variants.every((v) => selectedVariantIds.value.includes(v.id));
 };
 
 const handleParentCheck = (parentId, isChecked) => {
@@ -870,13 +846,9 @@ const handleParentCheck = (parentId, isChecked) => {
   const childIds = group.variants.map((v) => v.id);
 
   if (isChecked) {
-    selectedVariantIds.value = [
-      ...new Set([...selectedVariantIds.value, ...childIds]),
-    ];
+    selectedVariantIds.value = [...new Set([...selectedVariantIds.value, ...childIds])];
   } else {
-    selectedVariantIds.value = selectedVariantIds.value.filter(
-      (id) => !childIds.includes(id)
-    );
+    selectedVariantIds.value = selectedVariantIds.value.filter((id) => !childIds.includes(id));
     clearSourceFilters();
   }
 };
@@ -887,9 +859,7 @@ const toggleAllVariants = (e) => {
     const uniqueIds = new Set([...selectedVariantIds.value, ...visibleIds]);
     selectedVariantIds.value = Array.from(uniqueIds);
   } else {
-    selectedVariantIds.value = selectedVariantIds.value.filter(
-      (id) => !visibleIds.includes(id)
-    );
+    selectedVariantIds.value = selectedVariantIds.value.filter((id) => !visibleIds.includes(id));
   }
 };
 
@@ -904,117 +874,6 @@ const clearDetailFilters = () => {
   Object.keys(detailFilters).forEach((k) => (detailFilters[k] = ""));
 };
 
-// --- PRICE RANGE SLIDER ---
-const priceRangeBounds = computed(() => {
-  const prices = allSelectedVariants.value.map(v => v.giaNiemYet || 0);
-  if (prices.length === 0) return { min: 0, max: 10000000 };
-  return {
-    min: Math.floor(Math.min(...prices)),
-    max: Math.ceil(Math.max(...prices)),
-  };
-});
-
-const priceRangeStep = computed(() => {
-  const range = priceRangeBounds.value.max - priceRangeBounds.value.min;
-  if (range <= 100000) return 1000;
-  if (range <= 1000000) return 10000;
-  return 50000;
-});
-
-const priceRange = reactive({
-  min: 0,
-  max: 10000000,
-});
-
-watch(priceRangeBounds, (bounds) => {
-  priceRange.min = bounds.min;
-  priceRange.max = bounds.max;
-}, { immediate: true });
-
-const onMinRangeInput = (e) => {
-  const val = Number(e.target.value);
-  priceRange.min = Math.min(val, priceRange.max - priceRangeStep.value);
-};
-
-const onMaxRangeInput = (e) => {
-  const val = Number(e.target.value);
-  priceRange.max = Math.max(val, priceRange.min + priceRangeStep.value);
-};
-
-const rangeFillStyle = computed(() => {
-  const bounds = priceRangeBounds.value;
-  const range = bounds.max - bounds.min || 1;
-  const left = ((priceRange.min - bounds.min) / range) * 100;
-  const right = ((bounds.max - priceRange.max) / range) * 100;
-  return { left: `${left}%`, right: `${right}%` };
-});
-
-// --- VALIDATE OVERLAP ---
-const checkOverlaps = async (newStart, newEnd, selectedIds) => {
-  const allDiscounts = await discountService.getAll();
-
-  // Lấy ID và Mã hiện tại để loại trừ chính xác (ép kiểu String/LowerCase)
-  const currentId = String(route.params.id || "");
-  const currentCode = String(formData.maDotGiamGia || "").trim().toLowerCase();
-
-  const overlappingDiscounts = (Array.isArray(allDiscounts) ? allDiscounts : []).filter((d) => {
-    // 1. Loại trừ theo ID
-    if (String(d.id) === currentId) return false;
-    // 2. Loại trừ theo Mã
-    if (currentCode && String(d.maDotGiamGia || "").trim().toLowerCase() === currentCode) return false;
-
-    if (!d.trangThai) return false;
-
-    // Helper: Parse chuỗi YYYY-MM-DD về Local Time để khớp với parseDate(array)
-    const parseInputDate = (str) => {
-      if (!str) return new Date();
-      const [y, m, d] = str.split('-').map(Number);
-      return new Date(y, m - 1, d);
-    };
-
-    const dStart = parseDate(d.ngayBatDau);
-    const dEnd = parseDate(d.ngayKetThuc);
-    const nStart = parseInputDate(newStart);
-    const nEnd = parseInputDate(newEnd);
-
-    dStart.setHours(0, 0, 0, 0);
-    dEnd.setHours(23, 59, 59, 999);
-    nStart.setHours(0, 0, 0, 0);
-    nEnd.setHours(23, 59, 59, 999);
-
-    return nStart <= dEnd && nEnd >= dStart;
-  });
-
-  for (const discount of overlappingDiscounts) {
-    const details = await discountService.getDiscountDetails(discount.id);
-
-    const conflict = (Array.isArray(details) ? details : []).find((detail) => {
-      const ctspId =
-        detail.idChiTietSanPham ||
-        detail.id_chi_tiet_san_pham ||
-        (detail.chiTietSanPham ? detail.chiTietSanPham.id : null);
-      return ctspId && selectedIds.includes(ctspId);
-    });
-
-    if (conflict) {
-      const conflictId =
-        conflict.idChiTietSanPham ||
-        conflict.id_chi_tiet_san_pham ||
-        (conflict.chiTietSanPham ? conflict.chiTietSanPham.id : null);
-
-      const variant = rawVariants.value.find((v) => v.id === conflictId);
-
-      return {
-        overlap: true,
-        discountName: discount.tenDotGiamGia,
-        productName: variant ? variant.tenSanPham : "Sản phẩm",
-      };
-    }
-  }
-  return { overlap: false };
-};
-
-// --- UPDATE / DELETE ---
 const submitUpdate = async () => {
   if (!formData.tenDotGiamGia || !formData.ngayBatDau || !formData.ngayKetThuc) {
     alert("Vui lòng nhập đủ thông tin đợt giảm giá");
@@ -1023,18 +882,6 @@ const submitUpdate = async () => {
 
   if (selectedVariantIds.value.length === 0) {
     if (!confirm("Đợt giảm giá này chưa chọn sản phẩm nào. Bạn có chắc muốn lưu không?")) return;
-  }
-
-  const overlapCheck = await checkOverlaps(
-    formData.ngayBatDau,
-    formData.ngayKetThuc,
-    selectedVariantIds.value
-  );
-  if (overlapCheck.overlap) {
-    alert(
-      `Lỗi trùng lặp: Sản phẩm "${overlapCheck.productName}" đã nằm trong đợt giảm giá "${overlapCheck.discountName}" trong khoảng thời gian này.`
-    );
-    return;
   }
 
   const payload = { ...formData, idChiTietSanPhams: selectedVariantIds.value };
@@ -1066,7 +913,6 @@ const softDelete = async () => {
   }
 };
 
-// Map màu sắc
 const mapColor = (colorName) => {
   if (!colorName) return "#ccc";
   const lower = colorName.toLowerCase();
@@ -1516,66 +1362,6 @@ onMounted(() => loadData());
   margin-right: 4px;
   border: 1px solid rgba(17, 24, 39, 0.18);
 }
-/* Price Range Slider */
-.price-range-filter {
-  padding: 0 4px;
-}
-.range-slider-wrapper {
-  position: relative;
-  height: 32px;
-  margin-top: 4px;
-}
-.range-track {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 100%;
-  height: 4px;
-  background: rgba(17, 24, 39, 0.10);
-  border-radius: 2px;
-}
-.range-fill {
-  position: absolute;
-  height: 100%;
-  background: #ef4444;
-  border-radius: 2px;
-}
-.range-input {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 100%;
-  height: 4px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  pointer-events: none;
-  margin: 0;
-  padding: 0;
-}
-.range-input::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #ef4444;
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  pointer-events: auto;
-}
-.range-input::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #ef4444;
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  pointer-events: auto;
-}
-
 .empty-state {
   text-align: center;
   color: rgba(17, 24, 39, 0.35);
@@ -1601,26 +1387,6 @@ onMounted(() => loadData());
   width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid #eee;
 }
 
-/* Discount badge on image */
-.img-badge-wrapper {
-  position: relative;
-  display: inline-block;
-}
-.discount-badge-img {
-  position: absolute;
-  top: -4px;
-  right: -10px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 4px;
-  border-radius: 4px;
-  line-height: 1.2;
-  white-space: nowrap;
-  z-index: 2;
-}
-
 /* Expand button */
 .btn-expand {
   background: none; border: none; cursor: pointer; color: #64748b; width: 24px; height: 24px;
@@ -1630,24 +1396,6 @@ onMounted(() => loadData());
 .child-row td {
   background-color: #f8fafc;
   border-bottom: 1px solid #f1f5f9;
-}
-
-/* Input group with % suffix */
-.input-group-percent {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.input-group-percent .form-control {
-  padding-right: 36px;
-}
-.input-suffix {
-  position: absolute;
-  right: 12px;
-  color: rgba(17, 24, 39, 0.55);
-  font-weight: 600;
-  font-size: 14px;
-  pointer-events: none;
 }
 
 .font-weight-normal { font-weight: 400 !important; }
