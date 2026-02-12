@@ -17,7 +17,6 @@ export const pagingLichLamViec = async (page = 0, size = 5) => {
 
 
 export const createLich = async (data) => {
-  // data: { idNhanVien, idCaLam, ngayLam, ghiChu }
   const res = await fetch(API_LICH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -53,13 +52,16 @@ export const removeLich = async (id) => {
   return true;
 };
 
-export const importLichExcel = (formData) => {
-  return request({
-    url: '/api/lich-lam-viec/import-excel', // Đổi đường dẫn theo API thực tế của bạn
-    method: 'post',
-    data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data' // Bắt buộc để gửi file
-    }
+export const importLichExcel = async (formData) => {
+  const res = await fetch(`${API_LICH}/import-excel`, {
+    method: "POST",
+    body: formData, 
   });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err || "Lỗi khi import file Excel");
+  }
+
+  return await unwrapJson(res);
 };

@@ -52,9 +52,17 @@
         <div class="file-input-wrapper">
           <label>Chọn file Excel:</label>
           <div class="input-group">
-            <input type="file" id="fileExcel" />
-            <button class="btn-import"><i class="fa-solid fa-upload"></i> Import Excel</button>
+            <input type="file" ref="fileInputRef" accept=".xlsx, .xls" @change="handleFileChange" />
+
+            <button class="btn-import" @click="handleImportExcel" :disabled="isLoadingImport">
+              <i v-if="isLoadingImport" class="fa-solid fa-spinner fa-spin"></i>
+              <i v-else class="fa-solid fa-upload"></i>
+              Import Excel
+            </button>
           </div>
+          <small v-if="selectedFile" class="text-primary mt-2 d-block">
+            Đã chọn: {{ selectedFile.name }}
+          </small>
         </div>
       </div>
     </div>
@@ -153,46 +161,46 @@
           <button @click="closeModal" class="btn-close">&times;</button>
         </div>
         <div class="modal-body">
-  <div class="form-group">
-    <label>Nhân viên <span class="req">*</span></label>
-    <div class="combobox-wrapper">
-      <input type="text" class="form-control" placeholder="Tìm tên hoặc mã nhân viên..." 
-        v-model="searchNvModal" @focus="showNvModalDropdown = true" @blur="handleBlurNvModal" />
-      <ul v-if="showNvModalDropdown" class="combobox-dropdown">
-        <li v-for="nv in filteredNvModal" :key="nv.id" @click="selectNvModal(nv)"
-          :class="{ active: nv.id === form.idNhanVien }">
-          <span class="fw-bold">{{ nv.tenNhanVien }}</span>
-          <small> - {{ nv.maNhanVien }}</small>
-        </li>
-        <li v-if="filteredNvModal.length === 0" class="no-result">Không tìm thấy</li>
-      </ul>
-    </div>
-  </div>
+          <div class="form-group">
+            <label>Nhân viên <span class="req">*</span></label>
+            <div class="combobox-wrapper">
+              <input type="text" class="form-control" placeholder="Tìm tên hoặc mã nhân viên..." v-model="searchNvModal"
+                @focus="showNvModalDropdown = true" @blur="handleBlurNvModal" />
+              <ul v-if="showNvModalDropdown" class="combobox-dropdown">
+                <li v-for="nv in filteredNvModal" :key="nv.id" @click="selectNvModal(nv)"
+                  :class="{ active: nv.id === form.idNhanVien }">
+                  <span class="fw-bold">{{ nv.tenNhanVien }}</span>
+                  <small> - {{ nv.maNhanVien }}</small>
+                </li>
+                <li v-if="filteredNvModal.length === 0" class="no-result">Không tìm thấy</li>
+              </ul>
+            </div>
+          </div>
 
-  <div class="form-group">
-    <label>Ca làm việc <span class="req">*</span></label>
-    <div class="combobox-wrapper">
-      <input type="text" class="form-control" placeholder="Tìm ca làm việc..." 
-        v-model="searchCaModal" @focus="showCaModalDropdown = true" @blur="handleBlurCaModal" />
-      <ul v-if="showCaModalDropdown" class="combobox-dropdown">
-        <li v-for="ca in filteredCaModal" :key="ca.id" @click="selectCaModal(ca)"
-          :class="{ active: ca.id === form.idCaLam }">
-          <span class="fw-bold">{{ ca.tenCa }}</span>
-          <small> ({{ formatTime(ca.gioBatDau) }} - {{ formatTime(ca.gioKetThuc) }})</small>
-        </li>
-        <li v-if="filteredCaModal.length === 0" class="no-result">Không tìm thấy</li>
-      </ul>
-    </div>
-  </div>
+          <div class="form-group">
+            <label>Ca làm việc <span class="req">*</span></label>
+            <div class="combobox-wrapper">
+              <input type="text" class="form-control" placeholder="Tìm ca làm việc..." v-model="searchCaModal"
+                @focus="showCaModalDropdown = true" @blur="handleBlurCaModal" />
+              <ul v-if="showCaModalDropdown" class="combobox-dropdown">
+                <li v-for="ca in filteredCaModal" :key="ca.id" @click="selectCaModal(ca)"
+                  :class="{ active: ca.id === form.idCaLam }">
+                  <span class="fw-bold">{{ ca.tenCa }}</span>
+                  <small> ({{ formatTime(ca.gioBatDau) }} - {{ formatTime(ca.gioKetThuc) }})</small>
+                </li>
+                <li v-if="filteredCaModal.length === 0" class="no-result">Không tìm thấy</li>
+              </ul>
+            </div>
+          </div>
 
-  <div class="form-group">
-    <label>Ngày làm <span class="req">*</span></label>
-    <div class="input-with-icon">
-      <i class="fa-regular fa-calendar-days calendar-icon"></i>
-      <input type="date" v-model="form.ngayLam" class="form-control pl-35" />
-    </div>
-  </div>
-</div>
+          <div class="form-group">
+            <label>Ngày làm <span class="req">*</span></label>
+            <div class="input-with-icon">
+              <i class="fa-regular fa-calendar-days calendar-icon"></i>
+              <input type="date" v-model="form.ngayLam" class="form-control pl-35" />
+            </div>
+          </div>
+        </div>
         <div class="modal-footer">
           <button class="btn-cancel" @click="closeModal">Hủy</button>
           <button class="btn-save" @click="handleSubmit">
@@ -207,12 +215,10 @@
 
 <script setup>
 import { ref, onMounted, reactive, computed } from 'vue';
-// Giả sử bạn có function updateLich trong service
-import { createLich, updateLich, pagingLichLamViec, removeLich } from '@/services/lich_lam_viec/lich_lam_viecService';
+import { createLich, updateLich, pagingLichLamViec, removeLich, importLichExcel } from '@/services/lich_lam_viec/lich_lam_viecService';
 import { getAllNhanVien } from '@/services/tai_khoan/nhan_vien/nhan_vienService';
 import { getAllCaLam } from '@/services/lich_lam_viec/ca_lamService';
 
-// --- State cơ bản ---
 const lichList = ref([]);
 const listNhanVien = ref([]);
 const listCa = ref([]);
@@ -226,8 +232,12 @@ const searchCaModal = ref("");
 const showCaModalDropdown = ref(false);
 
 const showModal = ref(false);
-const isEditing = ref(false); // Biến kiểm tra đang sửa hay thêm
-const currentId = ref(null);  // ID của bản ghi đang sửa
+const isEditing = ref(false);
+const currentId = ref(null);
+
+const fileInputRef = ref(null); // Ref dính với thẻ input file
+const selectedFile = ref(null); // Biến lưu file người dùng chọn
+const isLoadingImport = ref(false);
 
 const form = reactive({
   idNhanVien: null,
@@ -304,7 +314,7 @@ const filteredNhanVienList = computed(() => {
 
 const filteredNvModal = computed(() => {
   const q = searchNvModal.value.toLowerCase();
-  return listNhanVien.value.filter(nv => 
+  return listNhanVien.value.filter(nv =>
     nv.tenNhanVien.toLowerCase().includes(q) || nv.maNhanVien.toLowerCase().includes(q)
   );
 });
@@ -312,7 +322,7 @@ const filteredNvModal = computed(() => {
 // Filter ca làm trong modal
 const filteredCaModal = computed(() => {
   const q = searchCaModal.value.toLowerCase();
-  return listCa.value.filter(ca => 
+  return listCa.value.filter(ca =>
     ca.tenCa.toLowerCase().includes(q)
   );
 });
@@ -345,7 +355,56 @@ const handleBlurNv = () => {
   }, 200);
 };
 
-// --- Helper Functions ---
+const handleFileChange = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    // Validate đuôi file (tùy chọn)
+    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/)) {
+      alert("Vui lòng chỉ chọn file Excel (.xlsx, .xls)");
+      resetFileInput();
+      return;
+    }
+    selectedFile.value = file;
+  } else {
+    selectedFile.value = null;
+  }
+};
+
+const handleImportExcel = async () => {
+  if (!selectedFile.value) {
+    alert("Vui lòng chọn file trước khi import!");
+    return;
+  }
+
+  if (!confirm("Bạn có chắc muốn import dữ liệu từ file này?")) return;
+
+  isLoadingImport.value = true;
+
+  const formData = new FormData();
+  formData.append('file', selectedFile.value);
+
+  try {
+    await importLichExcel(formData);
+    alert("Import dữ liệu thành công!");
+
+    resetFileInput();
+    loadData();
+  } catch (e) {
+    console.error(e);
+    alert("Import thất bại: " + (e.message || "Lỗi không xác định"));
+  } finally {
+    isLoadingImport.value = false;
+  }
+};
+
+const resetFileInput = () => {
+  selectedFile.value = null;
+  if (fileInputRef.value) {
+    fileInputRef.value.value = "";
+  }
+};
+
 const formatTime = (arr) => {
   if (Array.isArray(arr)) return `${arr[0]}:${arr[1] < 10 ? '0' + arr[1] : arr[1]}`;
   if (typeof arr === 'string') return arr.substring(0, 5);
@@ -356,7 +415,6 @@ const formatDate = (arr) => {
   return arr;
 }
 
-// Hàm chuyển đổi [yyyy, mm, dd] thành string "yyyy-mm-dd" cho input date
 const convertArrayDateToString = (arrDate) => {
   if (Array.isArray(arrDate)) {
     const y = arrDate[0];
@@ -364,7 +422,7 @@ const convertArrayDateToString = (arrDate) => {
     const d = arrDate[2] < 10 ? '0' + arrDate[2] : arrDate[2];
     return `${y}-${m}-${d}`;
   }
-  return arrDate; // Nếu đã là string thì trả về luôn
+  return arrDate;
 }
 
 const openModal = (item) => {
@@ -373,16 +431,15 @@ const openModal = (item) => {
     currentId.value = item.id;
     const idNv = item.idNhanVien || (item.nhanVien ? item.nhanVien.id : null);
     const idCa = item.idCaLam || (item.caLam ? item.caLam.id : null);
-    
+
     form.idNhanVien = idNv;
     form.idCaLam = idCa;
     form.ngayLam = convertArrayDateToString(item.ngayLam);
     form.ghiChu = item.ghiChu || "";
 
-    // Điền text hiển thị vào ô search
     const nv = listNhanVien.value.find(n => n.id === idNv);
     searchNvModal.value = nv ? nv.tenNhanVien : "";
-    
+
     const ca = listCa.value.find(c => c.id === idCa);
     searchCaModal.value = ca ? `${ca.tenCa} (${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)})` : "";
   } else {
@@ -405,7 +462,6 @@ const closeModal = () => {
 };
 
 const handleSubmit = async () => {
-  // Validate cơ bản
   if (!form.idNhanVien || !form.idCaLam || !form.ngayLam) {
     alert("Vui lòng nhập đủ: Nhân viên, Ca làm và Ngày làm!");
     return;
@@ -420,24 +476,20 @@ const handleSubmit = async () => {
 
   try {
     if (isEditing.value) {
-      // GỌI API UPDATE
-      // Cần đảm bảo bạn đã import updateLich từ service
       await updateLich(currentId.value, payload);
       alert("Cập nhật lịch thành công!");
     } else {
-      // GỌI API CREATE
       await createLich(payload);
       alert("Thêm lịch thành công!");
     }
 
     closeModal();
-    loadData(); // Load lại dữ liệu
+    loadData();
   } catch (e) {
     alert("Có lỗi xảy ra: " + (e.response?.data?.message || e.message));
   }
 };
 
-// --- API calls ---
 const loadData = async () => {
   try {
     const res = await pagingLichLamViec(0, 100);
@@ -461,7 +513,7 @@ const filteredLichList = computed(() => {
 
     data = data.filter(item => {
       if (item.nhanVien) {
-        return item.nhanVien.id === searchId; 
+        return item.nhanVien.id === searchId;
       }
       return false;
     });
@@ -470,8 +522,8 @@ const filteredLichList = computed(() => {
   if (filterDate.value) {
     data = data.filter(l => {
       const ngay = typeof l.ngayLam === "string"
-          ? l.ngayLam.substring(0, 10)
-          : convertArrayDateToString(l.ngayLam);
+        ? l.ngayLam.substring(0, 10)
+        : convertArrayDateToString(l.ngayLam);
       return ngay === filterDate.value;
     });
   }
@@ -497,7 +549,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* --- GIỮ NGUYÊN CSS CŨ --- */
 .lich-page {
   font-family: var(--admin-font, sans-serif);
   padding: 20px;
