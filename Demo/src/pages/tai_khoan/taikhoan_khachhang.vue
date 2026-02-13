@@ -8,23 +8,17 @@
         <div class="toolbar-left">
           <div class="search-wrapper">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input
-              v-model="filters.keyword"
-              type="text"
-              placeholder="Tìm theo tên, SĐT, email,... "
-              class="search-input"
-            />
+            <input v-model="filters.keyword" type="text" placeholder="Tìm theo tên, SĐT, email,... "
+              class="search-input" />
           </div>
         </div>
 
         <div class="toolbar-right">
-          <!-- ✅ Đặt lại: icon + màu y hệt ChatLieuPage (ss-btn-dark) -->
           <button class="btn btn-reset" @click="resetFilters" type="button">
             <span class="material-icons-outlined btn-mi">restart_alt</span>
             Đặt lại bộ lọc
           </button>
 
-          <!-- ✅ Xuất Excel: icon + màu y hệt ChatLieuPage (ss-btn-lite) -->
           <button class="btn btn-export" @click="exportExcel" type="button">
             <span class="material-icons-outlined btn-mi">description</span>
             Xuất Excel
@@ -76,31 +70,21 @@
           <tbody>
             <tr v-for="(item, index) in khachhangList" :key="item.id">
               <td class="text-gray">{{ pageNo * pageSize + index + 1 }}</td>
-
               <td class="text-dark fw-700">{{ item.maKhachHang ?? "---" }}</td>
-
               <td class="text-dark fw-700">{{ item.tenKhachHang ?? "---" }}</td>
               <td class="text-gray">{{ item.soDienThoai ?? "---" }}</td>
               <td class="text-gray">{{ item.email ?? "---" }}</td>
-
-              <!-- ✅ Địa chỉ: ưu tiên macDinh -->
               <td class="text-gray">{{ addrMap.get(item.id) ?? "---" }}</td>
-
               <td>
                 <span class="badge" :class="item.trangThai ? 'status-active' : 'status-ended'">
                   {{ item.trangThai ? "Hoạt động" : "Ngừng hoạt động" }}
                 </span>
               </td>
-
               <td class="text-center">
                 <div class="action-group">
                   <label class="switch">
-                    <input
-                      type="checkbox"
-                      :checked="!!item.trangThai"
-                      :disabled="dangCapNhatTrangThai.has(item.id)"
-                      @change="(e) => toggleStatus(item, e)"
-                    />
+                    <input type="checkbox" :checked="!!item.trangThai"
+                      :disabled="dangCapNhatTrangThai.has(item.id)" @change="(e) => toggleStatus(item, e)" />
                     <span class="slider"></span>
                   </label>
 
@@ -108,11 +92,9 @@
                     <span class="material-icons-outlined">visibility</span>
                   </button>
 
-                  <!-- <div class="modal-body">
-                  <button class="ss-icon-btn-view" @click="(item.id)" title="Địa chỉ" type="button">
-                    <span class="material-icons-outlined">visibility</span>
+                  <button class="ss-icon-btn-view" @click="quanLyDiaChi(item.id)" title="Quản lý địa chỉ" type="button">
+                    <span class="material-icons-outlined">edit_location_alt</span>
                   </button>
-                  </div> -->
                 </div>
               </td>
             </tr>
@@ -121,47 +103,123 @@
       </div>
 
       <div class="pagination-container">
-        <button
-          class="page-btn"
-          :class="{ disabled: pageNo === 0 }"
-          :disabled="pageNo === 0"
-          @click="changePage(pageNo - 1)"
-          type="button"
-        >
+        <button class="page-btn" :class="{ disabled: pageNo === 0 }" :disabled="pageNo === 0"
+          @click="changePage(pageNo - 1)" type="button">
           <i class="fa-solid fa-chevron-left"></i>
         </button>
-
-        <button
-          v-for="p in visiblePages"
-          :key="p"
-          class="page-btn"
-          :class="{ active: pageNo === p }"
-          @click="changePage(p)"
-          type="button"
-        >
+        <button v-for="p in visiblePages" :key="p" class="page-btn" :class="{ active: pageNo === p }"
+          @click="changePage(p)" type="button">
           {{ p + 1 }}
         </button>
-
-        <button
-          class="page-btn"
-          :class="{ disabled: pageNo >= totalPages - 1 }"
-          :disabled="pageNo >= totalPages - 1"
-          @click="changePage(pageNo + 1)"
-          type="button"
-        >
+        <button class="page-btn" :class="{ disabled: pageNo >= totalPages - 1 }"
+          :disabled="pageNo >= totalPages - 1" @click="changePage(pageNo + 1)" type="button">
           <i class="fa-solid fa-chevron-right"></i>
         </button>
       </div>
     </div>
-  </div>
 
-  <router-view />
+    <div class="modal fade" id="addressModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content ss-modal">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">Quản lý địa chỉ: {{ currentCustomerName }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          
+          <div class="modal-body p-4 bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span class="text-muted fst-italic">Quản lý danh sách địa chỉ nhận hàng.</span>
+              <button type="button" class="ss-btn ss-btn-outline" @click="addAddressInModal">
+                <i class="bi bi-plus-lg"></i> Thêm địa chỉ mới
+              </button>
+            </div>
+
+            <div v-if="loadingAddr" class="text-center py-4">
+               <div class="spinner-border text-primary" role="status"></div>
+               <div class="mt-2">Đang tải dữ liệu...</div>
+            </div>
+
+            <div v-else class="address-list-scroll">
+              <div v-if="modalAddresses.length === 0" class="text-center text-muted py-5">
+                Chưa có địa chỉ nào. Hãy thêm địa chỉ mới.
+              </div>
+
+              <div v-for="(a, idx) in modalAddresses" :key="a.key" class="addr-card mb-3">
+                <div class="addr-top d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                  <label class="d-flex align-items-center gap-2 cursor-pointer">
+                    <input type="radio" name="modalDefault" :checked="a.macDinh" @change="setDefaultModal(idx)" />
+                    <span class="fw-bold fs-14 text-primary">Địa chỉ mặc định</span>
+                  </label>
+                  
+                  <button class="btn btn-sm btn-outline-danger border-0" 
+                          @click="removeAddressInModal(idx)" 
+                          title="Xóa địa chỉ này">
+                    <i class="bi bi-trash3"></i> Xóa
+                  </button>
+                </div>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fs-13 text-muted">Tên gợi nhớ <span class="text-danger">*</span></label>
+                    <input class="form-control ss-input" v-model="a.tenDiaChi" 
+                           placeholder="VD: Nhà riêng, Công ty..." />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fs-13 text-muted">Số nhà/Đường</label>
+                    <input class="form-control ss-input" v-model="a.diaChiCuThe" 
+                           placeholder="VD: 123 Nguyễn Trãi" />
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label fs-13 text-muted">Tỉnh/Thành</label>
+                    <select class="form-select ss-input" v-model="a.tinhCode" @change="onTinhChangeModal(a)">
+                      <option value="">-- Chọn Tỉnh/Thành --</option>
+                      <option v-for="p in provinces" :key="p.code" :value="p.code">{{ p.name }}</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label fs-13 text-muted">Quận/Huyện</label>
+                    <select class="form-select ss-input" v-model="a.huyenCode" :disabled="!a.tinhCode" @change="onHuyenChangeModal(a)">
+                      <option value="">-- Chọn Quận/Huyện --</option>
+                      <option v-for="d in a.districts" :key="d.code" :value="d.code">{{ d.name }}</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label fs-13 text-muted">Phường/Xã</label>
+                    <select class="form-select ss-input" v-model="a.xaCode" :disabled="!a.huyenCode">
+                      <option value="">-- Chọn Phường/Xã --</option>
+                      <option v-for="w in a.wards" :key="w.code" :value="w.code">{{ w.name }}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            <button type="button" class="ss-btn ss-btn-primary" @click="saveModalAddresses" :disabled="isSavingAddr">
+              {{ isSavingAddr ? 'Đang lưu...' : 'Lưu thay đổi' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { searchKhachHang, pagingKhachHang, updateKhachHang, getAllKhachHang } from "@/services/tai_khoan/khach_hang/khach_hangService";
-import { getAllDiaChiKhachHang } from "@/services/tai_khoan/khach_hang/diaChiKhachHangService";
+import {
+  createDiaChiKhachHang,
+  updateDiaChiKhachHang,
+  removeDiaChiKhachHang,
+  getDiaChiByKhachHangId
+} from "@/services/tai_khoan/khach_hang/diaChiKhachHangService";
+import vnAddressService from "@/services/vnAddressService.js"; // Import service địa chỉ
 import { computed, onMounted, ref, watch } from "vue";
+import { Modal } from "bootstrap";
 import { useRoute, useRouter } from "vue-router";
 import * as XLSX from "xlsx";
 
@@ -174,14 +232,215 @@ const totalPages = ref(0);
 
 const khachhangList = ref([]);
 const khachhangOrigin = ref([]);
-
-const addrMap = ref(new Map()); // idKhachHang -> "text"
-
+const addrMap = ref(new Map()); 
 const filters = ref({ keyword: "", status: "", gender: "" });
 
-// ✅ Khóa theo id khi đang cập nhật + chống out-of-order khi bấm nhanh
-const dangCapNhatTrangThai = ref(new Set()); // Set<id>
-const trangThaiSeqMap = ref(new Map()); // Map<id, seq>
+const dangCapNhatTrangThai = ref(new Set());
+const trangThaiSeqMap = ref(new Map());
+
+// === STATE CHO MODAL ===
+const modalAddresses = ref([]);
+const removedAddrIds = ref([]);
+const provinces = ref([]);
+const currentCustomerId = ref(null);
+const currentCustomerName = ref("");
+const isSavingAddr = ref(false);
+const loadingAddr = ref(false);
+
+// === HELPER FUNCTIONS CHO ĐỊA CHỈ (UPDATED) ===
+
+const cleanName = (str) => {
+  if (!str) return "";
+  return str.toString().toLowerCase()
+    .replace(/^(tỉnh|thành phố|tp\.?|quận|huyện|thị xã|tx\.?|phường|xã|thị trấn|tt\.?)\s+/u, "") 
+    .trim();
+};
+
+const findCodeByName = (list, dbName) => {
+  if (!dbName || !list || list.length === 0) return "";
+  
+  const target = cleanName(dbName);
+  
+  // Bước 1: Tìm chính xác (VD: "hà nội" vs "hà nội")
+  let found = list.find(x => cleanName(x.name) === target);
+  
+  // Bước 2: Nếu không thấy, tìm kiểu bao hàm (VD: "láng hạ" nằm trong "phường láng hạ")
+  if (!found) {
+    found = list.find(x => {
+      const apiName = cleanName(x.name);
+      return apiName.includes(target) || target.includes(apiName);
+    });
+  }
+
+  return found ? found.code : "";
+};
+
+const findNameByCode = (list, code) => list.find((x) => x.code == code)?.name || ""; // Dùng == để so sánh lỏng string/number
+
+const quanLyDiaChi = async (id) => {
+  currentCustomerId.value = id;
+  const target = khachhangList.value.find(k => k.id === id);
+  currentCustomerName.value = target?.tenKhachHang || "";
+
+  const modalEl = document.getElementById('addressModal');
+  const modalObj = new Modal(modalEl);
+  modalObj.show();
+
+  loadingAddr.value = true;
+  removedAddrIds.value = [];
+  
+  try {
+    // 1. Tải Tỉnh/Thành
+    if (provinces.value.length === 0) {
+      provinces.value = await vnAddressService.getProvinces();
+    }
+
+    const locdiachi = await getDiaChiByKhachHangId(id);
+    const sortedAddrs = locdiachi.sort((a, b) => (b.macDinh ? 1 : 0) - (a.macDinh ? 1 : 0));
+
+    const finalModalData = [];
+
+    // 2. Xử lý từng địa chỉ theo trình tự
+    for (const x of sortedAddrs) {
+      const addrObj = {
+        key: String(x.id),
+        id: x.id,
+        tenDiaChi: x.tenDiaChi,
+        diaChiCuThe: x.diaChiCuThe,
+        macDinh: !!x.macDinh,
+        // Lưu lại tên gốc từ DB của bạn
+        thanhPhoName: x.thanhPho, // "Hà Nội"
+        quanName: x.quan,         // "Đống Đa"
+        phuongName: x.phuong,     // "Láng Hạ"
+        tinhCode: "", huyenCode: "", xaCode: "",
+        districts: [], wards: []
+      };
+
+      // TÌM MÃ TỈNH
+      addrObj.tinhCode = findCodeByName(provinces.value, addrObj.thanhPhoName);
+      
+      if (addrObj.tinhCode) {
+        // TẢI HUYỆN & TÌM MÃ HUYỆN
+        addrObj.districts = await vnAddressService.getDistricts(addrObj.tinhCode);
+        addrObj.huyenCode = findCodeByName(addrObj.districts, addrObj.quanName);
+      }
+
+      if (addrObj.huyenCode) {
+        // TẢI XÃ & TÌM MÃ XÃ
+        addrObj.wards = await vnAddressService.getWards(addrObj.huyenCode);
+        addrObj.xaCode = findCodeByName(addrObj.wards, addrObj.phuongName);
+      }
+
+      finalModalData.push(addrObj);
+    }
+
+    modalAddresses.value = finalModalData;
+
+    if (modalAddresses.value.length === 0) addAddressInModal();
+
+  } catch (e) {
+    console.error("Lỗi đồng bộ địa chỉ:", e);
+  } finally {
+    loadingAddr.value = false;
+  }
+};
+
+const addAddressInModal = () => {
+  const newAddr = {
+    key: "new_" + Date.now(),
+    id: null,
+    tenDiaChi: "",
+    diaChiCuThe: "",
+    macDinh: modalAddresses.value.length === 0, // Nếu là cái đầu tiên thì auto mặc định
+    tinhCode: "", huyenCode: "", xaCode: "",
+    districts: [], wards: []
+  };
+  modalAddresses.value.push(newAddr);
+};
+
+const removeAddressInModal = (idx) => {
+  const item = modalAddresses.value[idx];
+  // Nếu đã lưu DB thì đưa vào list cần xóa
+  if (item.id) removedAddrIds.value.push(item.id);
+  
+  const wasDefault = item.macDinh;
+  modalAddresses.value.splice(idx, 1);
+
+  // Nếu xóa cái mặc định, gán cái đầu tiên còn lại làm mặc định
+  if (wasDefault && modalAddresses.value.length > 0) {
+    modalAddresses.value[0].macDinh = true;
+  }
+};
+
+const setDefaultModal = (idx) => {
+  modalAddresses.value.forEach((item, i) => {
+    item.macDinh = (i === idx);
+  });
+};
+
+const onTinhChangeModal = async (a) => {
+  a.huyenCode = "";
+  a.xaCode = "";
+  a.wards = [];
+  a.districts = a.tinhCode ? await vnAddressService.getDistricts(a.tinhCode) : [];
+};
+
+const onHuyenChangeModal = async (a) => {
+  a.xaCode = "";
+  a.wards = a.huyenCode ? await vnAddressService.getWards(a.huyenCode) : [];
+};
+
+const saveModalAddresses = async () => {
+  if (modalAddresses.value.length === 0 && removedAddrIds.value.length === 0) {
+     Modal.getInstance(document.getElementById('addressModal')).hide();
+     return;
+  }
+
+  isSavingAddr.value = true;
+  try {
+    // 1. Xóa các địa chỉ đã chọn xóa
+    for (const rid of removedAddrIds.value) {
+      await removeDiaChiKhachHang(rid);
+    }
+
+    // 2. Thêm mới hoặc Cập nhật
+    for (const a of modalAddresses.value) {
+      // Validate sơ bộ
+      if (!a.tenDiaChi || !a.tenDiaChi.trim()) continue;
+
+      // Lấy tên từ code để lưu DB
+      const tinhName = findNameByCode(provinces.value, a.tinhCode);
+      const huyenName = findNameByCode(a.districts, a.huyenCode);
+      const xaName = findNameByCode(a.wards, a.xaCode);
+
+      const payload = {
+        idKhachHang: currentCustomerId.value,
+        tenDiaChi: a.tenDiaChi,
+        thanhPho: tinhName,
+        quan: huyenName,
+        phuong: xaName,
+        diaChiCuThe: a.diaChiCuThe,
+        macDinh: a.macDinh
+      };
+
+      if (a.id) {
+        await updateDiaChiKhachHang(a.id, payload);
+      } else {
+        await createDiaChiKhachHang(payload);
+      }
+    }
+
+    alert("Cập nhật địa chỉ thành công!");
+    Modal.getInstance(document.getElementById('addressModal')).hide();
+    handleFilter(); // Reload bảng bên ngoài
+  } catch (e) {
+    console.error(e);
+    alert("Có lỗi xảy ra khi lưu địa chỉ.");
+  } finally {
+    isSavingAddr.value = false;
+  }
+};
+
 
 const themkh = () => router.push({ name: "tai-khoan-khach-hang-them" });
 const updatedkh = (id) => router.push({ name: "tai-khoan-khach-hang-cap-nhat", params: { id } });
@@ -204,20 +463,21 @@ const buildAddrText = (a) => {
 
 const loadAddressMap = async () => {
   try {
-    const all = await getAllDiaChiKhachHang();
-    const arr = Array.isArray(all) ? all : [];
+    const res = await getAllKhachHang(); // lấy danh sách KH trước
+    const khList = res?.content ?? res ?? [];
 
     const m = new Map();
-    // ưu tiên macDinh = true
-    for (const a of arr) {
-      if (a?.xoaMem) continue;
-      const idkh = a?.idKhachHang;
-      if (!idkh) continue;
 
-      const txt = buildAddrText(a) || a?.tenDiaChi || "---";
+    for (const kh of khList) {
+      const addrs = await getDiaChiByKhachHangId(kh.id);
+      const arr = Array.isArray(addrs) ? addrs : [];
 
-      // set nếu chưa có, hoặc nếu đây là macDinh
-      if (!m.has(idkh) || a?.macDinh) m.set(idkh, txt);
+      const macDinh = arr.find(a => a.macDinh && !a.xoaMem) 
+                    || arr.find(a => !a.xoaMem);
+
+      if (macDinh) {
+        m.set(kh.id, buildAddrText(macDinh));
+      }
     }
 
     addrMap.value = m;
@@ -226,6 +486,7 @@ const loadAddressMap = async () => {
     addrMap.value = new Map();
   }
 };
+
 
 const applyStatusFilter = () => {
   const source = Array.isArray(khachhangOrigin.value) ? khachhangOrigin.value : (khachhangOrigin.value ?? []);
@@ -834,5 +1095,93 @@ tbody tr:hover {
 
 .switch input:checked + .slider:before {
   transform: translateX(14px);
+}
+
+.form-label,
+.form-check-label,
+.ss-input,
+select.form-control,
+option,
+.addr-loading,
+.addr-empty,
+.addr-preview,
+.radio,
+.addr-error {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: rgba(17, 24, 39, 0.82) !important;
+}
+
+.ss-btn{
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: #fff !important;
+}
+
+.ss-input {
+  border-radius: 10px !important;
+  border: 1px solid rgba(17, 24, 39, 0.14) !important;
+  height: 40px;
+}
+.ss-input:focus {
+  border-color: rgba(255, 77, 79, 0.45) !important;
+  box-shadow: 0 0 0 0.18rem rgba(255, 77, 79, 0.14) !important;
+}
+
+.ss-radio:checked {
+  background-color: #ff4d4f !important;
+  border-color: #ff4d4f !important;
+}
+
+/* Buttons */
+.ss-btn {
+  border-radius: 10px;
+  height: 36px;
+  padding: 0 14px;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  cursor: pointer;
+  user-select: none;
+
+  gap: 8px; /* ✅ để icon + chữ cân */
+}
+
+/* ✅ icon size chuẩn */
+.ss-btn i {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.ss-btn-back {
+  background: rgba(255, 77, 79, 0.08);
+  color: rgba(17, 24, 39, 0.88) !important;
+  border: 1px solid rgba(255, 77, 79, 0.22);
+}
+.ss-btn-back:hover {
+  background: rgba(255, 77, 79, 0.12);
+}
+
+.ss-btn-primary {
+  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 22px rgba(255, 77, 79, 0.14);
+}
+.ss-btn-primary:hover {
+  filter: brightness(0.98);
+}
+
+.ss-btn-danger {
+  background: linear-gradient(90deg, #ef4444 0%, #991b1b 100%) !important;
+  color: #fff !important;
+}
+
+.ss-btn-submit {
+  min-width: 118px;
 }
 </style>

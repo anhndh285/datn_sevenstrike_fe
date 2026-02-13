@@ -22,6 +22,12 @@ export const getDiaChiByKhachHangId_FEFilter = async (idKhachHang) => {
   return arr.filter((x) => String(x?.idKhachHang) === String(idKhachHang) && !x?.xoaMem);
 };
 
+export const getDiaChiByKhachHangId = async (idDiaChi) => {
+  const res = await fetch(`${API}/khach-hang/${idDiaChi}`);
+  if (!res.ok) throw new Error("Load địa chỉ thất bại");
+  return await unwrapJson(res);
+};
+
 // ✅ POST
 export const addDiaChiKhachHang = async (data) => {
   const res = await fetch(API, {
