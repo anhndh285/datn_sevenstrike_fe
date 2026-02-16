@@ -48,6 +48,8 @@ import SalesPage from "@/pages/sales/SalesPage.vue";
 
 // ✅ Thống kê
 import ThongKePage from "@/pages/thong_ke/ThongKePage.vue";
+import GiaoCaPage from "@/pages/lich_lam_viec/GiaoCaPage.vue";
+import LichLamViecPage from "@/pages/lich_lam_viec/LichLamViecPage.vue";
 
 // ✅ Check đăng nhập: token (nếu có) HOẶC user (hiện tại backend chưa trả token)
 const isLoggedIn = () => {
@@ -175,6 +177,16 @@ const routes = [
             props: true,
           },
         ],
+      },
+      {
+        path: "giao-ca",
+        name: "admin-giao-ca",
+        component: GiaoCaPage,
+      },
+      {
+        path: "lich-lam-viec",
+        name: "admin-lich-lam-viec",
+        component: LichLamViecPage,
       },
     ],
   },

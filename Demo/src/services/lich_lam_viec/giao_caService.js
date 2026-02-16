@@ -10,38 +10,45 @@ const unwrapJson = async (res) => {
   }
 };
 
+const handleResponse = async (response) => {
+    // 204 No Content: Trả về null
+    if (response.status === 204) return null;
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        const error = new Error(data.message || 'Có lỗi xảy ra');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+    }
+    return data;
+};
+
 export const checkActiveCa = async (idNhanVien) => {
-  const res = await fetch(`${API_GIAO_CA}/check-active/${idNhanVien}`);
-  // Nếu 204 (No Content) tức là chưa vào ca
-  if (res.status === 204) return null;
-  if (!res.ok) throw new Error("Lỗi kiểm tra ca làm việc");
-  return await unwrapJson(res);
+    const response = await fetch(`${API_GIAO_CA}/check-active/${idNhanVien}`);
+    return handleResponse(response);
 };
 
-export const batDauCa = async (data) => {
-  // data: { idNhanVien, tienBanDau }
-  const res = await fetch(`${API_GIAO_CA}/bat-dau`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
-  }
-  return await unwrapJson(res);
+export const getCaTruocGanNhat = () => {
+  return axios.get('/api/giao-ca/ca-truoc')
+    .then(res => res.data);
 };
 
-export const ketThucCa = async (idGiaoCa, data) => {
-  // data: { tongTienTrongKet, ghiChu, idNhanVienTiepNhan }
-  const res = await fetch(`${API_GIAO_CA}/ket-thuc/${idGiaoCa}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
-  }
-  return await unwrapJson(res);
+export const batDauCa = async (payload) => {
+    const response = await fetch(`${API_GIAO_CA}/bat-dau`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    return handleResponse(response);
+};
+
+export const ketThucCa = async (idGiaoCa, payload) => {
+    const response = await fetch(`${API_GIAO_CA}/ket-thuc/${idGiaoCa}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    return handleResponse(response);
 };

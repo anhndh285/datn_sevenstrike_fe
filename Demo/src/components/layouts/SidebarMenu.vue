@@ -145,6 +145,32 @@
           </RouterLink>
         </div>
       </div>
+
+      <!-- Quản lý lịch làm việc (Dropdown) -->
+        <div class="ss-nav-group">
+          <button type="button" class="ss-nav-toggle" :class="route.path.startsWith('/admin/lich-lam-viec') || route.path.startsWith('/admin/giao-ca')
+            ? 'sidebar-active-custom'
+            : 'text-secondary'">
+            <span class="d-flex align-items-center gap-2 nav-left">
+              <span class="material-icons ss-ic">calendar_today</span>
+              <span class="ss-nav-label">Quản lý lịch làm việc</span>
+            </span>
+          </button>
+
+          <div class="ss-submenu">
+            <router-link class="ss-sub-link"
+              :class="route.path === '/admin/giao-ca' ? 'sub-item-active fw-bold' : 'text-secondary'"
+              to="/admin/giao-ca">
+              Giao ca
+            </router-link>
+
+            <router-link class="ss-sub-link"
+              :class="route.path === '/admin/lich-lam-viec' ? 'sub-item-active fw-bold' : 'text-secondary'"
+              to="/admin/lich-lam-viec">
+              Lịch làm việc
+            </router-link>
+          </div>
+        </div>
     </nav>
   </aside>
 </template>
