@@ -6,6 +6,31 @@ const unwrapJson = async (res) => {
   try { return text ? JSON.parse(text) : null; } catch { return text; }
 };
 
+export const checkLichLamViec = async (data) => {
+  const params = new URLSearchParams({
+    ca: data.ca,
+    ngay: data.ngay
+  }).toString();
+
+  const res = await fetch(`${API_LICH}/check?${params}`);
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error("Kiểm tra lịch làm việc thất bại: " + err);
+  }
+  
+  return await unwrapJson(res);
+};
+
+export const getAllLichLamViec = async (data) => {
+  const res = await fetch(API_LICH);
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error("Load lịch làm việc thất bại: " + err);
+  }
+  return await unwrapJson(res);
+};
+
 export const pagingLichLamViec = async (page = 0, size = 5) => {
   const res = await fetch(`${API_LICH}/page?pageNo=${page}&pageSize=${size}`);
   if (!res.ok) {

@@ -11,17 +11,18 @@ const unwrapJson = async (res) => {
 };
 
 const handleResponse = async (response) => {
-    // 204 No Content: Trả về null
     if (response.status === 204) return null;
 
-    const data = await response.json();
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : null;
 
     if (!response.ok) {
-        const error = new Error(data.message || 'Có lỗi xảy ra');
+        const error = new Error(data?.message || "Có lỗi xảy ra");
         error.status = response.status;
         error.data = data;
         throw error;
     }
+
     return data;
 };
 
@@ -30,24 +31,36 @@ export const checkActiveCa = async (idNhanVien) => {
     return handleResponse(response);
 };
 
-export const getCaTruocGanNhat = () => {
-  return axios.get('/api/giao-ca/ca-truoc')
-    .then(res => res.data);
+export const getCaTruocGanNhat = async () => {
+    const response = await fetch(`${API_GIAO_CA}/ca-truoc`);
+    return handleResponse(response);
+};
+
+export const xacNhanTienDauCa = async (idGiaoCa, tienDauCaNhap) => {
+    const response = await fetch(`${API_GIAO_CA}/xac-nhan-tien/${idGiaoCa}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tienDauCaNhap })
+    });
+
+    return handleResponse(response);
 };
 
 export const batDauCa = async (payload) => {
+    // Payload mong đợi: { idNhanVien, tienDauCaNhap, idLichLamViec }
     const response = await fetch(`${API_GIAO_CA}/bat-dau`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
     });
     return handleResponse(response);
 };
 
 export const ketThucCa = async (idGiaoCa, payload) => {
+    // Payload mong đợi: { ghiChu, ... }
     const response = await fetch(`${API_GIAO_CA}/ket-thuc/${idGiaoCa}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
     });
     return handleResponse(response);

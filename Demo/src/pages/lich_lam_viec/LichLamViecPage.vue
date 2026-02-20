@@ -109,7 +109,7 @@
                   <span class="material-icons-outlined">visibility</span>
                 </button>
 
-                <button class="ss-icon-btn-view" @click="deleteLich(l.id)" title="Xóa">
+                <button class="ss-icon-btn-view" @click="deletePhanCong(l.id)" title="Xóa">
                   <span class="fa-solid fa-trash"></span>
                 </button>
               </td>
@@ -254,11 +254,19 @@
 
 <script setup>
 import { ref, onMounted, reactive, computed } from 'vue';
-import { createLich, updateLich, pagingLichLamViec, removeLich, importLichExcel } from '@/services/lich_lam_viec/lich_lam_viecService';
+import { 
+  createPhanCong, 
+  removePhanCong, 
+  getAllPhanCong
+} from '@/services/lich_lam_viec/lich_lam_viec_nhan_vienService'; 
+
 import { getAllNhanVien } from '@/services/tai_khoan/nhan_vien/nhan_vienService';
 import { getAllCaLam } from '@/services/lich_lam_viec/ca_lamService';
+import { pagingLichLamViec, createLich, checkLichLamViec } from '@/services/lich_lam_viec/lich_lam_viecService';
 
+const listLichMaster = ref([]);
 const lichList = ref([]);
+const lichNhanVienList = ref([]);
 const listNhanVien = ref([]);
 const listCa = ref([]);
 const loading = ref(false);
@@ -288,10 +296,9 @@ const currentMonth = ref(today.getMonth());
 const currentYear = ref(today.getFullYear());
 
 const form = reactive({
+  idLichLamViec: null,
   idNhanVien: null,
-  idCaLam: null,
-  ngayLam: "",
-  ghiChu: ""
+  nguoiTao: 1
 });
 
 const getAvatarLabel = (name) => {
@@ -366,7 +373,7 @@ const isToday = (day) => {
 };
 
 const getEventsForDay = (day) => {
-  if (!lichList.value) return [];
+  if (!lichNhanVienList.value) return [];
 
   const m = currentMonth.value + 1;
   const mStr = m < 10 ? `0${m}` : m;
@@ -519,6 +526,7 @@ const openModalVoiNgay = (day) => {
   // 1. Reset form về trạng thái thêm mới (giống logic openModal(null))
   isEditing.value = false;
   currentId.value = null;
+  form.idLichLamViec = null;
   form.idNhanVien = null;
   selectedNhanViens.value = [];
   form.idCaLam = null;
@@ -542,10 +550,11 @@ const openModal = (item) => {
     isEditing.value = true;
     currentId.value = item.id;
 
-    const idNv = item.idNhanVien || (item.nhanVien ? item.nhanVien.id : null);
+    const idNv = item.nhanVien?.id;
     const idCa = item.idCaLam || (item.caLam ? item.caLam.id : null);
     form.idNhanVien = idNv;
     form.idCaLam = idCa;
+    form.idLichLamViec = item.lichLamViec ? item.lichLamViec.id : item.idLichLamViec;
     form.ngayLam = convertArrayDateToString(item.ngayLam);
     form.ghiChu = item.ghiChu || "";
 
@@ -560,6 +569,7 @@ const openModal = (item) => {
     isEditing.value = false;
     currentId.value = null;
 
+    form.idLichLamViec = null;
     form.idNhanVien = null;
     selectedNhanViens.value = [];
 
@@ -579,63 +589,87 @@ const closeModal = () => {
 };
 
 const handleSubmit = async () => {
-  if (!form.idCaLam || !form.ngayLam) {
-    alert("Vui lòng chọn Ca làm và Ngày làm!");
-    return;
+  // 1. Validate đầu vào
+  if (!form.ngayLam) { alert("Vui lòng chọn ngày làm việc!"); return; }
+  if (!form.idCaLam) { alert("Vui lòng chọn ca làm việc!"); return; }
+  
+  if (!isEditing.value && selectedNhanViens.value.length === 0) {
+    alert("Vui lòng chọn ít nhất một nhân viên!"); return;
   }
-
-  if (isEditing.value) {
-    if (!form.idNhanVien) {
-      alert("Vui lòng chọn nhân viên!"); return;
-    }
-    const payload = {
-      idNhanVien: Number(form.idNhanVien),
-      idCaLam: Number(form.idCaLam),
-      ngayLam: form.ngayLam,
-      ghiChu: form.ghiChu || ""
-    };
-    try {
-      await updateLich(currentId.value, payload);
-      alert("Cập nhật lịch thành công!");
-      closeModal();
-      loadData();
-    } catch (e) {
-      alert("Lỗi cập nhật: " + (e.response?.data?.message || e.message));
-    }
-    return;
-  }
-
-  if (selectedNhanViens.value.length === 0) {
-    alert("Vui lòng chọn ít nhất một nhân viên!");
-    return;
-  }
-
-  const promises = selectedNhanViens.value.map(nv => {
-    const payload = {
-      idNhanVien: nv.id,
-      idCaLam: Number(form.idCaLam),
-      ngayLam: form.ngayLam,
-      ghiChu: form.ghiChu || ""
-    };
-    return createLich(payload);
-  });
 
   try {
-    await Promise.all(promises);
-    alert(`Đã thêm lịch thành công cho ${selectedNhanViens.value.length} nhân viên!`);
+    loading.value = true;
+    let idMaster = null;
+
+    // --- BƯỚC 1: SỬ DỤNG HÀM checkLichLamViec ĐỂ KIỂM TRA ---
+    // Gửi idCaLam và ngayLam lên server để kiểm tra sự tồn tại
+    const existingLich = await checkLichLamViec({
+      ca: form.idCaLam,
+      ngay: form.ngayLam
+    });
+
+    if (existingLich && existingLich.id) {
+      // Nếu server trả về object đã tồn tại
+      idMaster = existingLich.id;
+      console.log("Tìm thấy lịch làm việc cũ ID:", idMaster);
+    } else {
+      // Nếu chưa có (server trả về null hoặc empty) -> Tạo mới Master
+      const newLichData = {
+        idCaLam: form.idCaLam,
+        ngayLam: form.ngayLam,
+        ghiChu: form.ghiChu || "",
+        nguoiTao: 1
+      };
+      const resLich = await createLich(newLichData);
+      idMaster = resLich.id;
+      console.log("Đã tạo lịch làm việc mới ID:", idMaster);
+    }
+
+    // --- BƯỚC 2: TẠO PHÂN CÔNG NHÂN VIÊN ---
+    if (!isEditing.value) {
+      // Lấy danh sách ID nhân viên đã chọn
+      const selectedIds = selectedNhanViens.value.map(nv => nv.id);
+      
+      // Thực hiện tạo phân công hàng loạt
+      const promises = selectedIds.map(nvId => createPhanCong({
+        idLichLamViec: idMaster,
+        idNhanVien: nvId,
+        nguoiTao: 1
+      }));
+
+      await Promise.all(promises);
+      alert(`Đã thêm ${selectedIds.length} nhân viên vào lịch làm việc.`);
+    } else {
+      // Logic Update cho trường hợp sửa (nếu cần)
+      alert("Tính năng cập nhật đang được xử lý.");
+    }
+
     closeModal();
-    loadData();
+    loadData(); // Tải lại danh sách hiển thị (Table/Calendar)
+
   } catch (e) {
-    console.error(e);
-    alert("Có lỗi xảy ra (Có thể một số nhân viên đã bị trùng lịch): " + (e.response?.data?.message || e.message));
-    loadData();
+    console.error("Lỗi hệ thống:", e);
+    // Thông báo lỗi thân thiện hơn
+    const errorMsg = e.message.includes("Unexpected token") 
+      ? "Lỗi phản hồi từ Server (JSON error)" 
+      : e.message;
+    alert("Không thể hoàn thành: " + errorMsg);
+  } finally {
+    loading.value = false;
   }
 };
 
 const loadData = async () => {
   try {
-    const res = await pagingLichLamViec(0, 100);
-    lichList.value = res.content || [];
+    const res = await getAllPhanCong();
+    lichNhanVienList.value = Array.isArray(res) ? res : (res.content || []);
+  } catch (e) { console.error(e); }
+};
+
+const loadLichMaster = async () => {
+  try {
+    const res = await pagingLichLamViec(0, 1000);
+    listLichMaster.value = res.content || [];
   } catch (e) { console.error(e); }
 };
 
@@ -648,24 +682,15 @@ const loadthemLich = async () => {
 };
 
 const filterLichList = computed(() => {
-  let data = [...lichList.value];
+  let data = [...lichNhanVienList.value];
 
   if (filterNv.value) {
-    const searchId = Number(filterNv.value);
-
-    data = data.filter(item => {
-      if (item.nhanVien) {
-        return item.nhanVien.id === searchId;
-      }
-      return false;
-    });
+    data = data.filter(item => item.nhanVien?.id === Number(filterNv.value));
   }
 
   if (filterDate.value) {
     data = data.filter(l => {
-      const ngay = typeof l.ngayLam === "string"
-        ? l.ngayLam.substring(0, 10)
-        : convertArrayDateToString(l.ngayLam);
+      const ngay = convertArrayDateToString(l.ngayLam);
       return ngay === filterDate.value;
     });
   }
@@ -673,19 +698,17 @@ const filterLichList = computed(() => {
   return data;
 });
 
-
-
-const deleteLich = async (id) => {
-  if (!confirm("Bạn có chắc muốn xóa lịch này?")) return;
+const deletePhanCong = async (id) => {
+  if (!confirm("Gỡ nhân viên này khỏi lịch?")) return;
   try {
-    await removeLich(id);
+    await removePhanCong(id);
     loadData();
-  } catch (e) {
-    alert("Xóa thất bại: " + e.message);
-  }
+  } catch (e) { alert("Thất bại: " + e.message); }
 };
 
 onMounted(() => {
+  loadData();
+  loadLichMaster();
   loadthemLich();
 });
 </script>

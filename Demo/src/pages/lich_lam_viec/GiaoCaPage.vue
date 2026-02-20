@@ -54,7 +54,7 @@
                     </p>
                     <p>
                         <span class="label-text">Số tiền mặt ban đầu: </span>
-                        <span class="val-text">{{ formatNumber(caHienTai.tienBanDau) }} ₫</span>
+                        <span class="val-text">{{ formatNumber(caHienTai.tienDauCaNhap) }} ₫</span>
                     </p>
                 </div>
 
@@ -63,7 +63,7 @@
                     <div class="handover-box">
                         <div class="info-row">
                             <span class="label-text">Tiền mặt cuối ca trước:</span>
-                            <span class="val-text bold">{{ formatNumber(caHienTai.tienCuoiCaTruoc) }} ₫</span>
+                            <span class="val-text bold">{{ formatNumber(caHienTai.tienBanGiaoDuKien) }} ₫</span>
                         </div>
                         <div class="info-row mt-2">
                             <span class="label-text">Số đơn hàng chờ xử lý:</span>
@@ -145,6 +145,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { batDauCa, checkActiveCa, ketThucCa } from '@/services/lich_lam_viec/giao_caService';
+import { getLichLamViecNhanVien } from '@/services/lich_lam_viec/lich_lam_viec_nhan_vienService';
 
 const router = useRouter();
 
@@ -189,8 +190,8 @@ const triggerToast = (msg) => {
 
 const tinhTongLyThuyet = computed(() => {
     if (!caHienTai.value) return 0;
-    const banDau = caHienTai.value.tienBanDau || 0;
-    const doanhThu = caHienTai.value.tongTienTrongCa || 0;
+    const banDau = caHienTai.value.tienDauCaNhap || 0; 
+    const doanhThu = caHienTai.value.tongTienTrongCa || 0; 
     return banDau + doanhThu;
 });
 
@@ -248,9 +249,22 @@ const handleBatDauCa = async () => {
 
     isSubmitting.value = true;
     try {
+        const today = new Date().toLocaleDateString('en-CA');
+
+        const lichList = await getLichLamViecNhanVien(ID_NHAN_VIEN, today);
+
+        if (!lichList || lichList.length === 0) {
+            throw new Error("Không có ca làm việc được phân công hôm nay.");
+        }
+
+
+        console.log("Lịch làm việc nhận được:", lichList);
+        const idllv = lichList[0].lichLamViec.id;
+
         await batDauCa({
             idNhanVien: ID_NHAN_VIEN,
-            tienBanDau: tienBanDauInput.value
+            idLichLamViec: idllv,
+            tienDauCaNhap: tienBanDauInput.value,
         });
         await loadData();
 
