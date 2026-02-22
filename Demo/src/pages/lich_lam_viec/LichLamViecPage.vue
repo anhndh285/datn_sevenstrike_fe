@@ -601,38 +601,18 @@ const handleSubmit = async () => {
     loading.value = true;
     let idMaster = null;
 
-    // --- BƯỚC 1: SỬ DỤNG HÀM checkLichLamViec ĐỂ KIỂM TRA ---
-    // Gửi idCaLam và ngayLam lên server để kiểm tra sự tồn tại
+    if (!isEditing.value) {
     const existingLich = await checkLichLamViec({
       ca: form.idCaLam,
       ngay: form.ngayLam
     });
 
-    if (existingLich && existingLich.id) {
-      // Nếu server trả về object đã tồn tại
-      idMaster = existingLich.id;
-      console.log("Tìm thấy lịch làm việc cũ ID:", idMaster);
-    } else {
-      // Nếu chưa có (server trả về null hoặc empty) -> Tạo mới Master
-      const newLichData = {
-        idCaLam: form.idCaLam,
-        ngayLam: form.ngayLam,
-        ghiChu: form.ghiChu || "",
-        nguoiTao: 1
-      };
-      const resLich = await createLich(newLichData);
-      idMaster = resLich.id;
-      console.log("Đã tạo lịch làm việc mới ID:", idMaster);
-    }
-
-    // --- BƯỚC 2: TẠO PHÂN CÔNG NHÂN VIÊN ---
-    if (!isEditing.value) {
-      // Lấy danh sách ID nhân viên đã chọn
+    if (existingLich) {
       const selectedIds = selectedNhanViens.value.map(nv => nv.id);
       
       // Thực hiện tạo phân công hàng loạt
       const promises = selectedIds.map(nvId => createPhanCong({
-        idLichLamViec: idMaster,
+        idLichLamViec: existingLich[0].id,
         idNhanVien: nvId,
         nguoiTao: 1
       }));
@@ -640,16 +620,35 @@ const handleSubmit = async () => {
       await Promise.all(promises);
       alert(`Đã thêm ${selectedIds.length} nhân viên vào lịch làm việc.`);
     } else {
-      // Logic Update cho trường hợp sửa (nếu cần)
+      const newLichData = {
+        idCaLam: form.idCaLam,
+        ngayLam: form.ngayLam,
+        ghiChu: form.ghiChu || "",
+        nguoiTao: 1
+      };
+      const resLich = await createLich(newLichData);
+      console.log("Đã tạo lịch làm việc mới ID:", resLich[0].id);
+
+      const selectedIds = selectedNhanViens.value.map(nv => nv.id);
+      
+      const promises = selectedIds.map(nvId => createPhanCong({
+        idLichLamViec: resLich[0].id,
+        idNhanVien: nvId,
+        nguoiTao: 1
+      }));
+
+      await Promise.all(promises);
+      alert(`Đã thêm ${selectedIds.length} nhân viên vào lịch làm việc.`);
+    }
+
+    } else {
       alert("Tính năng cập nhật đang được xử lý.");
     }
 
     closeModal();
-    loadData(); // Tải lại danh sách hiển thị (Table/Calendar)
-
+    loadData();
   } catch (e) {
     console.error("Lỗi hệ thống:", e);
-    // Thông báo lỗi thân thiện hơn
     const errorMsg = e.message.includes("Unexpected token") 
       ? "Lỗi phản hồi từ Server (JSON error)" 
       : e.message;
