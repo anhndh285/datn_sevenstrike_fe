@@ -221,7 +221,6 @@
               <colgroup>
                 <col style="width: 40px" />
                 <col style="width: 50px" />
-                <col style="width: 60px" />
                 <col style="width: 150px" />
                 <col />
               </colgroup>
@@ -229,7 +228,6 @@
                 <tr>
                   <th></th>
                   <th class="text-center">#</th>
-                  <th class="text-center">Ảnh</th>
                   <th class="text-center">Mã SP</th>
                   <th class="text-center">Tên sản phẩm</th>
                 </tr>
@@ -237,7 +235,7 @@
 
               <tbody>
                 <tr v-if="filteredParentProducts.length === 0">
-                  <td colspan="5" class="text-center text-muted py-4">
+                  <td colspan="4" class="text-center text-muted py-4">
                     Không tìm thấy dữ liệu
                   </td>
                 </tr>
@@ -260,13 +258,6 @@
                         :checked="isGroupSelected(group.idSanPham)"
                         @change="handleParentCheck(group.idSanPham, $event.target.checked)"
                       />
-                    </td>
-
-                    <td class="text-center td-click" @click="toggleExpand(group.idSanPham)">
-                      <div class="thumb-wrap">
-                        <img :src="getGroupThumb(group)" class="product-thumb" @error="onImgError" alt="thumb" />
-                        <span v-if="displayPercent" class="discount-badge">-{{ displayPercent }}%</span>
-                      </div>
                     </td>
 
                     <td class="text-center td-click" @click="toggleExpand(group.idSanPham)">
@@ -297,13 +288,6 @@
                         v-model="selectedVariantIds"
                         @change="onSourceCheckboxChange"
                       />
-                    </td>
-
-                    <td class="text-center">
-                      <div class="thumb-wrap">
-                        <img :src="getVariantThumb(v)" class="product-thumb-sm" @error="onImgError" alt="thumb" />
-                        <span v-if="displayPercent" class="discount-badge sm">-{{ displayPercent }}%</span>
-                      </div>
                     </td>
 
                     <td class="text-center text-muted small">{{ v.maChiTietSanPham }}</td>
@@ -639,7 +623,7 @@
                 <td class="text-center">
                   <div class="thumb-wrap">
                     <img :src="getVariantThumb(item)" class="product-thumb-sm" @error="onImgError" alt="thumb" />
-                    <span v-if="displayPercent" class="discount-badge sm">-{{ displayPercent }}%</span>
+                    <span v-if="displayPercent" class="discount-badge sm" :class="badgeColorClass">-{{ displayPercent }}%</span>
                   </div>
                 </td>
 
@@ -651,7 +635,7 @@
                 <td class="text-center price-cell">
                   <template v-if="displayPercent">
                     <span class="price-original">{{ formatCurrency(getGiaBienThe(item)) }}</span>
-                    <span class="price-discounted">{{ formatCurrency(getGiaBienThe(item) * (1 - displayPercent / 100)) }}</span>
+                    <span class="price-discounted" :class="badgeColorClass">{{ formatCurrency(getGiaBienThe(item) * (1 - displayPercent / 100)) }}</span>
                   </template>
                   <template v-else>
                     {{ formatCurrency(getGiaBienThe(item)) }}
@@ -726,12 +710,6 @@ const extractRawImg = (v) => {
 
 const getVariantThumb = (v) => normalizeImgUrl(extractRawImg(v)) || IMG_PLACEHOLDER;
 
-const getGroupThumb = (group) => {
-  if (!group?.variants?.length) return IMG_PLACEHOLDER;
-  const pick = group.variants.find((x) => normalizeImgUrl(extractRawImg(x))) || group.variants[0];
-  return getVariantThumb(pick);
-};
-
 const onImgError = (e) => {
   const img = e?.target;
   if (!img) return;
@@ -753,6 +731,15 @@ const displayPercent = computed(() => {
   const v = Number(formData.giaTriGiamGia);
   if (!Number.isFinite(v) || v < 1 || v > 100) return null;
   return Math.round(v);
+});
+
+// < 50% → đỏ | 50–70% → vàng | > 70% → xanh
+const badgeColorClass = computed(() => {
+  const v = displayPercent.value;
+  if (!v) return "";
+  if (v > 70) return "badge-green";
+  if (v >= 50) return "badge-yellow";
+  return "badge-red";
 });
 
 const rawVariants = ref([]);
@@ -1511,6 +1498,15 @@ onMounted(loadData);
   z-index: 2;
 }
 .discount-badge.sm { font-size: 8px; padding: 1px 3px; top: -3px; right: -3px; }
+
+/* Phân loại màu: < 50% đỏ | 50–70% vàng | > 70% xanh */
+.discount-badge.badge-red   { background: #ef4444; box-shadow: 0 2px 6px rgba(239,68,68,0.3); }
+.discount-badge.badge-yellow { background: #f59e0b; box-shadow: 0 2px 6px rgba(245,158,11,0.3); }
+.discount-badge.badge-green  { background: #22c55e; box-shadow: 0 2px 6px rgba(34,197,94,0.3); }
+
+.price-discounted.badge-red    { color: #ef4444; }
+.price-discounted.badge-yellow { color: #f59e0b; }
+.price-discounted.badge-green  { color: #22c55e; }
 
 /* ✅ Combobox giống ProductManagePage.vue */
 .ss-combo { position: relative; min-width: 160px; }
