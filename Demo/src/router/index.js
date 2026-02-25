@@ -1,6 +1,8 @@
 // File: src/router/index.js
 import { createRouter, createWebHistory } from "vue-router";
+import Swal from "sweetalert2";
 
+import TrangChuPage from "@/pages/trang_chu/TrangChuPage.vue";
 import AdminLayout from "@/views/admin/AdminLayout.vue";
 import LoginManager from "@/views/authen_author/LoginManager.vue";
 
@@ -49,12 +51,56 @@ import SalesPage from "@/pages/sales/SalesPage.vue";
 // ✅ Thống kê
 import ThongKePage from "@/pages/thong_ke/ThongKePage.vue";
 
-// ✅ Check đăng nhập: token (nếu có) HOẶC user (hiện tại backend chưa trả token)
+// ✅ LỊCH LÀM VIỆC
+import LichLamViecPage from "@/pages/lich_lam_viec/LichLamViec.vue";
+import GiaoCaPage from "@/pages/lich_lam_viec/GiaoCa.vue";
+
+// ======================= AUTH HELPERS =======================
+const normalizeRole = (role) => {
+  const r = String(role || "").trim().toUpperCase();
+
+  // tương thích nếu ai đó còn lưu STAFF
+  if (r === "STAFF") return "NHAN_VIEN";
+  if (r === "NHANVIEN" || r === "NHÂN_VIÊN" || r === "NHÂN VIÊN") return "NHAN_VIEN";
+
+  return r;
+};
+
+const getUser = () => {
+  const raw =
+    localStorage.getItem("user") ||
+    sessionStorage.getItem("user") ||
+    localStorage.getItem("nguoiDung") ||
+    sessionStorage.getItem("nguoiDung");
+
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+};
+
+const getUserRole = () => {
+  const u = getUser();
+
+  // ưu tiên field dạng string trước, object (quyenHan) để sau
+  const role =
+    u?.role ||
+    u?.vaiTro ||
+    u?.tenVaiTro ||
+    u?.tenQuyenHan ||
+    u?.quyenHan?.tenQuyenHan ||
+    u?.quyenHan;
+
+  return normalizeRole(role);
+};
+
+// ✅ Check đăng nhập: token (nếu có) HOẶC user
 const isLoggedIn = () => {
   const tokenKeys = ["accessToken", "token", "jwt", "ss_token"];
-  const hasToken = tokenKeys.some(
-    (k) => !!localStorage.getItem(k) || !!sessionStorage.getItem(k)
-  );
+  const hasToken = tokenKeys.some((k) => !!localStorage.getItem(k) || !!sessionStorage.getItem(k));
 
   const hasUser =
     !!localStorage.getItem("user") ||
@@ -65,81 +111,196 @@ const isLoggedIn = () => {
   return hasToken || hasUser;
 };
 
+const clearAuth = () => {
+  const keys = ["user", "nguoiDung", "accessToken", "token", "jwt", "ss_token", "ss_nguoi_ban"];
+  keys.forEach((k) => {
+    localStorage.removeItem(k);
+    sessionStorage.removeItem(k);
+  });
+};
+
+const hasPermission = (requiredRoles, userRole) => {
+  if (!requiredRoles) return true;
+  if (!userRole) return false;
+
+  return Array.isArray(requiredRoles) ? requiredRoles.includes(userRole) : requiredRoles === userRole;
+};
+
+// ======================= ROUTES =======================
 const routes = [
-  // ✅ vào web sẽ về login (vì có auth)
   { path: "/", redirect: "/dang-nhap" },
 
-  // ✅ Login
-  { path: "/dang-nhap", name: "dang-nhap", component: LoginManager, meta: { public: true } },
+  {
+    path: "/dang-nhap",
+    name: "dang-nhap",
+    component: LoginManager,
+    meta: { public: true },
+  },
 
   {
     path: "/admin",
     component: AdminLayout,
     meta: { requiresAuth: true },
     children: [
-      { path: "", redirect: "/admin/san-pham" },
+      { path: "", redirect: "/admin/trang-chu" },
 
-      // ✅ THỐNG KÊ
-      { path: "dashboard", name: "admin-dashboard", component: ThongKePage },
+      // ✅ TRANG CHỦ: ADMIN + NHÂN VIÊN ĐỀU THẤY
+      {
+        path: "trang-chu",
+        name: "admin-trang-chu",
+        component: TrangChuPage,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
 
-      // ✅ Bán hàng
-      { path: "pos", name: "admin-pos", component: SalesPage },
+      // ✅ THỐNG KÊ: chỉ ADMIN
+      {
+        path: "dashboard",
+        name: "admin-dashboard",
+        component: ThongKePage,
+        meta: { roles: ["ADMIN"] },
+      },
 
-      // ✅ Hóa đơn
-      { path: "hoa-don", name: "admin-hoa-don", component: HoaDonList },
+      // ✅ POS / HÓA ĐƠN / KHÁCH HÀNG / LỊCH: ADMIN + NHÂN VIÊN
+      {
+        path: "pos",
+        name: "admin-pos",
+        component: SalesPage,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+
+      {
+        path: "hoa-don",
+        name: "admin-hoa-don",
+        component: HoaDonList,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
       {
         path: "hoa-don/:id(\\d+)",
         name: "admin-hoa-don-detail",
         component: HoaDonDetail,
         props: true,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+
+      {
+        path: "lich-lam-viec",
+        name: "admin-lich-lam-viec",
+        component: LichLamViecPage,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+      {
+        path: "giao-ca",
+        name: "admin-giao-ca",
+        component: GiaoCaPage,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
       },
 
       // =========================================================
-      // ✅ KHUYẾN MẠI
+      // ✅ KHUYẾN MẠI (ADMIN)
       // =========================================================
-      { path: "giam-gia/phieu", name: "admin-voucher", component: VoucherManagePage },
-      { path: "giam-gia/phieu/them", name: "admin-voucher-new", component: VoucherFormPage },
+      {
+        path: "giam-gia/phieu",
+        name: "admin-voucher",
+        component: VoucherManagePage,
+        meta: { roles: ["ADMIN"] },
+      },
+      {
+        path: "giam-gia/phieu/them",
+        name: "admin-voucher-new",
+        component: VoucherFormPage,
+        meta: { roles: ["ADMIN"] },
+      },
       {
         path: "giam-gia/phieu/:id(\\d+)",
         name: "admin-voucher-detail",
         component: VoucherFormPage,
         props: true,
+        meta: { roles: ["ADMIN"] },
       },
 
-      { path: "giam-gia/dot", name: "admin-discount", component: DiscountPage },
-      { path: "giam-gia/dot/new", name: "admin-discount-new", component: AddDiscountPage },
+      {
+        path: "giam-gia/dot",
+        name: "admin-discount",
+        component: DiscountPage,
+        meta: { roles: ["ADMIN"] },
+      },
+      {
+        path: "giam-gia/dot/new",
+        name: "admin-discount-new",
+        component: AddDiscountPage,
+        meta: { roles: ["ADMIN"] },
+      },
       {
         path: "giam-gia/dot/:id(\\d+)",
         name: "admin-discount-detail",
         component: DetailDiscountPage,
         props: true,
+        meta: { roles: ["ADMIN"] },
       },
 
       // =========================================================
-      // ✅ SẢN PHẨM
+      // ✅ SẢN PHẨM (ADMIN)
       // =========================================================
-      { path: "san-pham", name: "admin-san-pham", component: ProductManagePage },
-      { path: "san-pham/new", name: "admin-san-pham-new", component: ProductFormPage },
-      { path: "san-pham/:id(\\d+)", name: "admin-san-pham-one", component: ProductFormPage, props: true },
-      { path: "san-pham/:id(\\d+)/edit", name: "admin-san-pham-edit", component: ProductFormPage, props: true },
+      {
+        path: "san-pham",
+        name: "admin-san-pham",
+        component: ProductManagePage,
+        meta: { roles: ["ADMIN"] },
+      },
+      {
+        path: "san-pham/new",
+        name: "admin-san-pham-new",
+        component: ProductFormPage,
+        meta: { roles: ["ADMIN"] },
+      },
+      {
+        path: "san-pham/:id(\\d+)",
+        name: "admin-san-pham-one",
+        component: ProductFormPage,
+        props: true,
+        meta: { roles: ["ADMIN"] },
+      },
+      {
+        path: "san-pham/:id(\\d+)/edit",
+        name: "admin-san-pham-edit",
+        component: ProductFormPage,
+        props: true,
+        meta: { roles: ["ADMIN"] },
+      },
 
-      { path: "chi-tiet-san-pham", name: "admin-ctsp", component: ProductDetailListPage },
-      { path: "chi-tiet-san-pham/new", name: "admin-ctsp-new", component: ProductDetailFormPage },
-      { path: "chi-tiet-san-pham/:id(\\d+)", name: "admin-ctsp-one", component: ProductDetailFormPage, props: true },
+      {
+        path: "chi-tiet-san-pham",
+        name: "admin-ctsp",
+        component: ProductDetailListPage,
+        meta: { roles: ["ADMIN"] },
+      },
+      {
+        path: "chi-tiet-san-pham/new",
+        name: "admin-ctsp-new",
+        component: ProductDetailFormPage,
+        meta: { roles: ["ADMIN"] },
+      },
+      {
+        path: "chi-tiet-san-pham/:id(\\d+)",
+        name: "admin-ctsp-one",
+        component: ProductDetailFormPage,
+        props: true,
+        meta: { roles: ["ADMIN"] },
+      },
 
       // =========================================================
-      // ✅ THUỘC TÍNH
+      // ✅ THUỘC TÍNH (ADMIN)
       // =========================================================
-      { path: "xuat-xu", name: "admin-xuat-xu", component: XuatXuPage },
-      { path: "thuong-hieu", name: "admin-thuong-hieu", component: ThuongHieuPage },
-      { path: "vi-tri-thi-dau", name: "admin-vi-tri-thi-dau", component: ViTriThiDauPage },
-      { path: "phong-cach-choi", name: "admin-phong-cach-choi", component: PhongCachChoiPage },
-      { path: "co-giay", name: "admin-co-giay", component: CoGiayPage },
-      { path: "chat-lieu", name: "admin-chat-lieu", component: ChatLieuPage },
-      { path: "mau-sac", name: "admin-mau-sac", component: MauSacPage },
-      { path: "kich-thuoc", name: "admin-kich-thuoc", component: KichThuocPage },
-      { path: "form-chan", name: "admin-form-chan", component: FormChanPage },
-      { path: "loai-san", name: "admin-loai-san", component: LoaiSanPage },
+      { path: "xuat-xu", name: "admin-xuat-xu", component: XuatXuPage, meta: { roles: ["ADMIN"] } },
+      { path: "thuong-hieu", name: "admin-thuong-hieu", component: ThuongHieuPage, meta: { roles: ["ADMIN"] } },
+      { path: "vi-tri-thi-dau", name: "admin-vi-tri-thi-dau", component: ViTriThiDauPage, meta: { roles: ["ADMIN"] } },
+      { path: "phong-cach-choi", name: "admin-phong-cach-choi", component: PhongCachChoiPage, meta: { roles: ["ADMIN"] } },
+      { path: "co-giay", name: "admin-co-giay", component: CoGiayPage, meta: { roles: ["ADMIN"] } },
+      { path: "chat-lieu", name: "admin-chat-lieu", component: ChatLieuPage, meta: { roles: ["ADMIN"] } },
+      { path: "mau-sac", name: "admin-mau-sac", component: MauSacPage, meta: { roles: ["ADMIN"] } },
+      { path: "kich-thuoc", name: "admin-kich-thuoc", component: KichThuocPage, meta: { roles: ["ADMIN"] } },
+      { path: "form-chan", name: "admin-form-chan", component: FormChanPage, meta: { roles: ["ADMIN"] } },
+      { path: "loai-san", name: "admin-loai-san", component: LoaiSanPage, meta: { roles: ["ADMIN"] } },
 
       // ✅ redirect demo cũ
       { path: "khach-hang", redirect: "/admin/tai-khoan/khach-hang" },
@@ -152,13 +313,15 @@ const routes = [
         path: "tai-khoan/khach-hang",
         name: "tai-khoan-khach-hang",
         component: TaiKhoanKhachHangPage,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
         children: [
-          { path: "them", name: "tai-khoan-khach-hang-them", component: ThemKhachHangPage },
+          { path: "them", name: "tai-khoan-khach-hang-them", component: ThemKhachHangPage, meta: { roles: ["ADMIN", "NHAN_VIEN"] } },
           {
             path: "cap-nhat/:id(\\d+)",
             name: "tai-khoan-khach-hang-cap-nhat",
             component: CapNhatKhachHangPage,
             props: true,
+            meta: { roles: ["ADMIN", "NHAN_VIEN"] },
           },
         ],
       },
@@ -166,13 +329,15 @@ const routes = [
         path: "tai-khoan/nhan-vien",
         name: "tai-khoan-nhan-vien",
         component: TaiKhoanNhanVienPage,
+        meta: { roles: ["ADMIN"] },
         children: [
-          { path: "them", name: "tai-khoan-nhan-vien-them", component: ThemNhanVienPage },
+          { path: "them", name: "tai-khoan-nhan-vien-them", component: ThemNhanVienPage, meta: { roles: ["ADMIN"] } },
           {
             path: "cap-nhat/:id(\\d+)",
             name: "tai-khoan-nhan-vien-cap-nhat",
             component: CapNhatNhanVienPage,
             props: true,
+            meta: { roles: ["ADMIN"] },
           },
         ],
       },
@@ -187,19 +352,54 @@ const router = createRouter({
   routes,
 });
 
-// ✅ Guard: chặn /admin nếu chưa login
+// ======================= GUARD =======================
 router.beforeEach((to, from, next) => {
-  if (to.meta?.public) return next();
+  const role = getUserRole();
+
+  // Public route
+  if (to.meta?.public) {
+    // chỉ đá khỏi /dang-nhap khi đã login + role hợp lệ
+    if (to.name === "dang-nhap" && isLoggedIn() && role) {
+      return next("/admin/trang-chu");
+    }
+    return next();
+  }
 
   const requiresAuth = to.matched.some((r) => r.meta?.requiresAuth);
   if (!requiresAuth) return next();
 
-  if (isLoggedIn()) return next();
+  // chưa login -> về login
+  if (!isLoggedIn()) {
+    return next({ name: "dang-nhap", query: { redirect: to.fullPath } });
+  }
 
-  return next({
-    name: "dang-nhap",
-    query: { redirect: to.fullPath },
-  });
+  // đã có token/user nhưng không đọc ra role -> coi như chưa login (tránh “từ chối” sai)
+  if (!role) {
+    clearAuth();
+    return next({ name: "dang-nhap" });
+  }
+
+  // lấy roles gần nhất trong matched (ưu tiên route con)
+  const requiredRoles = to.matched.reduce(
+    (acc, r) => (r.meta?.roles ?? r.meta?.role ?? acc),
+    null
+  );
+
+  if (!hasPermission(requiredRoles, role)) {
+    Swal.fire({
+      icon: "error",
+      title: "Từ chối truy cập",
+      text: "Bạn không có quyền vào chức năng này!",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+
+    // fallback an toàn
+    const fallback = role === "NHAN_VIEN" ? "/admin/trang-chu" : "/admin/trang-chu";
+    return next(from.fullPath && from.fullPath !== "/dang-nhap" ? from.fullPath : fallback);
+  }
+
+  return next();
 });
 
 export default router;
