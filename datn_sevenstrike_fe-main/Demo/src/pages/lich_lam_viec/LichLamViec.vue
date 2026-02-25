@@ -1,0 +1,1404 @@
+<template>
+  <div class="lich-page">
+    <div class="header-section">
+      <h2 class="page-title">Quản Lý Lịch Làm Việc</h2>
+    </div>
+
+    <div class="card-box">
+      <div class="toolbar-header">
+        <div class="left">
+          <h3><i class="fa-solid fa-sliders"></i> Tùy chọn</h3>
+        </div>
+      </div>
+
+      <div class="toolbar-body">
+        <button class="btn-add" @click="openModal(null)">
+          <i class="fa-solid fa-plus"></i> Thêm mới lịch làm việc
+        </button>
+
+        <div class="filters-bar">
+          <div class="form-group">
+            <label>Nhân viên <span class="req">*</span></label>
+
+            <div class="combobox-wrapper">
+              <input type="text" class="form-control" placeholder="Nhập tên hoặc mã nhân viên..." v-model="searchNv"
+                @focus="showNvDropdown = true" @blur="handleBlurNv" @input="showNvDropdown = true; filterNv = null" />
+              <ul v-if="showNvDropdown" class="combobox-dropdown">
+                <li v-for="nv in filteredNhanVienList" :key="nv.id" @click="selectNhanVien(nv)"
+                  :class="{ active: nv.id === form.idNhanVien }">
+                  <span class="fw-bold">{{ nv.tenNhanVien }}</span>
+                  <small v-if="nv.maNhanVien"> - {{ nv.maNhanVien }}</small>
+                </li>
+
+                <li v-if="filteredNhanVienList.length === 0" class="no-result">
+                  Không tìm thấy nhân viên
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="filter-group" v-if="viewMode === 'table'">
+            <label>Ngày làm:</label>
+            <input type="date" v-model="filterDate" class="form-control" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-box mt-20">
+      <div class="table-header-row">
+        <h3>
+          <i :class="viewMode === 'table' ? 'fa-solid fa-table' : 'fa-solid fa-calendar'"></i>
+          {{ viewMode === 'table' ? 'Danh Sách Lịch Làm Việc' : 'Lịch Làm Việc Tháng ' + (currentMonth + 1) }}
+        </h3>
+
+        <div class="view-modes">
+          <button class="mode-btn" :class="{ active: viewMode === 'table' }" @click="viewMode = 'table'">
+            <i class="fa-solid fa-table"></i> Bảng
+          </button>
+          <button class="mode-btn" :class="{ active: viewMode === 'calendar' }" @click="viewMode = 'calendar'">
+            <i class="fa-solid fa-calendar"></i> Lịch
+          </button>
+        </div>
+      </div>
+
+      <div v-if="viewMode === 'table'" class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>NHÂN VIÊN</th>
+              <th>CA LÀM</th>
+              <th>THỜI GIAN</th>
+              <th>NGÀY LÀM</th>
+              <th class="text-right">THAO TÁC</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(l, index) in filterLichList" :key="l.id">
+              <td>{{ index + 1 }}</td>
+              <td>{{ l.tenNhanVien }}</td>
+              <td>{{ l.tenCa }}</td>
+              <td>{{ formatTime(l.gioBatDau) }} - {{ formatTime(l.gioKetThuc) }}</td>
+              <td>{{ formatDate(l.ngayLam) }}</td>
+              <td class="text-right action-col">
+                <button class="ss-icon-btn-view" @click="openModal(l)" title="Xem / Sửa">
+                  <span class="material-icons-outlined">visibility</span>
+                </button>
+
+                <button class="ss-icon-btn-view" @click="deletePhanCong(l.id)" title="Xóa">
+                  <span class="fa-solid fa-trash"></span>
+                </button>
+              </td>
+            </tr>
+            <tr v-if="filterLichList.length === 0">
+              <td colspan="5" class="text-center">Không có dữ liệu</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-else class="calendar-view">
+        <div class="cal-navigation">
+          <div class="nav-left">
+            <button class="btn-nav" @click="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+            <span class="cal-title">Tháng {{ currentMonth + 1 }} năm {{ currentYear }}</span>
+            <button class="btn-nav" @click="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+            <button class="btn-nav" @click="goToday">Hôm nay</button>
+          </div>
+        </div>
+
+        <div class="cal-grid-header">
+          <div class="cal-day-name">CN</div>
+          <div class="cal-day-name">Th 2</div>
+          <div class="cal-day-name">Th 3</div>
+          <div class="cal-day-name">Th 4</div>
+          <div class="cal-day-name">Th 5</div>
+          <div class="cal-day-name">Th 6</div>
+          <div class="cal-day-name">Th 7</div>
+        </div>
+
+        <div class="cal-grid-body">
+          <div v-for="blank in startPadding" :key="'blank-' + blank" class="cal-cell disabled"></div>
+
+          <div v-for="day in daysInMonth" :key="'day-' + day" class="cal-cell" :class="{ 'is-today': isToday(day) }">
+            <div class="cal-date-num">{{ day }}</div>
+
+            <div class="cal-events-container">
+              <div v-for="nv in getEventsForDay(day)" :key="nv.id" class="event-item" @click="openModal(nv)">
+                <div class="avatar-circle">
+                  <img v-if="isImg(nv.nhanVien?.anhNhanVien)" :src="nv.nhanVien?.anhNhanVien" />
+                  <span v-else class="initial">{{ getAvatarLabel(nv.tenNhanVien) }}</span>
+                </div>
+                <span class="event-name">{{ nv.nhanVien?.tenTaiKhoan }}</span>
+              </div>
+
+              <div class="event-item add-new-btn" @click.stop="openModalVoiNgay(day)">
+                <div class="avatar-circle circle-add">
+                  <i class="fa-solid fa-plus"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>{{ isEditing ? 'Cập Nhật Lịch Làm Việc' : 'Thêm Mới Lịch' }}</h3>
+          <button @click="closeModal" class="btn-close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nhân viên <span class="req">*</span></label>
+
+            <div v-if="!isEditing">
+              <div class="selected-tags" v-if="selectedNhanViens.length > 0">
+                <div v-for="(nv, index) in selectedNhanViens" :key="nv.id" class="tag-item">
+                  <span>{{ nv.tenNhanVien }}</span>
+                  <i class="fa-solid fa-xmark remove-tag" @click="removeSelectedNv(index)"></i>
+                </div>
+              </div>
+
+              <div class="combobox-wrapper">
+                <input type="text" class="form-control" placeholder="Tìm và chọn nhiều nhân viên..."
+                  v-model="searchNvModal" @focus="showNvModalDropdown = true" @blur="handleBlurNvModal" />
+
+                <ul v-if="showNvModalDropdown" class="combobox-dropdown">
+                  <li v-for="nv in filteredNvModal" :key="nv.id" @click="selectNvMulti(nv)"
+                    :class="{ active: isNvSelected(nv.id) }">
+                    <span class="fw-bold">{{ nv.tenNhanVien }}</span>
+                    <small> - {{ nv.maNhanVien }}</small>
+                    <i v-if="isNvSelected(nv.id)" class="fa-solid fa-check float-right"></i>
+                  </li>
+                  <li v-if="filteredNvModal.length === 0" class="no-result">Không tìm thấy</li>
+                </ul>
+              </div>
+              <small class="text-muted" v-if="selectedNhanViens.length > 0">
+                Đã chọn {{ selectedNhanViens.length }} nhân viên
+              </small>
+            </div>
+
+            <div v-else class="combobox-wrapper">
+              <input type="text" class="form-control" placeholder="Tìm tên hoặc mã nhân viên..." v-model="searchNvModal"
+                @focus="showNvModalDropdown = true" @blur="handleBlurNvModal" />
+              <ul v-if="showNvModalDropdown" class="combobox-dropdown">
+                <li v-for="nv in filteredNvModal" :key="nv.id" @click="selectNvSingle(nv)"
+                  :class="{ active: nv.id === form.idNhanVien }">
+                  <span class="fw-bold">{{ nv.tenNhanVien }}</span>
+                  <small> - {{ nv.maNhanVien }}</small>
+                </li>
+                <li v-if="filteredNvModal.length === 0" class="no-result">Không tìm thấy</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Ca làm việc <span class="req">*</span></label>
+            <div class="combobox-wrapper">
+              <input type="text" class="form-control" placeholder="Tìm ca làm việc..." v-model="searchCaModal"
+                @focus="showCaModalDropdown = true" @blur="handleBlurCaModal" />
+              <ul v-if="showCaModalDropdown" class="combobox-dropdown">
+                <li v-for="ca in filteredCaModal" :key="ca.id" @click="selectCaModal(ca)"
+                  :class="{ active: ca.id === form.idCaLam }">
+                  <span class="fw-bold">{{ ca.tenCa }}</span>
+                  <small> ({{ formatTime(ca.gioBatDau) }} - {{ formatTime(ca.gioKetThuc) }})</small>
+                </li>
+                <li v-if="filteredCaModal.length === 0" class="no-result">Không tìm thấy</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Ngày làm <span class="req">*</span></label>
+            <div class="input-with-icon">
+              <input type="date" v-model="form.ngayLam" class="btn-date" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-save" @click="handleSubmit">
+            {{ isEditing ? 'Lưu' : 'Thêm mới' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, reactive, computed } from 'vue';
+import { 
+  createPhanCong, 
+  removePhanCong, 
+  getAllPhanCong
+} from '@/services/lich_lam_viec/lich_lam_viec_nhan_vienService'; 
+
+import { getAllNhanVien } from '@/services/tai_khoan/nhan_vien/nhan_vienService';
+import { getAllCaLam } from '@/services/lich_lam_viec/ca_lamService';
+import { pagingLichLamViec, createLich, checkLichLamViec } from '@/services/lich_lam_viec/lich_lam_viecService';
+
+const listLichMaster = ref([]);
+const lichList = ref([]);
+const lichNhanVienList = ref([]);
+const listNhanVien = ref([]);
+const listCa = ref([]);
+const loading = ref(false);
+const filterNv = ref(null);
+const filterDate = ref(null);
+
+const selectedNhanViens = ref([]);
+
+const searchNv = ref("");
+const showNvDropdown = ref(false);
+const searchNvModal = ref("");
+const showNvModalDropdown = ref(false);
+const searchCaModal = ref("");
+const showCaModalDropdown = ref(false);
+
+const showModal = ref(false);
+const isEditing = ref(false);
+const currentId = ref(null);
+
+const fileInputRef = ref(null);
+const selectedFile = ref(null);
+const isLoadingImport = ref(false);
+
+const viewMode = ref('table');
+const today = new Date();
+const currentMonth = ref(today.getMonth());
+const currentYear = ref(today.getFullYear());
+
+const form = reactive({
+  idLichLamViec: null,
+  idNhanVien: null,
+  nguoiTao: 1
+});
+
+const getAvatarLabel = (name) => {
+  if (!name) return "";
+  const parts = name.trim().split(" ");
+  const lastName = parts[parts.length - 1];
+  return lastName.charAt(0).toUpperCase();
+};
+
+const isImg = (s) => {
+  if (!s) return false;
+  const v = String(s).trim();
+  return v.startsWith("data:image/") || v.startsWith("http://") || v.startsWith("https://");
+};
+
+const isNvSelected = (id) => {
+  return selectedNhanViens.value.some(nv => nv.id === id);
+};
+
+const selectNvMulti = (nv) => {
+  // Nếu chưa có thì thêm vào, có rồi thì thôi (hoặc bỏ chọn tùy logic, ở đây mình làm thêm vào)
+  if (!isNvSelected(nv.id)) {
+    selectedNhanViens.value.push(nv);
+  }
+  // Reset ô tìm kiếm để người dùng tìm người tiếp theo dễ hơn
+  searchNvModal.value = "";
+
+  // Giữ dropdown mở để chọn tiếp, hoặc đóng lại tùy ý. 
+  // Ở đây ta focus lại input để chọn tiếp
+};
+
+const removeSelectedNv = (index) => {
+  selectedNhanViens.value.splice(index, 1);
+};
+
+const selectNvSingle = (nv) => {
+  form.idNhanVien = nv.id;
+  searchNvModal.value = nv.tenNhanVien;
+  showNvModalDropdown.value = false;
+};
+
+const daysInMonth = computed(() => {
+  return new Date(currentYear.value, currentMonth.value + 1, 0).getDate();
+});
+
+const startPadding = computed(() => {
+  return new Date(currentYear.value, currentMonth.value, 1).getDay();
+});
+
+const changeMonth = (step) => {
+  let newMonth = currentMonth.value + step;
+  if (newMonth > 11) {
+    currentMonth.value = 0;
+    currentYear.value++;
+  } else if (newMonth < 0) {
+    currentMonth.value = 11;
+    currentYear.value--;
+  } else {
+    currentMonth.value = newMonth;
+  }
+};
+
+const goToday = () => {
+  const now = new Date();
+  currentMonth.value = now.getMonth();
+  currentYear.value = now.getFullYear();
+};
+
+const isToday = (day) => {
+  const now = new Date();
+  return day === now.getDate() && currentMonth.value === now.getMonth() && currentYear.value === now.getFullYear();
+};
+
+const getEventsForDay = (day) => {
+  if (!lichNhanVienList.value) return [];
+
+  const m = currentMonth.value + 1;
+  const mStr = m < 10 ? `0${m}` : m;
+  const dStr = day < 10 ? `0${day}` : day;
+  const dateString = `${currentYear.value}-${mStr}-${dStr}`; // Format YYYY-MM-DD
+
+  return filterLichList.value.filter(l => {
+    if (Array.isArray(l.ngayLam)) {
+      return l.ngayLam[0] === currentYear.value &&
+        l.ngayLam[1] === m &&
+        l.ngayLam[2] === day;
+    }
+    if (typeof l.ngayLam === 'string') {
+      return l.ngayLam === dateString;
+    }
+    return false;
+  });
+};
+
+const filteredNhanVienList = computed(() => {
+  if (!searchNv.value) return listNhanVien.value;
+  return listNhanVien.value.filter(nv => {
+    const nhanVienSearch = !searchNv.value || 
+      nv.tenNhanVien.toLowerCase().includes(searchNv.value.toLowerCase()) ||
+      (nv.maNhanVien && nv.maNhanVien.toLowerCase().includes(searchNv.value.toLowerCase()));
+
+    const koPhaiAdmin = nv.idQuyenHan !== 1;
+
+    return nhanVienSearch && koPhaiAdmin;
+  });
+});
+
+const filteredNvModal = computed(() => {
+  const q = searchNvModal.value.toLowerCase();
+  return listNhanVien.value.filter(nv => {
+    const nhanVienSearch = nv.tenNhanVien.toLowerCase().includes(q) || nv.maNhanVien.toLowerCase().includes(q);
+    
+    const koPhaiAdmin = nv.idQuyenHan !== 1;
+
+    return nhanVienSearch && koPhaiAdmin;
+  });
+});
+
+// Filter ca làm trong modal
+const filteredCaModal = computed(() => {
+  const q = searchCaModal.value.toLowerCase();
+  return listCa.value.filter(ca =>
+    ca.tenCa.toLowerCase().includes(q)
+  );
+});
+
+const selectNhanVien = (nv) => {
+  filterNv.value = nv.id;
+
+  searchNv.value = nv.tenNhanVien;
+  showNvDropdown.value = false;
+};
+
+const selectNvModal = (nv) => {
+  form.idNhanVien = nv.id;
+  searchNvModal.value = nv.tenNhanVien;
+  showNvModalDropdown.value = false;
+};
+
+const selectCaModal = (ca) => {
+  form.idCaLam = ca.id;
+  searchCaModal.value = `${ca.tenCa} (${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)})`;
+  showCaModalDropdown.value = false;
+};
+
+const handleBlurNvModal = () => setTimeout(() => showNvModalDropdown.value = false, 200);
+const handleBlurCaModal = () => setTimeout(() => showCaModalDropdown.value = false, 200);
+
+const handleBlurNv = () => {
+  setTimeout(() => {
+    showNvDropdown.value = false;
+  }, 200);
+};
+
+const handleFileChange = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/)) {
+      alert("Vui lòng chỉ chọn file Excel (.xlsx, .xls)");
+      resetFileInput();
+      return;
+    }
+    selectedFile.value = file;
+  } else {
+    selectedFile.value = null;
+  }
+};
+
+const handleImportExcel = async () => {
+  if (!selectedFile.value) {
+    alert("Vui lòng chọn file trước khi import!");
+    return;
+  }
+
+  if (!confirm("Bạn có chắc muốn import dữ liệu từ file này?")) return;
+
+  isLoadingImport.value = true;
+
+  const formData = new FormData();
+  formData.append('file', selectedFile.value);
+
+  try {
+    await importLichExcel(formData);
+    alert("Import dữ liệu thành công!");
+
+    resetFileInput();
+    loadData();
+  } catch (e) {
+    console.error(e);
+    alert("Import thất bại: " + (e.message || "Lỗi không xác định"));
+  } finally {
+    isLoadingImport.value = false;
+  }
+};
+
+const resetFileInput = () => {
+  selectedFile.value = null;
+  if (fileInputRef.value) {
+    fileInputRef.value.value = "";
+  }
+};
+
+const formatTime = (arr) => {
+  if (Array.isArray(arr)) return `${arr[0]}:${arr[1] < 10 ? '0' + arr[1] : arr[1]}`;
+  if (typeof arr === 'string') return arr.substring(0, 5);
+  return '';
+}
+const formatDate = (arr) => {
+  if (Array.isArray(arr)) return `${arr[2]}/${arr[1]}/${arr[0]}`;
+  return arr;
+}
+
+const convertArrayDateToString = (arrDate) => {
+  if (Array.isArray(arrDate)) {
+    const y = arrDate[0];
+    const m = arrDate[1] < 10 ? '0' + arrDate[1] : arrDate[1];
+    const d = arrDate[2] < 10 ? '0' + arrDate[2] : arrDate[2];
+    return `${y}-${m}-${d}`;
+  }
+  return arrDate;
+}
+
+const openModalVoiNgay = (day) => {
+  // 1. Reset form về trạng thái thêm mới (giống logic openModal(null))
+  isEditing.value = false;
+  currentId.value = null;
+  form.idLichLamViec = null;
+  form.idNhanVien = null;
+  selectedNhanViens.value = [];
+  form.idCaLam = null;
+  form.ghiChu = "";
+  searchNvModal.value = "";
+  searchCaModal.value = "";
+
+  // 2. Tính toán ngày được chọn (YYYY-MM-DD)
+  const m = currentMonth.value + 1;
+  const mStr = m < 10 ? `0${m}` : m;
+  const dStr = day < 10 ? `0${day}` : day;
+  const dateString = `${currentYear.value}-${mStr}-${dStr}`;
+
+  form.ngayLam = dateString;
+
+  showModal.value = true;
+};
+
+const openModal = (item) => {
+  if (item) {
+    isEditing.value = true;
+    currentId.value = item.id;
+
+    const idNv = item.nhanVien?.id;
+    const idCa = item.idCaLam || (item.caLam ? item.caLam.id : null);
+    form.idNhanVien = idNv;
+    form.idCaLam = idCa;
+    form.idLichLamViec = item.lichLamViec ? item.lichLamViec.id : item.idLichLamViec;
+    form.ngayLam = convertArrayDateToString(item.ngayLam);
+    form.ghiChu = item.ghiChu || "";
+
+    const nv = listNhanVien.value.find(n => n.id === idNv);
+    searchNvModal.value = nv ? nv.tenNhanVien : "";
+
+    selectedNhanViens.value = [];
+
+    const ca = listCa.value.find(c => c.id === idCa);
+    searchCaModal.value = ca ? `${ca.tenCa} (${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)})` : "";
+  } else {
+    isEditing.value = false;
+    currentId.value = null;
+
+    form.idLichLamViec = null;
+    form.idNhanVien = null;
+    selectedNhanViens.value = [];
+
+    form.idCaLam = null;
+    form.ngayLam = new Date().toISOString().split('T')[0];
+    form.ghiChu = "";
+    searchNvModal.value = "";
+    searchCaModal.value = "";
+  }
+  showModal.value = true;
+};
+
+const closeModal = () => {
+  showModal.value = false;
+  isEditing.value = false;
+  currentId.value = null;
+};
+
+const handleSubmit = async () => {
+  // 1. Validate đầu vào
+  if (!form.ngayLam) { alert("Vui lòng chọn ngày làm việc!"); return; }
+  if (!form.idCaLam) { alert("Vui lòng chọn ca làm việc!"); return; }
+  
+  if (!isEditing.value && selectedNhanViens.value.length === 0) {
+    alert("Vui lòng chọn ít nhất một nhân viên!"); return;
+  }
+
+  try {
+    loading.value = true;
+    let idMaster = null;
+
+    if (!isEditing.value) {
+      const existingLich = await checkLichLamViec({
+        ca: form.idCaLam,
+        ngay: form.ngayLam
+      });
+
+      if (existingLich && existingLich.length > 0) {
+        const selectedIds = selectedNhanViens.value.map(nv => nv.id);
+        const promises = selectedIds.map(nvId => createPhanCong({
+          idLichLamViec: existingLich[0].id,
+          idNhanVien: nvId,
+          nguoiTao: 1
+        }));
+        await Promise.all(promises);
+        alert(`Đã thêm ${selectedIds.length} nhân viên vào lịch làm việc.`);
+      } else {
+        const newLichData = {
+          idCaLam: form.idCaLam,
+          ngayLam: form.ngayLam,
+          ghiChu: form.ghiChu || "",
+          nguoiTao: 1
+        };
+        const resLich = await createLich(newLichData);
+        
+        const idLichMoi = Array.isArray(resLich) ? resLich[0]?.id : resLich?.id;
+        console.log("Đã tạo lịch làm việc mới ID:", idLichMoi);
+
+        const selectedIds = selectedNhanViens.value.map(nv => nv.id);
+        const promises = selectedIds.map(nvId => createPhanCong({
+          idLichLamViec: idLichMoi,
+          idNhanVien: nvId,
+          nguoiTao: 1
+        }));
+        await Promise.all(promises);
+        alert(`Đã thêm ${selectedIds.length} nhân viên vào lịch làm việc.`);
+      }
+    } else {
+      alert("Tính năng cập nhật đang được xử lý.");
+    }
+
+    closeModal();
+    loadData();
+  } catch (e) {
+    console.error("Lỗi hệ thống:", e);
+    const errorMsg = e.message.includes("Unexpected token") 
+      ? "Lỗi phản hồi từ Server (JSON error)" 
+      : e.message;
+    alert("Không thể hoàn thành: " + errorMsg);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const loadData = async () => {
+  try {
+    const res = await getAllPhanCong();
+    lichNhanVienList.value = Array.isArray(res) ? res : (res.content || []);
+  } catch (e) { console.error(e); }
+};
+
+const loadLichMaster = async () => {
+  try {
+    const res = await pagingLichLamViec(0, 1000);
+    listLichMaster.value = res.content || [];
+  } catch (e) { console.error(e); }
+};
+
+const loadthemLich = async () => {
+  const nv = await getAllNhanVien();
+  const ca = await getAllCaLam();
+  listNhanVien.value = Array.isArray(nv) ? nv : [];
+  listCa.value = Array.isArray(ca) ? ca : [];
+  loadData();
+};
+
+const filterLichList = computed(() => {
+  let data = [...lichNhanVienList.value];
+
+  if (filterNv.value) {
+    data = data.filter(item => item.nhanVien?.id === Number(filterNv.value));
+  }
+
+  if (filterDate.value) {
+    data = data.filter(l => {
+      const ngay = convertArrayDateToString(l.ngayLam);
+      return ngay === filterDate.value;
+    });
+  }
+
+  return data;
+});
+
+const deletePhanCong = async (id) => {
+  if (!confirm("Gỡ nhân viên này khỏi lịch?")) return;
+  try {
+    await removePhanCong(id);
+    loadData();
+  } catch (e) { alert("Thất bại: " + e.message); }
+};
+
+onMounted(() => {
+  loadData();
+  loadLichMaster();
+  loadthemLich();
+});
+</script>
+
+<style scoped>
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.lich-page {
+  font-family: var(--admin-font, sans-serif);
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.header-section {
+  margin-bottom: 20px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  margin-top: 10px;
+  color: rgba(17, 24, 39, 0.92);
+}
+
+.card-box {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.toolbar-header h3,
+.table-header-row h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-body {
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-add {
+  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
+  box-shadow: 0 10px 18px rgba(255, 77, 79, 0.16);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-date{
+  width: 100%;
+  height: 38px;
+  border: 1px solid #e5e7eb;
+  background-color: white;
+  color: #000;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.btn-import {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.filters-bar {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: rgba(17, 24, 39, 0.78);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.import-body {
+  margin-top: 15px;
+  background: #f9fafb;
+  padding: 15px;
+  border-radius: 6px;
+}
+
+.input-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.table-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.view-modes {
+  display: flex;
+  gap: 5px;
+}
+
+.action-col {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ss-icon-btn-view:hover {
+  background: #e0f2fe;
+}
+
+.mode-btn {
+  border: 1px solid #e5e7eb;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #f9fafb;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.mode-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.mode-btn.active {
+  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
+  box-shadow: 0 4px 6px rgba(255, 77, 79, 0.2);
+  color: white;
+  border-color: transparent;
+}
+
+/* CSS TABLE CŨ */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th {
+  text-align: left;
+  padding: 12px;
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #111827;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.calendar-view {
+  margin-top: 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cal-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 10px;
+  text-transform: capitalize;
+}
+
+.btn-nav {
+  border: 1px solid #d1d5db;
+  color: #000;
+  background: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-nav:hover {
+  background: #f3f4f6;
+}
+
+.btn-nav.active {
+  background: #111827;
+  color: white;
+  border-color: #111827;
+}
+
+.cal-grid-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.cal-day-name {
+  padding: 10px;
+  text-align: center;
+  font-weight: 600;
+  color: #1e40af;
+  border-right: 1px solid #e5e7eb;
+}
+
+.cal-day-name:last-child {
+  border-right: none;
+}
+
+.cal-grid-body {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #fff;
+}
+
+.cal-cell {
+  min-height: 120px;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 5px;
+  position: relative;
+}
+
+.cal-cell:nth-child(7n) {
+  border-right: none;
+}
+
+.cal-cell.disabled {
+  background: #f9fafb;
+}
+
+.cal-cell.is-today {
+  background: #fffbeb;
+}
+
+.cal-date-num {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: right;
+  margin-bottom: 5px;
+  padding-right: 5px;
+}
+
+.cal-events {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.banglich-chip {
+  background: #0ea5e9;
+  color: white;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 2px;
+  transition: all 0.2s;
+}
+
+.banglich-chip:hover {
+  background: #0284c7;
+  transform: translateY(-1px);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  width: 500px;
+  border-radius: 8px;
+  overflow: hidden;
+  animation: fadeIn 0.2s;
+}
+
+.modal-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-close {
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.req {
+  color: red;
+}
+
+.form-control {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.modal-footer {
+  padding: 15px 20px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-cancel {
+  background: #f3f4f6;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-save {
+  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
+  box-shadow: 0 10px 18px rgba(255, 77, 79, 0.16);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.combobox-wrapper {
+  position: relative;
+  /* Để dropdown bám theo thằng này */
+}
+
+.combobox-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  max-height: 200px;
+  /* Giới hạn chiều cao */
+  overflow-y: auto;
+  /* Cho phép cuộn */
+  z-index: 1050;
+  /* Cao hơn các thành phần khác */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.combobox-dropdown li {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+  color: #374151;
+}
+
+.combobox-dropdown li:last-child {
+  border-bottom: none;
+}
+
+.combobox-dropdown li:hover {
+  background-color: #f3f4f6;
+}
+
+.combobox-dropdown li.active {
+  background-color: #e0f2fe;
+  /* Màu xanh nhạt khi được chọn */
+  color: #0369a1;
+  font-weight: 600;
+}
+
+.combobox-dropdown .no-result {
+  padding: 10px;
+  color: #9ca3af;
+  text-align: center;
+  font-style: italic;
+  cursor: default;
+}
+
+.fw-bold {
+  font-weight: 600;
+}
+
+/* Thêm vào phần style scoped */
+
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 5px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #fff;
+  min-height: 40px;
+}
+
+.tag-item {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: fadeIn 0.2s;
+}
+
+.remove-tag {
+  cursor: pointer;
+  font-size: 14px;
+  color: #0284c7;
+}
+
+.remove-tag:hover {
+  color: #ef4444;
+}
+
+.text-muted {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+  display: block;
+}
+
+.float-right {
+  float: right;
+  color: #10b981;
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(17, 24, 39, 0.04);
+  color: rgba(17, 24, 39, 0.78);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.cal-cell {
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.quick-add-wrapper {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.cal-cell:hover .quick-add-wrapper {
+  opacity: 1;
+}
+
+.btn-quick-add {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background-color: #ecfdf5;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+}
+
+.btn-quick-add:hover {
+  background-color: #d1fae5;
+  transform: scale(1.1);
+}
+
+.btn-quick-add i {
+  font-size: 14px;
+}
+
+/* --- CSS MỚI CHO AVATAR LỊCH --- */
+
+/* Container chứa các avatar trong 1 ô ngày */
+.cal-events-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  /* Khoảng cách giữa các avatar */
+  padding: 4px;
+}
+
+/* Item bao gồm Avatar + Tên */
+.event-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  width: 40px;
+  /* Chiều rộng cố định để căn giữa tên */
+}
+
+/* Hình tròn Avatar */
+.avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #00509d;
+  /* Màu xanh đậm giống hình (chữ P nền xanh) */
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  border: 2px solid white;
+  /* Viền trắng để nổi bật */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+
+.event-item:hover .avatar-circle {
+  transform: scale(1.1);
+}
+
+.avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Tên nhân viên ở dưới */
+.event-name {
+  font-size: 11px;
+  color: #374151;
+  font-weight: 600;
+  margin-top: 4px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+/* --- Style riêng cho nút Add (+) --- */
+.circle-add {
+  background-color: #ecfdf5;
+  /* Màu nền xanh nhạt giống hình */
+  color: #10b981;
+  /* Màu icon xanh lá */
+  border: 1px dashed #10b981;
+}
+
+.add-new-btn:hover .circle-add {
+  background-color: #10b981;
+  color: white;
+}
+
+/* Ẩn nút quick-add cũ nếu không dùng nữa */
+.quick-add-wrapper {
+  display: none;
+}
+
+/* Điều chỉnh lại ô lịch để nội dung căn lên trên */
+.cal-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  /* Đẩy nội dung lên trên */
+  min-height: 100px;
+  /* Đảm bảo đủ cao */
+}
+
+.event-item.add-new-btn {
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease-in-out;
+  transform: translateY(5px);
+  /* Hiệu ứng trượt nhẹ lên */
+}
+
+/* Khi di chuột vào ô lịch (cal-cell) thì hiện nút thêm */
+.cal-cell:hover .event-item.add-new-btn {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
