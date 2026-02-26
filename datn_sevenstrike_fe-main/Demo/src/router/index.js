@@ -56,7 +56,6 @@ import LichLamViecPage from "@/pages/lich_lam_viec/LichLamViec.vue";
 import GiaoCaPage from "@/pages/lich_lam_viec/GiaoCa.vue";
 import LichCaLamPage from "@/pages/lich_lam_viec/LichCaLam.vue";
 
-
 // ======================= AUTH HELPERS =======================
 const normalizeRole = (role) => {
   const r = String(role || "").trim().toUpperCase();
@@ -368,7 +367,7 @@ router.beforeEach((to, from, next) => {
   if (to.meta?.public) {
     // chỉ đá khỏi /dang-nhap khi đã login + role hợp lệ
     if (to.name === "dang-nhap" && isLoggedIn() && role) {
-      return next("/admin/giao-ca");
+      return next("/admin/trang-chu");
     }
     return next();
   }
@@ -403,7 +402,7 @@ router.beforeEach((to, from, next) => {
     });
 
     // fallback an toàn
-    const fallback = role === "NHAN_VIEN" ? "/admin/giao-ca" : "/admin/giao-ca";
+    const fallback = role === "NHAN_VIEN" ? "/admin/trang-chu" : "/admin/trang-chu";
     return next(from.fullPath && from.fullPath !== "/dang-nhap" ? from.fullPath : fallback);
   }
 

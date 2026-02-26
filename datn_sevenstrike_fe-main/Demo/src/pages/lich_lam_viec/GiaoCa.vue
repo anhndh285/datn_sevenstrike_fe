@@ -167,7 +167,6 @@
               >NHẬP TIỀN THỰC TẾ <span class="text-danger">*</span></label
             >
             <div class="ho-input-wrapper">
-              <span class="ho-currency">₫</span>
               <input
                 type="text"
                 class="ho-input-money"
@@ -369,36 +368,6 @@ const formatCurrency = (num) => {
   }).format(num || 0);
 };
 
-const kiemTraGioMoCa = () => {
-    if (!lichHomNay.value || !lichHomNay.value.gioBatDau || !lichHomNay.value.gioKetThuc) return true;
-
-    const parseTime = (timeStr) => {
-        const [h, m, s] = timeStr.split(':');
-        const d = new Date();
-        d.setHours(parseInt(h || 0), parseInt(m || 0), parseInt(s || 0), 0);
-        return d;
-    };
-
-    const gioBatDau = parseTime(lichHomNay.value.gioBatDau);
-    const gioKetThuc = parseTime(lichHomNay.value.gioKetThuc);
-    const thoiGianHienTai = now.value;
-
-    // Tùy chỉnh: Cho phép nhân viên mở ca trước 30 phút
-    const phutChoPheMoSom = 30; 
-    const gioChoPhepMo = new Date(gioBatDau.getTime() - phutChoPheMoSom * 60000);
-
-    if (thoiGianHienTai < gioChoPhepMo) {
-        errorMessage.value = `Chưa đến giờ. Bạn chỉ có thể mở ca trước ${phutChoPheMoSom} phút (từ ${gioChoPhepMo.toLocaleTimeString('vi-VN', { hour12: false, hour: '2-digit', minute: '2-digit' })}).`;
-        return false;
-    }
-
-    if (thoiGianHienTai > gioKetThuc) {
-        errorMessage.value = `Ca làm việc này đã kết thúc lúc ${lichHomNay.value.gioKetThuc}.`;
-        return false;
-    }
-
-    return true;
-};
 
 const onInputMoney = (event, type) => {
   const raw = event.target.value.replace(/\D/g, "");
@@ -437,8 +406,6 @@ const handleBatDauCa = async () => {
   errorMessage.value = "";
   if (tienBanDauInput.value < 0) return alert("Tiền không hợp lệ");
   if (!lichHomNay.value) return;
-
-  if (!kiemTraGioMoCa()) return;
   
   isSubmitting.value = true;
   try {
@@ -556,7 +523,6 @@ onUnmounted(() => {
   color: #6b7280;
 }
 
-/* --- GIAO DIỆN PHIẾU BÀN GIAO CA MỚI --- */
 .ho-wrapper {
   width: 900px;
   max-width: 95%;
@@ -579,8 +545,8 @@ onUnmounted(() => {
   gap: 15px;
 }
 .ho-icon-box {
-  background-color: #e6f7f2;
-  color: #10b981;
+  background-color: #f7e7e6;
+  color: #ff4d4f;
   width: 40px;
   height: 40px;
   border-radius: 8px;
@@ -592,7 +558,6 @@ onUnmounted(() => {
 .ho-header-text h2 {
   margin: 0;
   font-size: 1.2rem;
-  font-weight: 700;
   color: #111827;
 }
 .ho-sub-text {
@@ -620,7 +585,6 @@ onUnmounted(() => {
 }
 .ho-name {
   font-size: 0.95rem;
-  font-weight: 700;
   color: #111827;
 }
 .ho-body {
@@ -638,14 +602,13 @@ onUnmounted(() => {
   margin-top: 0;
   margin-bottom: 20px;
   font-size: 1.1rem;
-  font-weight: 700;
   color: #111827;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .text-success-icon {
-  color: #10b981;
+  color: #ff4d4f;
   font-size: 1.2rem;
 }
 .ho-row {
@@ -674,7 +637,7 @@ onUnmounted(() => {
   margin-right: 5px;
 }
 .ho-summary-box {
-  background: #f0fdf4;
+  background: #fef0f0;
   padding: 20px;
   border-radius: 8px;
   text-align: center;
@@ -683,17 +646,17 @@ onUnmounted(() => {
   gap: 5px;
 }
 .ho-summary-title {
-  color: #059669;
+  color: #ff4d4f;
   font-weight: 700;
   font-size: 0.85rem;
 }
 .ho-summary-value {
-  color: #059669;
+  color: #ff4d4f;
   font-size: 2rem;
   font-weight: 800;
 }
 .ho-summary-note {
-  color: #34d399;
+  color: #ff4d4f;
   font-size: 0.8rem;
 }
 .ho-input-label {
@@ -707,6 +670,7 @@ onUnmounted(() => {
   position: relative;
   display: flex;
   align-items: center;
+  color: #9ca3af;
 }
 .ho-currency {
   position: absolute;
@@ -727,15 +691,15 @@ onUnmounted(() => {
   padding: 14px 40px 14px 40px;
   font-size: 1.2rem;
   font-weight: 700;
-  border: 1px solid #10b981;
+  border: 1px solid #e8ebf1;
+  background: white;
   border-radius: 8px;
   text-align: right;
-  color: #111827;
-  transition: all 0.2s;
+  color: #9ca3af;
 }
 .ho-input-money:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  border: 1px solid #ff4d4f;
 }
 .ho-diff-box {
   display: flex;
@@ -768,18 +732,21 @@ onUnmounted(() => {
   width: 100%;
   padding: 12px;
   border: 1px solid #d1d5db;
+  background: white;
   border-radius: 8px;
   resize: none;
   font-family: inherit;
   font-size: 0.95rem;
+  color: #9ca3af;
 }
 .ho-textarea:focus {
   outline: none;
-  border-color: #10b981;
+  border-color: #ff4d4f;
 }
 .btn-submit-end {
   width: 100%;
-  background: #10b981;
+  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
+  box-shadow: 0 10px 18px rgba(255, 77, 79, 0.16);
   color: white;
   border: none;
   padding: 15px;
@@ -791,7 +758,8 @@ onUnmounted(() => {
   transition: 0.2s;
 }
 .btn-submit-end:hover {
-  background: #059669;
+  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
+  box-shadow: 0 10px 18px rgba(255, 77, 80, 0.541);
 }
 .btn-submit-end:disabled {
   background: #9ca3af;

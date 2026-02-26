@@ -18,28 +18,17 @@
 
         <div class="filters-bar">
           <div class="form-group">
-            <label>Nhân viên <span class="req">*</span></label>
 
             <div class="combobox-wrapper">
-              <input
-                type="text"
-                class="form-control"
-                placeholder="Nhập tên hoặc mã nhân viên..."
-                v-model="searchNv"
-                @focus="showNvDropdown = true"
-                @blur="handleBlurNv"
-                @input="
+              <label>Nhân viên <span class="req">*</span></label>
+              <input type="text" class="form-control" placeholder="Nhập tên hoặc mã nhân viên..." v-model="searchNv"
+                @focus="showNvDropdown = true" @blur="handleBlurNv" @input="
                   showNvDropdown = true;
-                  filterNv = null;
-                "
-              />
+                filterNv = null;
+                " />
               <ul v-if="showNvDropdown" class="combobox-dropdown">
-                <li
-                  v-for="nv in filteredNhanVienList"
-                  :key="nv.id"
-                  @click="selectNhanVien(nv)"
-                  :class="{ active: nv.id === form.idNhanVien }"
-                >
+                <li v-for="nv in filteredNhanVienList" :key="nv.id" @click="selectNhanVien(nv)"
+                  :class="{ active: nv.id === form.idNhanVien }">
                   <span class="fw-bold">{{ nv.tenNhanVien }}</span>
                   <small v-if="nv.maNhanVien"> - {{ nv.maNhanVien }}</small>
                 </li>
@@ -62,33 +51,23 @@
     <div class="card-box mt-20">
       <div class="table-header-row">
         <h3>
-          <i
-            :class="
-              viewMode === 'table'
-                ? 'fa-solid fa-table'
-                : 'fa-solid fa-calendar'
-            "
-          ></i>
+          <i :class="viewMode === 'table'
+              ? 'fa-solid fa-table'
+              : 'fa-solid fa-calendar'
+            "></i>
           {{
             viewMode === "table"
               ? "Danh Sách Lịch Làm Việc"
-              : "Lịch Làm Việc Tháng " + (currentMonth + 1)
+              : (viewMode === "week" ? "Lịch Làm Việc Tuần" : "Lịch Làm Việc Tháng " + (currentMonth + 1))
           }}
         </h3>
 
         <div class="view-modes">
-          <button
-            class="mode-btn"
-            :class="{ active: viewMode === 'table' }"
-            @click="viewMode = 'table'"
-          >
+          <button class="mode-btn" :class="{ active: viewMode === 'table' }" @click="viewMode = 'table'">
             <i class="fa-solid fa-table"></i> Bảng
           </button>
-          <button
-            class="mode-btn"
-            :class="{ active: viewMode === 'calendar' }"
-            @click="viewMode = 'calendar'"
-          >
+          <button class="mode-btn" :class="{ active: viewMode === 'calendar' || viewMode === 'week' }"
+            @click="viewMode = 'week'">
             <i class="fa-solid fa-calendar"></i> Lịch
           </button>
         </div>
@@ -116,21 +95,11 @@
               </td>
               <td>{{ formatDate(l.ngayLam) }}</td>
               <td class="text-right action-col">
-                <button
-                  v-if="hasPermission"
-                  class="ss-icon-btn-view"
-                  @click="openModal(l)"
-                  title="Xem / Sửa"
-                >
+                <button v-if="hasPermission" class="ss-icon-btn-view" @click="openModal(l)" title="Xem / Sửa">
                   <span class="material-icons-outlined">visibility</span>
                 </button>
 
-                <button
-                  v-if="hasPermission"
-                  class="ss-icon-btn-view"
-                  @click="deletePhanCong(l.id)"
-                  title="Xóa"
-                >
+                <button v-if="hasPermission" class="ss-icon-btn-view" @click="deletePhanCong(l.id)" title="Xóa">
                   <span class="fa-solid fa-trash"></span>
                 </button>
               </td>
@@ -145,16 +114,22 @@
       <div v-else class="calendar-view">
         <div class="cal-navigation">
           <div class="nav-left">
-            <button class="btn-nav" @click="changeMonth(-1)">
+            <button class="btn-nav" @click="changePeriod(-1)">
               <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <span class="cal-title"
-              >Tháng {{ currentMonth + 1 }} năm {{ currentYear }}</span
-            >
-            <button class="btn-nav" @click="changeMonth(1)">
+            <span class="cal-title">
+              {{ viewMode === 'week' ? 'Tuần ' : 'Tháng ' }} {{ currentMonth + 1 }} năm {{ currentYear }}
+            </span>
+            <button class="btn-nav" @click="changePeriod(1)">
               <i class="fa-solid fa-chevron-right"></i>
             </button>
+            
             <button class="btn-nav" @click="goToday">Hôm nay</button>
+          </div>
+
+          <div class="nav-right">
+            <button class="btn-month" :class="{active: viewMode === 'week'}" @click="viewMode = 'week'">Tuần</button>
+            <button class="btn-month" :class="{active: viewMode === 'calendar'}" @click="viewMode = 'calendar'">Tháng</button>
           </div>
         </div>
 
@@ -168,48 +143,43 @@
           <div class="cal-day-name">Th 7</div>
         </div>
 
-        <div class="cal-grid-body">
-          <div
-            v-for="blank in startPadding"
-            :key="'blank-' + blank"
-            class="cal-cell disabled"
-          ></div>
+        <div v-if="viewMode === 'calendar'" class="cal-grid-body">
+          <div v-for="blank in startPadding" :key="'blank-' + blank" class="cal-cell disabled"></div>
 
-          <div
-            v-for="day in daysInMonth"
-            :key="'day-' + day"
-            class="cal-cell"
-            :class="{ 'is-today': isToday(day) }"
-          >
+          <div v-for="day in daysInMonth" :key="'day-' + day" class="cal-cell" :class="{ 'is-today': isToday(day) }">
             <div class="cal-date-num">{{ day }}</div>
+            <div class="cal-events-container">
+              <div v-for="nv in getEventsForDay(day)" :key="nv.id" class="event-item" @click="openModal(nv)">
+                <div class="avatar-circle">
+                  <img v-if="isImg(nv.nhanVien?.anhNhanVien)" :src="nv.nhanVien?.anhNhanVien" />
+                  <span v-else class="initial">{{ getAvatarLabel(nv.tenNhanVien) }}</span>
+                </div>
+                <span class="event-name">{{ nv.nhanVien?.tenTaiKhoan }}</span>
+              </div>
+              <div v-if="hasPermission" class="event-item add-new-btn" @click.stop="openModalVoiNgay(day)">
+                <div class="avatar-circle circle-add"><i class="fa-solid fa-plus"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="viewMode === 'week'" class="cal-grid-body">
+          <div v-for="wd in weekDays" :key="'week-day-' + wd.dateFull.getTime()" class="cal-cell"
+            :class="{ 'is-today': isToday(wd.day) && currentMonth === wd.month }">
+            <div class="cal-date-num">{{ wd.day }}/{{ wd.month + 1 }}</div>
 
             <div class="cal-events-container">
-              <div
-                v-for="nv in getEventsForDay(day)"
-                :key="nv.id"
-                class="event-item"
-                @click="openModal(nv)"
-              >
+              <div v-for="nv in getEventsForSpecificDay(wd.day, wd.month, wd.year)" :key="nv.id" class="event-item"
+                @click="openModal(nv)">
                 <div class="avatar-circle">
-                  <img
-                    v-if="isImg(nv.nhanVien?.anhNhanVien)"
-                    :src="nv.nhanVien?.anhNhanVien"
-                  />
-                  <span v-else class="initial">{{
-                    getAvatarLabel(nv.tenNhanVien)
-                  }}</span>
+                  <img v-if="isImg(nv.nhanVien?.anhNhanVien)" :src="nv.nhanVien?.anhNhanVien" />
+                  <span v-else class="initial">{{ getAvatarLabel(nv.tenNhanVien) }}</span>
                 </div>
                 <span class="event-name">{{ nv.nhanVien?.tenTaiKhoan }}</span>
               </div>
 
-              <div
-                v-if="hasPermission"
-                class="event-item add-new-btn"
-                @click.stop="openModalVoiNgay(day)"
-              >
-                <div class="avatar-circle circle-add">
-                  <i class="fa-solid fa-plus"></i>
-                </div>
+              <div v-if="hasPermission" class="event-item add-new-btn" @click.stop="openModalVoiNgay(wd.day)">
+                <div class="avatar-circle circle-add"><i class="fa-solid fa-plus"></i></div>
               </div>
             </div>
           </div>
@@ -229,42 +199,22 @@
 
             <div v-if="!isEditing">
               <div class="selected-tags" v-if="selectedNhanViens.length > 0">
-                <div
-                  v-for="(nv, index) in selectedNhanViens"
-                  :key="nv.id"
-                  class="tag-item"
-                >
+                <div v-for="(nv, index) in selectedNhanViens" :key="nv.id" class="tag-item">
                   <span>{{ nv.tenNhanVien }}</span>
-                  <i
-                    class="fa-solid fa-xmark remove-tag"
-                    @click="removeSelectedNv(index)"
-                  ></i>
+                  <i class="fa-solid fa-xmark remove-tag" @click="removeSelectedNv(index)"></i>
                 </div>
               </div>
 
               <div class="combobox-wrapper">
-                <input
-                  type="text"
-                  class="form-control"
-                  placeholder="Tìm và chọn nhiều nhân viên..."
-                  v-model="searchNvModal"
-                  @focus="showNvModalDropdown = true"
-                  @blur="handleBlurNvModal"
-                />
+                <input type="text" class="form-control" placeholder="Tìm và chọn nhiều nhân viên..."
+                  v-model="searchNvModal" @focus="showNvModalDropdown = true" @blur="handleBlurNvModal" />
 
                 <ul v-if="showNvModalDropdown" class="combobox-dropdown">
-                  <li
-                    v-for="nv in filteredNvModal"
-                    :key="nv.id"
-                    @click="selectNvMulti(nv)"
-                    :class="{ active: isNvSelected(nv.id) }"
-                  >
+                  <li v-for="nv in filteredNvModal" :key="nv.id" @click="selectNvMulti(nv)"
+                    :class="{ active: isNvSelected(nv.id) }">
                     <span class="fw-bold">{{ nv.tenNhanVien }}</span>
                     <small> - {{ nv.maNhanVien }}</small>
-                    <i
-                      v-if="isNvSelected(nv.id)"
-                      class="fa-solid fa-check float-right"
-                    ></i>
+                    <i v-if="isNvSelected(nv.id)" class="fa-solid fa-check float-right"></i>
                   </li>
                   <li v-if="filteredNvModal.length === 0" class="no-result">
                     Không tìm thấy
@@ -277,21 +227,11 @@
             </div>
 
             <div v-else class="combobox-wrapper">
-              <input
-                type="text"
-                class="form-control"
-                placeholder="Tìm tên hoặc mã nhân viên..."
-                v-model="searchNvModal"
-                @focus="showNvModalDropdown = true"
-                @blur="handleBlurNvModal"
-              />
+              <input type="text" class="form-control" placeholder="Tìm tên hoặc mã nhân viên..." v-model="searchNvModal"
+                @focus="showNvModalDropdown = true" @blur="handleBlurNvModal" />
               <ul v-if="showNvModalDropdown" class="combobox-dropdown">
-                <li
-                  v-for="nv in filteredNvModal"
-                  :key="nv.id"
-                  @click="selectNvSingle(nv)"
-                  :class="{ active: nv.id === form.idNhanVien }"
-                >
+                <li v-for="nv in filteredNvModal" :key="nv.id" @click="selectNvSingle(nv)"
+                  :class="{ active: nv.id === form.idNhanVien }">
                   <span class="fw-bold">{{ nv.tenNhanVien }}</span>
                   <small> - {{ nv.maNhanVien }}</small>
                 </li>
@@ -305,26 +245,15 @@
           <div class="form-group">
             <label>Ca làm việc <span class="req">*</span></label>
             <div class="combobox-wrapper">
-              <input
-                type="text"
-                class="form-control"
-                placeholder="Tìm ca làm việc..."
-                v-model="searchCaModal"
-                @focus="showCaModalDropdown = true"
-                @blur="handleBlurCaModal"
-              />
+              <input type="text" class="form-control" placeholder="Tìm ca làm việc..." v-model="searchCaModal"
+                @focus="showCaModalDropdown = true" @blur="handleBlurCaModal" />
               <ul v-if="showCaModalDropdown" class="combobox-dropdown">
-                <li
-                  v-for="ca in filteredCaModal"
-                  :key="ca.id"
-                  @click="selectCaModal(ca)"
-                  :class="{ active: ca.id === form.idCaLam }"
-                >
+                <li v-for="ca in filteredCaModal" :key="ca.id" @click="selectCaModal(ca)"
+                  :class="{ active: ca.id === form.idCaLam }">
                   <span class="fw-bold">{{ ca.tenCa }}</span>
                   <small>
                     ({{ formatTime(ca.gioBatDau) }} -
-                    {{ formatTime(ca.gioKetThuc) }})</small
-                  >
+                    {{ formatTime(ca.gioKetThuc) }})</small>
                 </li>
                 <li v-if="filteredCaModal.length === 0" class="no-result">
                   Không tìm thấy
@@ -397,10 +326,11 @@ const fileInputRef = ref(null);
 const selectedFile = ref(null);
 const isLoadingImport = ref(false);
 
-const viewMode = ref("table");
+const viewMode = ref("week");
 const today = new Date();
 const currentMonth = ref(today.getMonth());
 const currentYear = ref(today.getFullYear());
+const currentDate = ref(new Date());
 
 const form = reactive({
   idLichLamViec: null,
@@ -454,23 +384,10 @@ const startPadding = computed(() => {
   return new Date(currentYear.value, currentMonth.value, 1).getDay();
 });
 
-const changeMonth = (step) => {
-  let newMonth = currentMonth.value + step;
-  if (newMonth > 11) {
-    currentMonth.value = 0;
-    currentYear.value++;
-  } else if (newMonth < 0) {
-    currentMonth.value = 11;
-    currentYear.value--;
-  } else {
-    currentMonth.value = newMonth;
-  }
-};
-
 const goToday = () => {
-  const now = new Date();
-  currentMonth.value = now.getMonth();
-  currentYear.value = now.getFullYear();
+  currentDate.value = new Date();
+  currentMonth.value = currentDate.value.getMonth();
+  currentYear.value = currentDate.value.getFullYear();
 };
 
 const isToday = (day) => {
@@ -480,6 +397,70 @@ const isToday = (day) => {
     currentMonth.value === now.getMonth() &&
     currentYear.value === now.getFullYear()
   );
+};
+
+const weekDays = computed(() => {
+  const days = [];
+  const startOfWeek = new Date(currentDate.value);
+
+  // Điều chỉnh về ngày Chủ Nhật của tuần này
+  const day = startOfWeek.getDay();
+  startOfWeek.setDate(startOfWeek.getDate() - day);
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    days.push({
+      day: d.getDate(),
+      month: d.getMonth(),
+      year: d.getFullYear(),
+      dateFull: d
+    });
+  }
+  return days;
+});
+
+const changePeriod = (step) => {
+  if (viewMode.value === 'calendar') {
+    // Di chuyển tháng
+    let newMonth = currentMonth.value + step;
+    if (newMonth > 11) {
+      currentMonth.value = 0;
+      currentYear.value++;
+    } else if (newMonth < 0) {
+      currentMonth.value = 11;
+      currentYear.value--;
+    } else {
+      currentMonth.value = newMonth;
+    }
+    // Cập nhật currentDate để đồng bộ
+    currentDate.value = new Date(currentYear.value, currentMonth.value, 1);
+  } else if (viewMode.value === 'week') {
+    // Di chuyển tuần (7 ngày)
+    const newDate = new Date(currentDate.value);
+    newDate.setDate(newDate.getDate() + (step * 7));
+    currentDate.value = newDate;
+
+    // Cập nhật lại Month/Year hiển thị trên title
+    currentMonth.value = newDate.getMonth();
+    currentYear.value = newDate.getFullYear();
+  }
+};
+
+const getEventsForSpecificDay = (day, month, year) => {
+  if (!lichNhanVienList.value) return [];
+
+  const m = month + 1;
+  const mStr = m < 10 ? `0${m}` : m;
+  const dStr = day < 10 ? `0${day}` : day;
+  const dateString = `${year}-${mStr}-${dStr}`;
+
+  return filterLichList.value.filter((l) => {
+    if (Array.isArray(l.ngayLam)) {
+      return l.ngayLam[0] === year && l.ngayLam[1] === m && l.ngayLam[2] === day;
+    }
+    return l.ngayLam === dateString;
+  });
 };
 
 const getEventsForDay = (day) => {
@@ -786,15 +767,18 @@ onMounted(() => {
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
+
 .lich-page {
   font-family: var(--admin-font, sans-serif);
   padding: 20px;
   background-color: #f8f9fa;
   min-height: 100vh;
 }
+
 .header-section {
   margin-bottom: 20px;
 }
+
 .page-title {
   font-size: 22px;
   font-weight: 700;
@@ -802,6 +786,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   margin-top: 10px;
   color: rgba(17, 24, 39, 0.92);
 }
+
 .card-box {
   background: white;
   border-radius: 8px;
@@ -809,9 +794,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 20px;
   border: 1px solid #e5e7eb;
 }
+
 .mt-20 {
   margin-top: 20px;
 }
+
 .toolbar-header h3,
 .table-header-row h3 {
   font-size: 16px;
@@ -822,6 +809,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   align-items: center;
   gap: 8px;
 }
+
 .toolbar-body {
   margin-top: 15px;
   display: flex;
@@ -829,6 +817,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   align-items: center;
   flex-wrap: wrap;
 }
+
 .btn-add {
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
   box-shadow: 0 10px 18px rgba(255, 77, 79, 0.16);
@@ -842,6 +831,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   gap: 8px;
   align-items: center;
 }
+
 .btn-date {
   width: 100%;
   height: 38px;
@@ -852,6 +842,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-radius: 4px;
   font-size: 14px;
 }
+
 .btn-import {
   background: #10b981;
   color: white;
@@ -860,11 +851,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-radius: 4px;
   cursor: pointer;
 }
+
 .filters-bar {
   display: flex;
   gap: 20px;
   margin-bottom: 24px;
 }
+
 .filter-group {
   display: flex;
   align-items: center;
@@ -874,35 +867,42 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-weight: 600;
   white-space: nowrap;
 }
+
 .import-body {
   margin-top: 15px;
   background: #f9fafb;
   padding: 15px;
   border-radius: 6px;
 }
+
 .input-group {
   display: flex;
   gap: 10px;
   margin-top: 5px;
 }
+
 .table-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
 }
+
 .view-modes {
   display: flex;
   gap: 5px;
 }
+
 .action-col {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
 }
+
 .ss-icon-btn-view:hover {
   background: #e0f2fe;
 }
+
 .mode-btn {
   border: 1px solid #e5e7eb;
   padding: 6px 14px;
@@ -917,22 +917,26 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-weight: 500;
   transition: all 0.2s ease;
 }
+
 .mode-btn:hover {
   background: #f3f4f6;
   color: #374151;
   border-color: #d1d5db;
 }
+
 .mode-btn.active {
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
   box-shadow: 0 4px 6px rgba(255, 77, 79, 0.2);
   color: white;
   border-color: transparent;
 }
+
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
 }
+
 th {
   text-align: left;
   padding: 12px;
@@ -943,24 +947,29 @@ th {
   font-weight: 700;
   text-transform: uppercase;
 }
+
 td {
   padding: 12px;
   border-bottom: 1px solid #e5e7eb;
   font-size: 14px;
   color: #111827;
 }
+
 .text-right {
   text-align: right;
 }
+
 .text-center {
   text-align: center;
 }
+
 .calendar-view {
   margin-top: 15px;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   overflow: hidden;
 }
+
 .cal-navigation {
   display: flex;
   justify-content: space-between;
@@ -969,17 +978,26 @@ td {
   background: white;
   border-bottom: 1px solid #e5e7eb;
 }
+
 .nav-left {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .cal-title {
   font-size: 18px;
   font-weight: 700;
   margin: 0 10px;
   text-transform: capitalize;
 }
+
 .btn-nav {
   border: 1px solid #d1d5db;
   color: #000;
@@ -989,20 +1007,44 @@ td {
   cursor: pointer;
   font-size: 13px;
 }
+
 .btn-nav:hover {
   background: #f3f4f6;
 }
+
 .btn-nav.active {
   background: #111827;
   color: white;
   border-color: #111827;
 }
+
+.btn-month {
+  border: 1px solid #d1d5db;
+  color: #000;
+  background: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-month:hover {
+  background: #f3f4f6;
+}
+
+.btn-month.active {
+  background: #111827;
+  color: white;
+  border-color: #111827;
+}
+
 .cal-grid-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   background: #f8fafc;
   border-bottom: 1px solid #e5e7eb;
 }
+
 .cal-day-name {
   padding: 10px;
   text-align: center;
@@ -1010,14 +1052,17 @@ td {
   color: #1e40af;
   border-right: 1px solid #e5e7eb;
 }
+
 .cal-day-name:last-child {
   border-right: none;
 }
+
 .cal-grid-body {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   background: #fff;
 }
+
 .cal-cell {
   min-height: 120px;
   border-right: 1px solid #e5e7eb;
@@ -1025,15 +1070,19 @@ td {
   padding: 5px;
   position: relative;
 }
+
 .cal-cell:nth-child(7n) {
   border-right: none;
 }
+
 .cal-cell.disabled {
   background: #f9fafb;
 }
+
 .cal-cell.is-today {
   background: #fffbeb;
 }
+
 .cal-date-num {
   font-size: 14px;
   font-weight: 600;
@@ -1042,11 +1091,13 @@ td {
   margin-bottom: 5px;
   padding-right: 5px;
 }
+
 .cal-events {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
+
 .banglich-chip {
   background: #0ea5e9;
   color: white;
@@ -1061,10 +1112,12 @@ td {
   margin-bottom: 2px;
   transition: all 0.2s;
 }
+
 .banglich-chip:hover {
   background: #0284c7;
   transform: translateY(-1px);
 }
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1077,6 +1130,7 @@ td {
   align-items: center;
   z-index: 1000;
 }
+
 .modal-content {
   background: white;
   width: 500px;
@@ -1084,6 +1138,7 @@ td {
   overflow: hidden;
   animation: fadeIn 0.2s;
 }
+
 .modal-header {
   padding: 15px 20px;
   border-bottom: 1px solid #eee;
@@ -1091,24 +1146,30 @@ td {
   justify-content: space-between;
   align-items: center;
 }
+
 .btn-close {
   font-size: 15px;
   cursor: pointer;
 }
+
 .modal-body {
   padding: 20px;
 }
+
 .form-group {
   margin-bottom: 15px;
 }
+
 .form-group label {
   display: block;
   margin-bottom: 5px;
   font-weight: 500;
 }
+
 .req {
   color: red;
 }
+
 .form-control {
   width: 100%;
   padding: 8px;
@@ -1116,6 +1177,7 @@ td {
   border-radius: 4px;
   box-sizing: border-box;
 }
+
 .modal-footer {
   padding: 15px 20px;
   border-top: 1px solid #eee;
@@ -1123,6 +1185,7 @@ td {
   justify-content: flex-end;
   gap: 10px;
 }
+
 .btn-cancel {
   background: #f3f4f6;
   border: none;
@@ -1130,6 +1193,7 @@ td {
   border-radius: 4px;
   cursor: pointer;
 }
+
 .btn-save {
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
   box-shadow: 0 10px 18px rgba(255, 77, 79, 0.16);
@@ -1139,9 +1203,11 @@ td {
   border-radius: 4px;
   cursor: pointer;
 }
+
 .combobox-wrapper {
   position: relative;
 }
+
 .combobox-dropdown {
   position: absolute;
   top: 100%;
@@ -1158,6 +1224,7 @@ td {
   padding: 0;
   list-style: none;
 }
+
 .combobox-dropdown li {
   padding: 10px;
   cursor: pointer;
@@ -1165,17 +1232,21 @@ td {
   font-size: 14px;
   color: #374151;
 }
+
 .combobox-dropdown li:last-child {
   border-bottom: none;
 }
+
 .combobox-dropdown li:hover {
   background-color: #f3f4f6;
 }
+
 .combobox-dropdown li.active {
   background-color: #e0f2fe;
   color: #0369a1;
   font-weight: 600;
 }
+
 .combobox-dropdown .no-result {
   padding: 10px;
   color: #9ca3af;
@@ -1183,9 +1254,11 @@ td {
   font-style: italic;
   cursor: default;
 }
+
 .fw-bold {
   font-weight: 600;
 }
+
 .selected-tags {
   display: flex;
   flex-wrap: wrap;
@@ -1197,6 +1270,7 @@ td {
   background: #fff;
   min-height: 40px;
 }
+
 .tag-item {
   background-color: #e0f2fe;
   color: #0369a1;
@@ -1210,24 +1284,29 @@ td {
   gap: 6px;
   animation: fadeIn 0.2s;
 }
+
 .remove-tag {
   cursor: pointer;
   font-size: 14px;
   color: #0284c7;
 }
+
 .remove-tag:hover {
   color: #ef4444;
 }
+
 .text-muted {
   font-size: 12px;
   color: #6b7280;
   margin-top: 4px;
   display: block;
 }
+
 .float-right {
   float: right;
   color: #10b981;
 }
+
 .avatar {
   width: 24px;
   height: 24px;
@@ -1239,12 +1318,14 @@ td {
   align-items: center;
   justify-content: center;
 }
+
 .avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
+
 .avatar-fallback {
   width: 100%;
   height: 100%;
@@ -1256,10 +1337,12 @@ td {
   font-weight: 500;
   font-size: 13px;
 }
+
 .cal-cell {
   position: relative;
   transition: background-color 0.2s;
 }
+
 .quick-add-wrapper {
   margin-top: 8px;
   display: flex;
@@ -1267,9 +1350,11 @@ td {
   opacity: 0;
   transition: opacity 0.2s ease-in-out;
 }
+
 .cal-cell:hover .quick-add-wrapper {
   opacity: 1;
 }
+
 .btn-quick-add {
   width: 32px;
   height: 32px;
@@ -1284,19 +1369,23 @@ td {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   transition: all 0.2s;
 }
+
 .btn-quick-add:hover {
   background-color: #d1fae5;
   transform: scale(1.1);
 }
+
 .btn-quick-add i {
   font-size: 14px;
 }
+
 .cal-events-container {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   padding: 4px;
 }
+
 .event-item {
   display: flex;
   flex-direction: column;
@@ -1304,6 +1393,7 @@ td {
   cursor: pointer;
   width: 40px;
 }
+
 .avatar-circle {
   width: 36px;
   height: 36px;
@@ -1320,14 +1410,17 @@ td {
   overflow: hidden;
   transition: transform 0.2s;
 }
+
 .event-item:hover .avatar-circle {
   transform: scale(1.1);
 }
+
 .avatar-circle img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 .event-name {
   font-size: 11px;
   color: #374151;
@@ -1339,40 +1432,48 @@ td {
   text-overflow: ellipsis;
   width: 100%;
 }
+
 .circle-add {
   background-color: #ecfdf5;
   color: #10b981;
   border: 1px dashed #10b981;
 }
+
 .add-new-btn:hover .circle-add {
   background-color: #10b981;
   color: white;
 }
+
 .quick-add-wrapper {
   display: none;
 }
+
 .cal-cell {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   min-height: 100px;
 }
+
 .event-item.add-new-btn {
   opacity: 0;
   visibility: hidden;
   transition: all 0.2s ease-in-out;
   transform: translateY(5px);
 }
+
 .cal-cell:hover .event-item.add-new-btn {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
 }
+
 @keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
