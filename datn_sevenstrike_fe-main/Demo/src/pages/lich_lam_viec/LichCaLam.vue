@@ -158,7 +158,7 @@
               <label>Giờ bắt đầu</label>
               <input 
                 type="time" 
-                class="form-control" 
+                lang="en-GB" class="form-control" 
                 v-model="form.gioBatDau" 
               />
             </div>
@@ -166,7 +166,7 @@
               <label>Giờ kết thúc</label>
               <input 
                 type="time" 
-                class="form-control" 
+                lang="en-GB" class="form-control" 
                 v-model="form.gioKetThuc" 
               />
             </div>
