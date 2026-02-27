@@ -142,6 +142,7 @@ const toggleUserMenu = () => {
 
 const handleProfile = () => {
   userMenuOpen.value = false;
+  router.push("/admin/thong-tin-ca-nhan");
 };
 
 const handleLogout = () => {

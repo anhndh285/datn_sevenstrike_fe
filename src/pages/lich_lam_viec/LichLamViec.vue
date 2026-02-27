@@ -19,7 +19,6 @@
         <div class="filters-bar">
           <div class="form-group">
             <label>Nhân viên <span class="req">*</span></label>
-
             <div class="combobox-wrapper">
               <input
                 type="text"
@@ -43,7 +42,6 @@
                   <span class="fw-bold">{{ nv.tenNhanVien }}</span>
                   <small v-if="nv.maNhanVien"> - {{ nv.maNhanVien }}</small>
                 </li>
-
                 <li v-if="filteredNhanVienList.length === 0" class="no-result">
                   Không tìm thấy nhân viên
                 </li>
@@ -72,7 +70,9 @@
           {{
             viewMode === "table"
               ? "Danh Sách Lịch Làm Việc"
-              : "Lịch Làm Việc Tháng " + (currentMonth + 1)
+              : viewMode === "week"
+                ? "Lịch Làm Việc Tuần"
+                : "Lịch Làm Việc Tháng " + (currentMonth + 1)
           }}
         </h3>
 
@@ -86,8 +86,8 @@
           </button>
           <button
             class="mode-btn"
-            :class="{ active: viewMode === 'calendar' }"
-            @click="viewMode = 'calendar'"
+            :class="{ active: viewMode === 'calendar' || viewMode === 'week' }"
+            @click="viewMode = 'week'"
           >
             <i class="fa-solid fa-calendar"></i> Lịch
           </button>
@@ -145,16 +145,35 @@
       <div v-else class="calendar-view">
         <div class="cal-navigation">
           <div class="nav-left">
-            <button class="btn-nav" @click="changeMonth(-1)">
+            <button class="btn-nav" @click="changePeriod(-1)">
               <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <span class="cal-title"
-              >Tháng {{ currentMonth + 1 }} năm {{ currentYear }}</span
-            >
-            <button class="btn-nav" @click="changeMonth(1)">
+            <span class="cal-title">
+              {{ viewMode === "week" ? "Tuần " : "Tháng " }}
+              {{ currentMonth + 1 }} năm {{ currentYear }}
+            </span>
+            <button class="btn-nav" @click="changePeriod(1)">
               <i class="fa-solid fa-chevron-right"></i>
             </button>
+
             <button class="btn-nav" @click="goToday">Hôm nay</button>
+          </div>
+
+          <div class="nav-right">
+            <button
+              class="btn-month"
+              :class="{ active: viewMode === 'week' }"
+              @click="viewMode = 'week'"
+            >
+              Tuần
+            </button>
+            <button
+              class="btn-month"
+              :class="{ active: viewMode === 'calendar' }"
+              @click="viewMode = 'calendar'"
+            >
+              Tháng
+            </button>
           </div>
         </div>
 
@@ -168,7 +187,7 @@
           <div class="cal-day-name">Th 7</div>
         </div>
 
-        <div class="cal-grid-body">
+        <div v-if="viewMode === 'calendar'" class="cal-grid-body">
           <div
             v-for="blank in startPadding"
             :key="'blank-' + blank"
@@ -182,10 +201,51 @@
             :class="{ 'is-today': isToday(day) }"
           >
             <div class="cal-date-num">{{ day }}</div>
-
             <div class="cal-events-container">
               <div
                 v-for="nv in getEventsForDay(day)"
+                :key="nv.id"
+                class="event-item"
+                @click="openModal(nv)"
+              >
+                <div class="avatar-circle">
+                  <img
+                    v-if="isImg(nv.nhanVien?.anhNhanVien)"
+                    :src="nv.nhanVien?.anhNhanVien"
+                  />
+                  <span v-else class="initial">{{
+                    getAvatarLabel(nv.tenNhanVien)
+                  }}</span>
+                </div>
+                <span class="event-name">{{ nv.nhanVien?.tenTaiKhoan }}</span>
+              </div>
+              <div
+                v-if="hasPermission"
+                class="event-item add-new-btn"
+                @click.stop="openModalVoiNgay(day, currentMonth, currentYear)"
+              >
+                <div class="avatar-circle circle-add">
+                  <i class="fa-solid fa-plus"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="viewMode === 'week'" class="cal-grid-body">
+          <div
+            v-for="wd in weekDays"
+            :key="'week-day-' + wd.dateFull.getTime()"
+            class="cal-cell"
+            :class="{
+              'is-today': isToday(wd.day) && currentMonth === wd.month,
+            }"
+          >
+            <div class="cal-date-num">{{ wd.day }}/{{ wd.month + 1 }}</div>
+
+            <div class="cal-events-container">
+              <div
+                v-for="nv in getEventsForSpecificDay(wd.day, wd.month, wd.year)"
                 :key="nv.id"
                 class="event-item"
                 @click="openModal(nv)"
@@ -205,7 +265,7 @@
               <div
                 v-if="hasPermission"
                 class="event-item add-new-btn"
-                @click.stop="openModalVoiNgay(day)"
+                @click.stop="openModalVoiNgay(wd.day, wd.month, wd.year)"
               >
                 <div class="avatar-circle circle-add">
                   <i class="fa-solid fa-plus"></i>
@@ -366,7 +426,7 @@ import {
   checkLichLamViec,
 } from "@/services/lich_lam_viec/lich_lam_viecService";
 
-// ✅ BỔ SUNG BIẾN LẤY QUYỀN ĐỂ KHÓA CRUD
+// ✅ QUYỀN ĐƯỢC GIỮ NGUYÊN
 const hasPermission = computed(() => {
   return sessionStorage.getItem("ss_has_active_shift") === "true";
 });
@@ -393,14 +453,11 @@ const showModal = ref(false);
 const isEditing = ref(false);
 const currentId = ref(null);
 
-const fileInputRef = ref(null);
-const selectedFile = ref(null);
-const isLoadingImport = ref(false);
-
-const viewMode = ref("table");
+const viewMode = ref("week");
 const today = new Date();
 const currentMonth = ref(today.getMonth());
 const currentYear = ref(today.getFullYear());
+const currentDate = ref(new Date());
 
 const form = reactive({
   idLichLamViec: null,
@@ -454,23 +511,10 @@ const startPadding = computed(() => {
   return new Date(currentYear.value, currentMonth.value, 1).getDay();
 });
 
-const changeMonth = (step) => {
-  let newMonth = currentMonth.value + step;
-  if (newMonth > 11) {
-    currentMonth.value = 0;
-    currentYear.value++;
-  } else if (newMonth < 0) {
-    currentMonth.value = 11;
-    currentYear.value--;
-  } else {
-    currentMonth.value = newMonth;
-  }
-};
-
 const goToday = () => {
-  const now = new Date();
-  currentMonth.value = now.getMonth();
-  currentYear.value = now.getFullYear();
+  currentDate.value = new Date();
+  currentMonth.value = currentDate.value.getMonth();
+  currentYear.value = currentDate.value.getFullYear();
 };
 
 const isToday = (day) => {
@@ -482,9 +526,66 @@ const isToday = (day) => {
   );
 };
 
+const weekDays = computed(() => {
+  const days = [];
+  const startOfWeek = new Date(currentDate.value);
+  const day = startOfWeek.getDay();
+  startOfWeek.setDate(startOfWeek.getDate() - day);
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    days.push({
+      day: d.getDate(),
+      month: d.getMonth(),
+      year: d.getFullYear(),
+      dateFull: d,
+    });
+  }
+  return days;
+});
+
+const changePeriod = (step) => {
+  if (viewMode.value === "calendar") {
+    let newMonth = currentMonth.value + step;
+    if (newMonth > 11) {
+      currentMonth.value = 0;
+      currentYear.value++;
+    } else if (newMonth < 0) {
+      currentMonth.value = 11;
+      currentYear.value--;
+    } else {
+      currentMonth.value = newMonth;
+    }
+    currentDate.value = new Date(currentYear.value, currentMonth.value, 1);
+  } else if (viewMode.value === "week") {
+    const newDate = new Date(currentDate.value);
+    newDate.setDate(newDate.getDate() + step * 7);
+    currentDate.value = newDate;
+    currentMonth.value = newDate.getMonth();
+    currentYear.value = newDate.getFullYear();
+  }
+};
+
+const getEventsForSpecificDay = (day, month, year) => {
+  if (!lichNhanVienList.value) return [];
+  const m = month + 1;
+  const mStr = m < 10 ? `0${m}` : m;
+  const dStr = day < 10 ? `0${day}` : day;
+  const dateString = `${year}-${mStr}-${dStr}`;
+
+  return filterLichList.value.filter((l) => {
+    if (Array.isArray(l.ngayLam)) {
+      return (
+        l.ngayLam[0] === year && l.ngayLam[1] === m && l.ngayLam[2] === day
+      );
+    }
+    return l.ngayLam === dateString;
+  });
+};
+
 const getEventsForDay = (day) => {
   if (!lichNhanVienList.value) return [];
-
   const m = currentMonth.value + 1;
   const mStr = m < 10 ? `0${m}` : m;
   const dStr = day < 10 ? `0${day}` : day;
@@ -515,7 +616,6 @@ const filteredNhanVienList = computed(() => {
         nv.maNhanVien.toLowerCase().includes(searchNv.value.toLowerCase()));
 
     const koPhaiAdmin = nv.idQuyenHan !== 1;
-
     return nhanVienSearch && koPhaiAdmin;
   });
 });
@@ -528,7 +628,6 @@ const filteredNvModal = computed(() => {
       nv.maNhanVien.toLowerCase().includes(q);
 
     const koPhaiAdmin = nv.idQuyenHan !== 1;
-
     return nhanVienSearch && koPhaiAdmin;
   });
 });
@@ -588,7 +687,8 @@ const convertArrayDateToString = (arrDate) => {
   return arrDate;
 };
 
-const openModalVoiNgay = (day) => {
+// ✅ ĐÃ FIX LỖI: Nhận thêm biến month và year để xử lý giao diện Tuần vắt chéo tháng
+const openModalVoiNgay = (day, month = null, year = null) => {
   isEditing.value = false;
   currentId.value = null;
   form.idLichLamViec = null;
@@ -599,10 +699,13 @@ const openModalVoiNgay = (day) => {
   searchNvModal.value = "";
   searchCaModal.value = "";
 
-  const m = currentMonth.value + 1;
+  const targetYear = year !== null ? year : currentYear.value;
+  const targetMonth = month !== null ? month : currentMonth.value;
+
+  const m = targetMonth + 1;
   const mStr = m < 10 ? `0${m}` : m;
   const dStr = day < 10 ? `0${day}` : day;
-  const dateString = `${currentYear.value}-${mStr}-${dStr}`;
+  const dateString = `${targetYear}-${mStr}-${dStr}`;
 
   form.ngayLam = dateString;
   showModal.value = true;
@@ -625,7 +728,6 @@ const openModal = (item) => {
 
     const nv = listNhanVien.value.find((n) => n.id === idNv);
     searchNvModal.value = nv ? nv.tenNhanVien : "";
-
     selectedNhanViens.value = [];
 
     const ca = listCa.value.find((c) => c.id === idCa);
@@ -635,11 +737,9 @@ const openModal = (item) => {
   } else {
     isEditing.value = false;
     currentId.value = null;
-
     form.idLichLamViec = null;
     form.idNhanVien = null;
     selectedNhanViens.value = [];
-
     form.idCaLam = null;
     form.ngayLam = new Date().toISOString().split("T")[0];
     form.ghiChu = "";
@@ -664,7 +764,6 @@ const handleSubmit = async () => {
     alert("Vui lòng chọn ca làm việc!");
     return;
   }
-
   if (!isEditing.value && selectedNhanViens.value.length === 0) {
     alert("Vui lòng chọn ít nhất một nhân viên!");
     return;
@@ -974,6 +1073,11 @@ td {
   align-items: center;
   gap: 8px;
 }
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .cal-title {
   font-size: 18px;
   font-weight: 700;
@@ -993,6 +1097,23 @@ td {
   background: #f3f4f6;
 }
 .btn-nav.active {
+  background: #111827;
+  color: white;
+  border-color: #111827;
+}
+.btn-month {
+  border: 1px solid #d1d5db;
+  color: #000;
+  background: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.btn-month:hover {
+  background: #f3f4f6;
+}
+.btn-month.active {
   background: #111827;
   color: white;
   border-color: #111827;
