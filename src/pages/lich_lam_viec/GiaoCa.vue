@@ -803,7 +803,7 @@ onUnmounted(() => {
 }
 .ss-header-sub {
   font-size: 0.8rem;
-  color: #a7f3d0;
+  color: #ffffff;
   margin-top: 5px;
   margin-left: 30px;
 }
@@ -811,7 +811,7 @@ onUnmounted(() => {
   padding: 25px;
 }
 .ss-schedule-box {
-  background-color: #f0fdf4;
+  background-color: #fee2e2;
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 15px;
@@ -819,7 +819,7 @@ onUnmounted(() => {
 .ss-schedule-label {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #059669;
+  color: #ff4d4f;
   margin-bottom: 6px;
 }
 .ss-schedule-info {
@@ -833,8 +833,8 @@ onUnmounted(() => {
   color: #111827;
 }
 .ss-shift-time {
-  background-color: #d1fae5;
-  color: #047857;
+  background-color: #ffffff;
+  color: #000000;
   padding: 4px 12px;
   border-radius: 20px;
   font-weight: 600;
@@ -886,8 +886,8 @@ onUnmounted(() => {
 .money-input-new:focus,
 .note-textarea:focus {
   outline: none;
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  border-color: #ff4d4f;
+  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.1);
 }
 .note-textarea {
   width: 100%;
