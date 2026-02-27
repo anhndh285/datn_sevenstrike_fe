@@ -1,3 +1,4 @@
+<!-- File: src/pages/hoa_don/HoaDonDetail.vue -->
 <template>
   <div class="order-page p-4 ss-page ss-font">
     <!-- HEADER -->
@@ -10,7 +11,7 @@
         </div>
       </div>
 
-      <button class="btn btn-secondary btn-sm" @click="quayLai">
+      <button class="btn btn-secondary btn-sm" type="button" @click="quayLai">
         <i class="bi bi-arrow-left"></i> Quay lại danh sách
       </button>
     </div>
@@ -19,7 +20,6 @@
       <!-- CỘT TRÁI -->
       <div class="col-lg-8">
         <!-- TRẠNG THÁI -->
-
         <div class="card ss-card mb-4">
           <div class="card-body">
             <!-- HEADER + BUTTON -->
@@ -29,7 +29,7 @@
                 Trạng thái đơn hàng
               </h6>
 
-              <button class="btn btn-history" @click="moModalLichSu">
+              <button class="btn btn-history" type="button" @click="moModalLichSu">
                 <i class="bi bi-clock-history me-1"></i>
                 Lịch sử thao tác
               </button>
@@ -42,8 +42,8 @@
                 :key="st.value"
                 class="ss-step"
                 :class="{
-                  done: st.value < selectedHD.trangThai,
-                  active: st.value === selectedHD.trangThai,
+                  done: st.value < trangThaiHienTaiDungDeHienThi,
+                  active: st.value === trangThaiHienTaiDungDeHienThi,
                 }"
               >
                 <div class="ss-icon">
@@ -160,9 +160,7 @@
                   </td>
                 </tr>
 
-                <tr
-                  v-if="!selectedHD.sanPham || selectedHD.sanPham.length === 0"
-                >
+                <tr v-if="!selectedHD.sanPham || selectedHD.sanPham.length === 0">
                   <td colspan="8" class="text-center text-muted">
                     Không có sản phẩm
                   </td>
@@ -224,10 +222,8 @@
                 :key="index"
                 class="d-flex justify-content-between border-bottom py-2"
               >
-                <!-- Cột bên trái: loại thanh toán -->
                 <div class="fw-bold">{{ item.loai }}</div>
 
-                <!-- Cột bên phải: số tiền + thời gian ở dưới -->
                 <div class="text-end">
                   <div class="fw-bold text-danger">
                     {{ item.soTien.toLocaleString() }} đ
@@ -241,10 +237,10 @@
           </div>
 
           <hr />
-          <button class="btn btn-primary w-100 mb-2" @click="inHoaDon">
+          <button class="btn btn-primary w-100 mb-2" type="button" @click="inHoaDon">
             <i class="bi bi-printer me-1"></i> In hóa đơn
           </button>
-          <button class="btn btn-warning w-100" @click="moModalSua">
+          <button class="btn btn-warning w-100" type="button" @click="moModalSua">
             <i class="bi bi-pencil me-1"></i> Chỉnh sửa đơn hàng
           </button>
         </div>
@@ -257,7 +253,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Cập nhật thông tin đơn hàng</h5>
-          <button class="btn-close" data-bs-dismiss="modal"></button>
+          <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
         </div>
 
         <div class="modal-body">
@@ -266,6 +262,7 @@
             <li class="nav-item">
               <button
                 class="nav-link"
+                type="button"
                 :class="{ active: tab === 'donhang' }"
                 @click="tab = 'donhang'"
               >
@@ -276,6 +273,7 @@
             <li class="nav-item">
               <button
                 class="nav-link"
+                type="button"
                 :class="{ active: tab === 'khachhang' }"
                 @click="tab = 'khachhang'"
               >
@@ -335,9 +333,8 @@
         </div>
 
         <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-
-          <button class="btn btn-success" @click="updateHoaDon">Lưu</button>
+          <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Hủy</button>
+          <button class="btn btn-success" type="button" @click="updateHoaDon">Lưu</button>
         </div>
       </div>
     </div>
@@ -349,7 +346,7 @@
       <div class="modal-content p-3">
         <div class="modal-header border-0">
           <h5 class="modal-title fw-bold w-100 text-center">THANH TOÁN</h5>
-          <button class="btn-close" data-bs-dismiss="modal"></button>
+          <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
         </div>
 
         <div class="modal-body">
@@ -364,6 +361,7 @@
           <div class="text-center mb-3">
             <button
               class="btn me-2"
+              type="button"
               :class="phuongThuc === 'CK' ? 'btn-success' : 'btn-light'"
               @click="phuongThuc = 'CK'"
             >
@@ -372,6 +370,7 @@
 
             <button
               class="btn"
+              type="button"
               :class="phuongThuc === 'TM' ? 'btn-success' : 'btn-light'"
               @click="phuongThuc = 'TM'"
             >
@@ -383,10 +382,10 @@
           <div v-if="phuongThuc === 'CK'" class="mb-3 text-center">
             <div class="border rounded p-3">
               <p class="mb-1"><b>Ngân hàng:</b> MB Bank</p>
-              <p class="mb-2"><b>Số tài khoản:</b> 0876524519</p>
+              <p class="mb-2"><b>Số tài khoản:</b> 906512234</p>
 
               <img
-                src="https://img.vietqr.io/image/MB-0876524519-compact.png"
+                src="https://img.vietqr.io/image/MB-906512234-compact.png"
                 alt="QR Thanh toán"
                 style="max-width: 200px"
               />
@@ -434,11 +433,11 @@
           <div class="d-flex justify-content-between mb-3">
             <span>Tiền thiếu</span>
             <b class="text-danger">
-              {{ hoaDon.canThanhToan.toLocaleString() }} đ
+              {{ tienThieuThanhToan.toLocaleString() }} đ
             </b>
           </div>
 
-          <button class="btn btn-primary" @click="xacNhanThanhToan">
+          <button class="btn btn-primary" type="button" @click="xacNhanThanhToan">
             Xác nhận thanh toán
           </button>
         </div>
@@ -455,7 +454,7 @@
             <i class="bi bi-clock-history me-2"></i>
             Lịch sử thao tác
           </h5>
-          <button class="btn-close" data-bs-dismiss="modal"></button>
+          <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
         </div>
 
         <div class="modal-body history-body">
@@ -490,10 +489,18 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
 import { Modal } from "bootstrap";
+
+/**
+ * ✅ Fix Vue warn: Extraneous non-props attributes (id)...
+ * Router có thể truyền props id="..."
+ */
+const props = defineProps({
+  id: { type: [String, Number], required: false },
+});
 
 const tab = ref("donhang");
 
@@ -527,9 +534,59 @@ const selectedHD = ref({
   sanPham: [],
 });
 
-const danhSachTrangThaiHopLe = computed(() => {
-  const current = selectedHD.value.trangThai;
+/** ✅ Ưu tiên props.id (nếu có), fallback route.params.id */
+const hoaDonIdHienTai = computed(() => {
+  const p = props.id;
+  const r = route.params.id;
+  return p ?? r ?? null;
+});
 
+/** ✅ loaiDon: hỗ trợ 0/1, true/false, "0"/"1" */
+const loaiDonText = computed(() => {
+  const type = selectedHD.value?.loaiDon;
+
+  if (type === 1 || type === "1" || type === true) return "Giao hàng";
+  if (type === 0 || type === "0" || type === false) return "Tại quầy";
+
+  return "Không xác định";
+});
+
+/** ✅ xác định tại quầy */
+const isTaiQuay = computed(() => {
+  const type = selectedHD.value?.loaiDon;
+  return type === 0 || type === "0" || type === false;
+});
+
+/**
+ * ✅ trạng thái dùng để hiển thị timeline:
+ * - tại quầy: chỉ hiển thị 1 hoặc 5 (nếu DB lỡ có 2/3/4 thì coi như 1)
+ */
+const trangThaiHienTaiDungDeHienThi = computed(() => {
+  const t = Number(selectedHD.value?.trangThai ?? 1);
+
+  if (isTaiQuay.value) {
+    return t >= 5 ? 5 : 1;
+  }
+
+  return t;
+});
+
+/** ✅ danh sách trạng thái hợp lệ khi sửa */
+const danhSachTrangThaiHopLe = computed(() => {
+  const current = trangThaiHienTaiDungDeHienThi.value;
+
+  // ✅ tại quầy: chỉ cho 1 -> 5
+  if (isTaiQuay.value) {
+    const ds = trangThaiList.filter((st) => st.value === 1 || st.value === 5);
+
+    return ds.filter((st) => {
+      if (st.value === current) return true;
+      if (current === 1) return st.value === 5;
+      return false;
+    });
+  }
+
+  // ✅ giao hàng: luồng tuần tự như cũ
   return trangThaiList.filter((st) => {
     if (st.value === current) return true;
 
@@ -541,7 +598,7 @@ const danhSachTrangThaiHopLe = computed(() => {
       case 3:
         return st.value === 4;
       case 4:
-        return st.value === 5; // giao xong -> hoàn thành
+        return st.value === 5;
       default:
         return false;
     }
@@ -554,7 +611,9 @@ const moModalSua = () => {
   form.value = {
     maHD: selectedHD.value.maHD,
     ngayTao: selectedHD.value.ngayTao,
-    trangThai: selectedHD.value.trangThai,
+
+    // ✅ tại quầy: normalize để select không bị lệch nếu DB đang 2/3/4
+    trangThai: trangThaiHienTaiDungDeHienThi.value,
 
     tenKhachHang: selectedHD.value.tenKhachHang,
     sdt: selectedHD.value.sdt,
@@ -568,13 +627,14 @@ const moModalSua = () => {
 
 const moModalThanhToan = () => {
   const el = document.getElementById("modalThanhToan");
-  const modal = Modal.getOrCreateInstance(el);
-  modal.show();
+  const m = Modal.getOrCreateInstance(el);
+  m.show();
 };
 
 const updateHoaDon = async () => {
   try {
-    const id = route.params.id;
+    const id = hoaDonIdHienTai.value;
+    if (!id) return;
 
     await axios.put(`${API_HD}/${id}/trang-thai`, {
       trangThai: form.value.trangThai,
@@ -596,11 +656,15 @@ const updateHoaDon = async () => {
     oldHistory.unshift(newItem);
 
     saveLichSuLocal(id, oldHistory);
-
     lichSuThaoTac.value = oldHistory;
 
     alert("Lưu thay đổi thành công!");
-    modal.hide();
+
+    try {
+      document.activeElement?.blur?.();
+    } catch (e) {}
+
+    modal?.hide();
   } catch (error) {
     console.error("Update error:", error);
     alert(
@@ -628,8 +692,8 @@ const loadLichSuLocal = (id) => {
 
 const moModalLichSu = () => {
   const el = document.getElementById("modalLichSu");
-  const modal = Modal.getOrCreateInstance(el);
-  modal.show();
+  const m = Modal.getOrCreateInstance(el);
+  m.show();
 };
 
 const layThoiGianHienTai = () => {
@@ -664,6 +728,18 @@ const hoaDon = computed(() => {
   };
 });
 
+/** ✅ Tiền thiếu hiển thị đúng theo phương thức */
+const tienThieuThanhToan = computed(() => {
+  const total = Number(hoaDon.value.canThanhToan || 0);
+
+  if (phuongThuc.value === "TM") {
+    return Math.max(0, total - Number(tienKhachDua.value || 0));
+  }
+
+  // chuyển khoản: chưa đối soát nên coi là còn thiếu toàn bộ
+  return total;
+});
+
 const xacNhanThanhToan = async () => {
   if (phuongThuc.value === "TM") {
     if (!tienKhachDua.value || tienKhachDua.value <= 0) {
@@ -685,7 +761,8 @@ const xacNhanThanhToan = async () => {
 
   lichSuThanhToan.value.unshift(banGhiMoi);
 
-  const id = route.params.id;
+  const id = hoaDonIdHienTai.value;
+  if (!id) return;
 
   const newItem = {
     thoiGian: layThoiGianHienTai(),
@@ -698,19 +775,25 @@ const xacNhanThanhToan = async () => {
   lichSuThaoTac.value = oldHistory;
 
   try {
-    const id = route.params.id;
+    // ✅ tại quầy: thanh toán xong -> hoàn thành luôn
+    const trangThaiSauThanhToan = isTaiQuay.value
+      ? 5
+      : Math.min(5, Number(selectedHD.value.trangThai || 1) + 1);
 
     await axios.put(`${API_HD}/${id}/trang-thai`, {
-      trangThai: selectedHD.value.trangThai + 1,
+      trangThai: trangThaiSauThanhToan,
       ghiChu: "Tự động cập nhật sau khi thanh toán",
     });
 
     alert("Thanh toán thành công!");
-
     await loadChiTiet(id);
 
     tienKhachDua.value = 0;
     tienKhachDuaHienThi.value = "";
+
+    try {
+      document.activeElement?.blur?.();
+    } catch (e) {}
 
     const el = document.getElementById("modalThanhToan");
     Modal.getInstance(el)?.hide();
@@ -720,23 +803,21 @@ const xacNhanThanhToan = async () => {
   }
 };
 
+/**
+ * ✅ Timeline hiển thị:
+ * - tại quầy: chỉ 1 và 5
+ * - giao hàng: đủ 1..5
+ */
 const trangThaiHienThi = computed(() => {
-  return trangThaiList.filter((st) => st.value <= selectedHD.value.trangThai);
-});
-
-const loaiDonText = computed(() => {
-  const type = selectedHD.value?.loaiDon;
-  if (type === true) return "Online";
-  if (type === false) return "Tại cửa hàng";
-  return "Không xác định";
+  if (isTaiQuay.value) {
+    return trangThaiList.filter((st) => st.value === 1 || st.value === 5);
+  }
+  return trangThaiList;
 });
 
 const loadChiTiet = async (id) => {
   const { data } = await axios.get(`${API_HD}/${id}`);
 
-  // =========================
-  // MAP HÓA ĐƠN
-  // =========================
   selectedHD.value = {
     maHD: data.maHoaDon,
     ngayTao: data.ngayTao
@@ -754,8 +835,8 @@ const loadChiTiet = async (id) => {
 
     loaiDon: data.loaiDon,
 
-    tongTien: data.tongTien ?? 0, // tiền hàng gốc
-    giamGia: data.tongTienGiam ?? 0, // tiền giảm
+    tongTien: data.tongTien ?? 0,
+    giamGia: data.tongTienGiam ?? 0,
     phiVanChuyen: data.phiVanChuyen ?? 0,
 
     trangThai: data.trangThaiHienTai ?? 1,
@@ -774,9 +855,6 @@ const loadChiTiet = async (id) => {
       : [],
   };
 
-  // =========================
-  // MAP LỊCH SỬ THANH TOÁN
-  // =========================
   lichSuThanhToan.value = [];
 
   if (data.ngayThanhToan) {
@@ -787,12 +865,8 @@ const loadChiTiet = async (id) => {
     });
   }
 
-  // =========================
-  // MAP LỊCH SỬ THAO TÁC
-  // =========================
   lichSuThaoTac.value = loadLichSuLocal(id);
 
-  // Tạo đơn
   if (data.ngayTao) {
     lichSuThaoTac.value.push({
       thoiGian: new Date(data.ngayTao).toLocaleString("vi-VN"),
@@ -800,7 +874,6 @@ const loadChiTiet = async (id) => {
     });
   }
 
-  // Thanh toán
   if (data.ngayThanhToan) {
     lichSuThaoTac.value.unshift({
       thoiGian: new Date(data.ngayThanhToan).toLocaleString("vi-VN"),
@@ -809,8 +882,9 @@ const loadChiTiet = async (id) => {
   }
 };
 
+/** ✅ watch theo hoaDonIdHienTai để ăn cả props.id và route.params.id */
 watch(
-  () => route.params.id,
+  () => hoaDonIdHienTai.value,
   (id) => id && loadChiTiet(id),
   { immediate: true },
 );
@@ -903,6 +977,40 @@ const inHoaDon = () => {
 };
 
 const quayLai = () => router.push("/admin/hoa-don");
+
+/** ✅ giảm cảnh báo aria-hidden: blur focus khi modal đóng */
+const cleanupFns = [];
+
+onMounted(() => {
+  const ids = ["modalEdit", "modalThanhToan", "modalLichSu"];
+
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    const onHide = () => {
+      try {
+        document.activeElement?.blur?.();
+      } catch (e) {}
+    };
+
+    el.addEventListener("hide.bs.modal", onHide);
+    el.addEventListener("hidden.bs.modal", onHide);
+
+    cleanupFns.push(() => {
+      el.removeEventListener("hide.bs.modal", onHide);
+      el.removeEventListener("hidden.bs.modal", onHide);
+    });
+  });
+});
+
+onBeforeUnmount(() => {
+  cleanupFns.forEach((fn) => {
+    try {
+      fn();
+    } catch (e) {}
+  });
+});
 </script>
 
 <style scoped>
