@@ -1,7 +1,5 @@
-<!-- File: src/pages/sales/SalesPage.vue -->
 <template>
   <div class="ss-page ss-font ss-pos">
-    <!-- HEAD -->
     <div class="ss-head">
       <div class="ss-head-left">
         <div class="ss-title">Bán hàng</div>
@@ -19,7 +17,6 @@
       </div>
     </div>
 
-    <!-- TOAST -->
     <div v-if="toast.show" class="ss-toast" :class="toast.type">
       <div class="ss-toast-left">
         <span class="ss-toast-dot"></span>
@@ -28,7 +25,6 @@
       <button class="ss-toast-x" type="button" @click="hideToast">×</button>
     </div>
 
-    <!-- ========================= EMPTY: CHƯA CÓ ĐƠN HÀNG ========================= -->
     <div v-if="!hasOrders" class="ss-card ss-border ss-card-main">
       <div class="ss-empty-wrap">
         <div class="ss-empty-icon" aria-hidden="true">
@@ -51,9 +47,7 @@
       </div>
     </div>
 
-    <!-- ========================= ORDER UI (có đơn hàng) ========================= -->
     <template v-else>
-      <!-- TABS -->
       <div class="ss-tabs">
         <div class="ss-tab-list">
           <button
@@ -76,9 +70,7 @@
         </div>
       </div>
 
-      <!-- MAIN CARD -->
       <div class="ss-card ss-border ss-card-main">
-        <!-- Product Section Head -->
         <div class="ss-section-head">
           <div class="ss-section-title">Sản phẩm</div>
 
@@ -92,7 +84,6 @@
           </div>
         </div>
 
-        <!-- Cart -->
         <div class="ss-cart-box ss-border">
           <div v-if="cartItems.length === 0" class="ss-empty-wrap ss-empty-cart">
             <div class="ss-empty-icon" aria-hidden="true">
@@ -188,9 +179,7 @@
           </div>
         </div>
 
-        <!-- Bottom: chỉ hiện khi đã có sản phẩm -->
         <div v-if="cartItems.length > 0" class="ss-bottom-grid">
-          <!-- Customer card -->
           <div class="ss-panel ss-border">
             <div class="ss-panel-head">
               <div class="ss-panel-title">Thông tin khách hàng</div>
@@ -213,7 +202,6 @@
             </div>
 
             <div class="ss-panel-body">
-              <!-- TẠI QUẦY -->
               <template v-if="isCounter">
                 <div class="ss-kv">
                   <div class="ss-k">Tên khách hàng</div>
@@ -222,9 +210,7 @@
                 <div class="ss-hint">Tại quầy: chỉ cần chọn sản phẩm và thanh toán.</div>
               </template>
 
-              <!-- GIAO HÀNG -->
               <template v-else>
-                <!-- ĐÃ CHỌN KH -->
                 <template v-if="selectedKh">
                   <div class="ss-kv">
                     <div class="ss-k">Tên khách hàng</div>
@@ -250,7 +236,6 @@
                   </div>
                 </template>
 
-                <!-- KHÁCH VÃNG LAI -->
                 <template v-else>
                   <div class="ss-guest-hint">Khách vãng lai (không cần tạo tài khoản)</div>
 
@@ -319,12 +304,10 @@
             </div>
           </div>
 
-          <!-- Payment card -->
           <div class="ss-panel ss-border">
             <div class="ss-panel-head">
               <div class="ss-panel-title">Thông tin thanh toán</div>
 
-              <!-- Switch: OFF = giao hàng, ON = tại quầy -->
               <div class="ss-ship-toggle">
                 <span class="ss-toggle-label">{{ isCounter ? "Tại quầy" : "Giao hàng" }}</span>
                 <label class="ss-switch">
@@ -335,7 +318,6 @@
             </div>
 
             <div class="ss-panel-body">
-              <!-- Voucher input -->
               <div class="ss-voucher-row">
                 <div class="ss-field grow">
                   <div class="ss-filter-label">Mã phiếu giảm giá</div>
@@ -418,7 +400,6 @@
       </div>
     </template>
 
-    <!-- ========================= MODAL: CHỌN CTSP ========================= -->
     <div v-if="showCtspModal" class="ss-modal-backdrop">
       <div class="ss-modal ss-modal-lg">
         <div class="ss-modal-head">
@@ -555,7 +536,6 @@
       </div>
     </div>
 
-    <!-- ========================= MODAL: QR ========================= -->
     <div v-if="showQrModal" class="ss-modal-backdrop">
       <div class="ss-modal ss-modal-md">
         <div class="ss-modal-head">
@@ -582,7 +562,6 @@
       </div>
     </div>
 
-    <!-- ========================= MODAL: CHỌN KH ========================= -->
     <div v-if="showKhModal" class="ss-modal-backdrop">
       <div class="ss-modal ss-modal-kh">
         <div class="ss-modal-head ss-kh-head">
@@ -635,7 +614,6 @@
       </div>
     </div>
 
-    <!-- ========================= MODAL: CHỌN ĐỊA CHỈ ========================= -->
     <div v-if="showDiaChiModal" class="ss-modal-backdrop">
       <div class="ss-modal ss-modal-md">
         <div class="ss-modal-head">
@@ -672,7 +650,6 @@
       </div>
     </div>
 
-    <!-- ========================= MODAL: THANH TOÁN ========================= -->
     <div v-if="showPayModal" class="ss-modal-backdrop">
       <div class="ss-modal ss-modal-pay">
         <div class="ss-modal-head ss-pay-head">
@@ -721,6 +698,7 @@
 import { Html5Qrcode } from "html5-qrcode";
 import SalesService from "@/services/sales/salesService.js";
 import apiClient from "@/services/apiClient";
+import Swal from "sweetalert2"; // ✅ ĐÃ THÊM IMPORT SWEETALERT2
 
 export default {
   name: "SalesPage",
@@ -829,6 +807,11 @@ export default {
   },
 
   computed: {
+    // ✅ THÊM BIẾN TÍNH TOÁN QUYỀN MỞ CA
+    hasPermission() {
+      return sessionStorage.getItem("ss_has_active_shift") === "true";
+    },
+
     nguoiBanTen() {
       const u = this.nguoiBan || {};
       return u.hoTen || u.tenNhanVien || u.ten || u.username || "";
@@ -1106,6 +1089,20 @@ export default {
   },
 
   methods: {
+    // ✅ HÀM TRUNG TÂM XỬ LÝ CHẶN CLICK
+    checkQuyenThaoTac() {
+      if (!this.hasPermission) {
+        Swal.fire({
+          icon: "error",
+          title: "Chế độ Chỉ xem",
+          text: "Bạn cần Bắt đầu ca làm việc mới có thể Thêm hoặc Sửa dữ liệu!",
+          confirmButtonColor: '#6366f1' 
+        });
+        return false;
+      }
+      return true;
+    },
+
     // ================== base qty persist ==================
     baseQtyKey() {
       return "ss_pos_ctsp_base_qty_map";
@@ -1325,6 +1322,9 @@ export default {
     },
 
     createOrderTab() {
+      // ✅ BẢO VỆ NÚT TẠO ĐƠN HÀNG
+      if (!this.checkQuyenThaoTac()) return;
+
       if (this.tabs.length >= this.maxOrderTabs) {
         this.showToast(`Chỉ được tạo tối đa ${this.maxOrderTabs} đơn để tránh spam.`, "error");
         return;
@@ -1561,7 +1561,7 @@ export default {
       return this.formatMoney(giaTri);
     },
 
-    // ================== ĐỢT GIẢM GIÁ: lấy best theo CTSP (FIX CHÍNH) ==================
+    // ================== ĐỢT GIẢM GIÁ ==================
     async fetchBestDotGiamGiaByCtspIds(ids) {
       const list = [...new Set((ids || []).map((x) => Number(x)).filter((x) => Number.isFinite(x)))];
       if (!list.length) return [];
@@ -1582,7 +1582,6 @@ export default {
         }
       }
 
-      // không throw để POS không crash
       console.error("Không lấy được đợt giảm giá theo CTSP:", lastErr);
       return [];
     },
@@ -1602,7 +1601,7 @@ export default {
     },
 
     getLoaiGiamGiaFromDotBestRow(x) {
-      if (!x || typeof x !== "object") return true; // mặc định: giảm %
+      if (!x || typeof x !== "object") return true; 
       const v =
         x.loaiGiamGia ??
         x.loaiGiam ??
@@ -1674,20 +1673,17 @@ export default {
 
         const best = map.get(Number(sp.id));
 
-        // base price
         const giaBase =
           this.toNumberSafe(sp.giaGoc ?? 0) > 0
             ? Math.round(this.toNumberSafe(sp.giaGoc))
             : Math.round(this.toNumberSafe(sp.giaBan ?? 0));
 
         if (!best) {
-          // không có giảm
           sp.phanTramGiam = 0;
           sp.idDotGiamGia = null;
           sp.maDotGiamGia = null;
           sp.tenDotGiamGia = null;
 
-          // để không hiện giá gốc gạch, set giaGoc = 0 (getGiaGoc sẽ fallback giaBan)
           sp.giaGoc = 0;
           sp.giaBan = giaBase > 0 ? giaBase : Math.round(this.toNumberSafe(sp.giaBan ?? 0));
           continue;
@@ -1696,7 +1692,6 @@ export default {
         const loaiPercent = this.getLoaiGiamGiaFromDotBestRow(best);
         let giaTri = this.getGiaTriGiamFromDotBestRow(best);
 
-        // BE đôi khi trả 0.1 = 10%
         if (loaiPercent) {
           if (giaTri > 0 && giaTri <= 1) giaTri = giaTri * 100;
           giaTri = Math.max(0, Math.min(100, Math.round(giaTri)));
@@ -1736,7 +1731,6 @@ export default {
       await this.ganDotGiamGiaChoDanhSachCtsp(this.cartItems);
     },
 
-    // ================== NORMALIZE ĐỢT GIẢM GIÁ (giữ lại để fallback) ==================
     toNumberSafe(v) {
       if (v == null) return 0;
       const n = Number(String(v).replace("%", "").trim());
@@ -1746,10 +1740,7 @@ export default {
     normalizePercent(raw) {
       let n = this.toNumberSafe(raw);
       if (!Number.isFinite(n) || n <= 0) return 0;
-
-      // BE hay trả 0.1 = 10%
       if (n > 0 && n <= 1) n = n * 100;
-
       n = Math.round(n);
       if (n < 0) n = 0;
       if (n > 100) n = 100;
@@ -1792,7 +1783,6 @@ export default {
 
     extractDiscountPercent(x) {
       const { dot, ct } = this.extractDotInfo(x);
-
       const raw =
         x?.phanTramGiam ??
         x?.phanTramGiamGia ??
@@ -1807,7 +1797,6 @@ export default {
         dot?.phanTramGiamGia ??
         dot?.giaTriGiam ??
         0;
-
       return this.normalizePercent(raw);
     },
 
@@ -1830,7 +1819,6 @@ export default {
         dot?.soTienGiamGia ??
         dot?.giaGiam ??
         0;
-
       const n = this.toNumberSafe(raw);
       return n > 0 ? Math.round(n) : 0;
     },
@@ -1845,7 +1833,6 @@ export default {
         0;
       const n = this.toNumberSafe(raw);
       if (n > 0) return Math.round(n);
-
       const gb = this.toNumberSafe(x?.giaBan ?? 0);
       return gb > 0 ? Math.round(gb) : 0;
     },
@@ -1860,7 +1847,6 @@ export default {
         x?.giaSauKhuyenMai ??
         x?.donGiaSauGiam ??
         0;
-
       const n = this.toNumberSafe(raw);
       return n > 0 ? Math.round(n) : 0;
     },
@@ -1869,7 +1855,6 @@ export default {
       if (!x || typeof x !== "object") return x;
 
       const { idDot, maDot, tenDot } = this.extractDotInfo(x);
-
       const giaGoc = this.extractGiaGoc(x);
       const pct = this.extractDiscountPercent(x);
       const amt = pct > 0 ? 0 : this.extractDiscountAmount(x);
@@ -1898,39 +1883,30 @@ export default {
 
       return {
         ...x,
-
         idDotGiamGia: idDot ?? x?.idDotGiamGia ?? null,
         maDotGiamGia: maDot ?? x?.maDotGiamGia ?? null,
         tenDotGiamGia: tenDot ?? x?.tenDotGiamGia ?? null,
-
         giaGoc: giaGoc || 0,
         giaBan: giaSau || giaGoc || 0,
-
         phanTramGiam: pctDisplay,
       };
     },
 
-    // ================== Giá bán (khớp BE mới) ==================
     getGiaGoc(it) {
       if (!it) return 0;
-
       const goc = Number(it.giaGoc);
       if (Number.isFinite(goc) && goc > 0) return goc;
-
       const giaBanOld = Number(it.giaBan || 0);
       return Number.isFinite(giaBanOld) && giaBanOld > 0 ? giaBanOld : 0;
     },
 
     getGiaThucTe(it) {
       if (!it) return 0;
-
       const gb = Number(it.giaBan ?? 0);
       if (Number.isFinite(gb) && gb > 0) return Math.round(gb);
-
       const giaGoc = this.getGiaGoc(it);
       const pct = this.normalizePercent(it.phanTramGiam ?? it.phanTramKhuyenMai ?? 0);
       if (giaGoc > 0 && pct > 0) return Math.round((giaGoc * (100 - pct)) / 100);
-
       return Math.round(giaGoc || 0);
     },
 
@@ -2015,9 +1991,7 @@ export default {
     pickCtsp(row, qtyToAdd = 1) {
       if (!row) return;
 
-      // ✅ luôn normalize để không rơi case đợt giảm giá trả nested/0.1
       const nx = this.normalizeCtspRow(row);
-
       const id = nx?.id;
       if (id == null) return;
 
@@ -2074,12 +2048,14 @@ export default {
       }
 
       this.ctspPickQty = { ...this.ctspPickQty, [id]: 1 };
-
       this.scheduleAutoVoucher();
     },
 
     // ================== CTSP Modal ==================
     async openCtspModal() {
+      // ✅ BẢO VỆ NÚT THÊM SẢN PHẨM (Mở modal)
+      if (!this.checkQuyenThaoTac()) return;
+
       this.showCtspModal = true;
       this.ctspPage = 1;
       this.ctspPickQty = {};
@@ -2102,10 +2078,7 @@ export default {
         const data = await SalesService.getCtspBanHang();
         const rawList = Array.isArray(data) ? data : [];
 
-        // 1) normalize cơ bản (fallback)
         const list = rawList.map((x) => this.normalizeCtspRow(x));
-
-        // 2) FIX CHÍNH: gọi API best đợt giảm giá theo CTSP IDs và merge vào list
         await this.ganDotGiamGiaChoDanhSachCtsp(list);
 
         this.ctspList = list;
@@ -2120,9 +2093,7 @@ export default {
         this.ctspBaseQtyMap = map;
         this.persistCtspBaseQtyMap();
 
-        // đồng bộ giảm giá cho giỏ hàng (nếu giỏ có item từ localStorage)
         await this.capNhatDotGiamGiaChoGioHang();
-
         this.ctspPage = 1;
       } catch (e) {
         this.ctspErr = "Không tải được danh sách biến thể (API đang lỗi).";
@@ -2134,6 +2105,9 @@ export default {
 
     // ================== QR Modal ==================
     async openQrModal() {
+      // ✅ BẢO VỆ NÚT QUÉT QR
+      if (!this.checkQuyenThaoTac()) return;
+
       this.showQrModal = true;
       this.qrError = "";
       this.$nextTick(async () => {

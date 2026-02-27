@@ -426,9 +426,23 @@ import {
   checkLichLamViec,
 } from "@/services/lich_lam_viec/lich_lam_viecService";
 
+const getUser = () => {
+  const raw = localStorage.getItem("user") || sessionStorage.getItem("user") || 
+              localStorage.getItem("nguoiDung") || sessionStorage.getItem("nguoiDung");
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+};
+
 // ✅ QUYỀN ĐƯỢC GIỮ NGUYÊN
 const hasPermission = computed(() => {
-  return sessionStorage.getItem("ss_has_active_shift") === "true";
+  const u = getUser();
+  const role = u?.role || u?.quyen || u?.vaiTro || u?.tenVaiTro;
+
+  if (role === "NHAN_VIEN") {
+    return false;
+  }
+
+  return true; 
 });
 
 const listLichMaster = ref([]);
