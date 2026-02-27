@@ -54,11 +54,11 @@
 
               <div class="col-md-6">
                 <label class="form-label small fw-bold">Họ và tên <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" v-model="form.tenNhanVien" required />
+                <input type="text" class="form-control" v-model="form.tenNhanVien" placeholder="Nhập họ và tên..." />
               </div>
               <div class="col-md-6">
                 <label class="form-label small fw-bold">Mật khẩu <span class="text-danger">*</span></label>
-                <input type="password" class="form-control" v-model="form.matKhau" placeholder="Để trống nếu không đổi mật khẩu" />
+                <input type="password" class="form-control" v-model="form.matKhau" placeholder="Nhập mật khẩu..." />
               </div>
 
               <div class="col-md-6">
@@ -134,7 +134,6 @@
                   </ul>
                 </div>
               </div>
-              
               <div class="col-md-12">
                 <label class="form-label small fw-bold">Địa chỉ cụ thể</label>
                 <input type="text" class="form-control" v-model="form.diaChiCuThe" placeholder="Số nhà, ngõ, ngách, đường..." />
@@ -240,7 +239,6 @@ const fetchAddressData = async () => {
   }
 };
 
-// Theo dõi khi Tỉnh/Quận bị nhập chữ để tự động lấy list con
 watch(() => form.thanhPho, (newVal) => {
   const p = provinces.value.find(x => x.name.toLowerCase() === String(newVal).toLowerCase());
   districts.value = p ? p.districts : [];
@@ -251,7 +249,6 @@ watch(() => form.quan, (newVal) => {
   wards.value = d ? d.wards : [];
 });
 
-// Lọc dữ liệu khi gõ chữ
 const filteredProvinces = computed(() => {
   if (!form.thanhPho) return provinces.value;
   return provinces.value.filter(p => p.name.toLowerCase().includes(form.thanhPho.toLowerCase()));
@@ -267,21 +264,10 @@ const filteredWards = computed(() => {
   return wards.value.filter(w => w.name.toLowerCase().includes(form.phuong.toLowerCase()));
 });
 
-// Hàm xử lý khi ấn chọn trên Menu Dropdown
-const selectCity = (name) => {
-  form.thanhPho = name;
-  showCity.value = false;
-};
-const selectDistrict = (name) => {
-  form.quan = name;
-  showDistrict.value = false;
-};
-const selectWard = (name) => {
-  form.phuong = name;
-  showWard.value = false;
-};
+const selectCity = (name) => { form.thanhPho = name; showCity.value = false; };
+const selectDistrict = (name) => { form.quan = name; showDistrict.value = false; };
+const selectWard = (name) => { form.phuong = name; showWard.value = false; };
 
-// Hàm đóng Menu Dropdown (Dùng setTimeout để nhận diện click trước khi đóng)
 const handleBlurCity = () => setTimeout(() => showCity.value = false, 200);
 const handleBlurDistrict = () => setTimeout(() => showDistrict.value = false, 200);
 const handleBlurWard = () => setTimeout(() => showWard.value = false, 200);
@@ -300,16 +286,14 @@ const loadProfile = async () => {
 
     if (!userId.value) return;
 
-    // Load Data
     const res = await detailNhanVien(userId.value);
     Object.assign(form, res); 
     
     oldPasswordHash = res.matKhau || ''; 
-    form.matKhau = ''; // Xóa MK ở ô input đi để người dùng không thấy chuỗi mã hóa
+    // Gán 6 dấu sao để hiển thị (báo cho người dùng biết mật khẩu không bị trống)
+    form.matKhau = '******'; 
 
-    // Tải API Địa chỉ
     await fetchAddressData();
-    // Kích hoạt watch để lấy list Quận/Phường dựa trên Tỉnh/Quận từ DB
     const p = provinces.value.find(x => x.name === form.thanhPho);
     if(p) districts.value = p.districts;
     
@@ -322,17 +306,28 @@ const loadProfile = async () => {
 };
 
 const handleSubmit = async () => {
+  // ✅ 1. VALIDATION CÁC TRƯỜNG BẮT BUỘC (Dấu *)
+  if (!form.tenNhanVien || form.tenNhanVien.trim() === '') {
+    Swal.fire({ icon: 'warning', title: 'Thiếu thông tin', text: 'Họ và tên không được để trống!' });
+    return;
+  }
+  
+  if (!form.matKhau || form.matKhau.trim() === '') {
+    Swal.fire({ icon: 'warning', title: 'Thiếu thông tin', text: 'Mật khẩu không được để trống!' });
+    return;
+  }
+
   loading.value = true;
   try {
     const payload = { ...form };
     
-    if (!payload.matKhau) {
+    // ✅ 2. XỬ LÝ MẬT KHẨU
+    // Nếu gửi lên chuỗi '******' => Tức là họ không sửa => Gán lại pass cũ
+    if (payload.matKhau === '******') {
       payload.matKhau = oldPasswordHash; 
     }
 
     let submitData;
-    
-    // Gửi Form Data nếu có chọn ảnh mới
     if (selectedFile.value) {
       submitData = new FormData();
       submitData.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
