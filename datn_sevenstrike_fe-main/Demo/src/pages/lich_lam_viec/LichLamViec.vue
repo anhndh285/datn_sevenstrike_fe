@@ -829,7 +829,6 @@ const convertArrayDateToString = (arrDate) => {
   return arrDate;
 };
 
-// ✅ ĐÃ FIX LỖI: Nhận thêm biến month và year để xử lý giao diện Tuần vắt chéo tháng
 const openModalVoiNgay = (day, month = null, year = null) => {
   isEditing.value = false;
   currentId.value = null;
@@ -975,8 +974,6 @@ const loadData = async () => {
     console.error(e);
   }
 };
-
-// listLichMaster and loadLichMaster were removed because they are never used
 
 const loadthemLich = async () => {
   const nv = await getAllNhanVien();
