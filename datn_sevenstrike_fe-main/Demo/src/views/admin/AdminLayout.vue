@@ -37,7 +37,11 @@
 
               <div class="ss-user-divider"></div>
 
-              <button class="ss-user-item ss-danger" type="button" @click="handleLogout">
+              <button
+                class="ss-user-item ss-danger"
+                type="button"
+                @click="handleLogout"
+              >
                 <span class="material-icons ss-user-ic">logout</span>
                 <span class="small fw-bold">Đăng xuất</span>
               </button>
@@ -55,7 +59,6 @@
           <GiaoCa @ca-started="handleCaStarted" class="giao-ca-embedded" />
         </div>
       </div>
-
     </main>
   </div>
 </template>
@@ -68,9 +71,9 @@ import Swal from "sweetalert2";
 import SidebarMenu from "@/components/layouts/SidebarMenu.vue";
 import { useTheme } from "@/utils/useTheme";
 
-import { getLichLamViecNhanVien } from '@/services/lich_lam_viec/lich_lam_viec_nhan_vienService';
-import { checkActiveCa } from '@/services/lich_lam_viec/giao_caService';
-import GiaoCa from '@/pages/lich_lam_viec/GiaoCa.vue';
+import { getLichLamViecNhanVien } from "@/services/lich_lam_viec/lich_lam_viec_nhan_vienService";
+import { checkActiveCa } from "@/services/lich_lam_viec/giao_caService";
+import GiaoCa from "@/pages/lich_lam_viec/GiaoCa.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -101,7 +104,11 @@ const getUser = () => {
     sessionStorage.getItem("nguoiDung");
 
   if (!raw) return null;
-  try { return JSON.parse(raw); } catch (e) { return null; }
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
 };
 
 const syncUserName = () => {
@@ -135,6 +142,7 @@ const toggleUserMenu = () => {
 
 const handleProfile = () => {
   userMenuOpen.value = false;
+  router.push("/admin/thong-tin-ca-nhan");
 };
 
 const handleLogout = () => {
@@ -169,15 +177,15 @@ const kiemTraVaoCa = async () => {
   if (!u) return;
 
   const role = u.role || u.quyen || u.vaiTro || u.tenVaiTro;
-  
+
   // ADMIN -> Full quyền, không hiện Modal
   if (role !== "NHAN_VIEN") {
     sessionStorage.setItem("ss_has_active_shift", "true");
-    return; 
+    return;
   }
 
   const idNv = u.id || u.idNhanVien;
-  const today = new Date().toLocaleDateString('en-CA');
+  const today = new Date().toLocaleDateString("en-CA");
 
   try {
     const activeCa = await checkActiveCa(idNv);
@@ -194,18 +202,18 @@ const kiemTraVaoCa = async () => {
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
       for (const item of lichList) {
-        const ca = item.lichLamViec?.idCaLam || item.lichLamViec?.caLam; 
+        const ca = item.lichLamViec?.idCaLam || item.lichLamViec?.caLam;
         if (ca && ca.gioBatDau && ca.gioKetThuc) {
           const getMins = (val) => {
             if (Array.isArray(val)) return val[0] * 60 + val[1];
-            const p = String(val).split(':');
+            const p = String(val).split(":");
             return parseInt(p[0]) * 60 + parseInt(p[1]);
           };
 
           const startMin = getMins(ca.gioBatDau);
           const endMin = getMins(ca.gioKetThuc);
 
-          if (currentMinutes >= (startMin - 30) && currentMinutes <= endMin) {
+          if (currentMinutes >= startMin - 30 && currentMinutes <= endMin) {
             inShiftTime = true;
             break;
           }
@@ -227,7 +235,7 @@ const kiemTraVaoCa = async () => {
         toast: true,
         position: "top-end",
         showConfirmButton: false,
-        timer: 4000
+        timer: 4000,
       });
     }
   } catch (error) {
@@ -246,7 +254,7 @@ const handleCaStarted = () => {
     toast: true,
     position: "top-end",
     showConfirmButton: false,
-    timer: 3000
+    timer: 3000,
   });
 };
 
@@ -263,29 +271,113 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.ss-admin-root { overflow-x: hidden; --ss-sidebar-w: 240px; background: var(--ss-bg); color: var(--ss-text); }
-.ss-main { margin-left: var(--ss-sidebar-w, 240px); width: calc(100% - var(--ss-sidebar-w, 240px)); overflow-x: hidden; min-height: 100vh; }
-.ss-header { background: var(--ss-surface); border-bottom: 1px solid var(--ss-border); }
-.ss-theme-btn { border: 0; background: transparent; padding: 6px 8px; border-radius: 10px; cursor: pointer; }
-.ss-theme-btn:hover { background: var(--ss-hover); }
-.ss-user-wrap { position: relative; display: flex; align-items: center; border-left: 1px solid var(--ss-border); }
-.ss-user-btn { display: flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 6px 6px; border-radius: 10px; cursor: pointer; }
-.ss-user-btn:hover { background: var(--ss-hover); }
-.ss-user-menu { position: absolute; top: calc(100% + 10px); right: 0; min-width: 220px; background: var(--ss-surface); border-radius: 12px; border: 1px solid var(--ss-border); overflow: hidden; z-index: 1200; }
-.ss-user-item { width: 100%; display: flex; align-items: center; gap: 10px; border: 0; background: transparent; padding: 10px 12px; text-align: left; cursor: pointer; color: var(--ss-text); }
-.ss-user-item:hover { background: var(--ss-hover); }
-.ss-user-divider { height: 1px; background: var(--ss-border); }
-.ss-user-ic { font-size: 20px; }
-.ss-danger { color: #dc3545; }
+.ss-admin-root {
+  overflow-x: hidden;
+  --ss-sidebar-w: 240px;
+  background: var(--ss-bg);
+  color: var(--ss-text);
+}
+.ss-main {
+  margin-left: var(--ss-sidebar-w, 240px);
+  width: calc(100% - var(--ss-sidebar-w, 240px));
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+.ss-header {
+  background: var(--ss-surface);
+  border-bottom: 1px solid var(--ss-border);
+}
+.ss-theme-btn {
+  border: 0;
+  background: transparent;
+  padding: 6px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.ss-theme-btn:hover {
+  background: var(--ss-hover);
+}
+.ss-user-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-left: 1px solid var(--ss-border);
+}
+.ss-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 6px 6px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.ss-user-btn:hover {
+  background: var(--ss-hover);
+}
+.ss-user-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 220px;
+  background: var(--ss-surface);
+  border-radius: 12px;
+  border: 1px solid var(--ss-border);
+  overflow: hidden;
+  z-index: 1200;
+}
+.ss-user-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ss-text);
+}
+.ss-user-item:hover {
+  background: var(--ss-hover);
+}
+.ss-user-divider {
+  height: 1px;
+  background: var(--ss-border);
+}
+.ss-user-ic {
+  font-size: 20px;
+}
+.ss-danger {
+  color: #dc3545;
+}
 
 /* CSS Modal ép nhận ca */
 .ss-ca-modal-overlay {
-  position: fixed; inset: 0; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(4px);
-  z-index: 9999; display: flex; justify-content: center; align-items: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 .ss-ca-modal-content {
-  background: transparent; border-radius: 12px;
+  background: transparent;
+  border-radius: 12px;
 }
-.giao-ca-embedded :deep(.giao-ca-container) { min-height: auto !important; padding: 0 !important; background: transparent !important; }
-.giao-ca-embedded :deep(.modal-overlay) { position: static !important; background: transparent !important; }
+
+/* ✅ ĐÃ SỬA CHỖ NÀY: Xóa bỏ :deep(.giao-ca-container) để class ăn trực tiếp vào root, loại bỏ vệt trắng/xám */
+.giao-ca-embedded {
+  min-height: auto !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.giao-ca-embedded :deep(.modal-overlay) {
+  position: static !important;
+  background: transparent !important;
+}
 </style>

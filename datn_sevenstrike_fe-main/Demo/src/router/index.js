@@ -153,6 +153,14 @@ const routes = [
         meta: { roles: ["ADMIN", "NHAN_VIEN"] },
       },
 
+      // ✅ TRANG THÔNG TIN CÁ NHÂN: ADMIN + NHÂN VIÊN ĐỀU THẤY
+      {
+        path: "thong-tin-ca-nhan",
+        name: "admin-profile",
+        component: () => import("@/views/admin/ThongTinCaNhan.vue"),
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+
       // ✅ THỐNG KÊ: chỉ ADMIN
       {
         path: "dashboard",
@@ -391,6 +399,49 @@ router.beforeEach((to, from, next) => {
     (acc, r) => (r.meta?.roles ?? r.meta?.role ?? acc),
     null
   );
+
+  // =========================================================
+  // ✅ CHẶN VÀO TRANG GIAO CA NẾU CHƯA MỞ CA LÀM VIỆC
+  // =========================================================
+  if (to.path.includes("/admin/giao-ca")) {
+    if (role === "NHAN_VIEN") {
+      const hasActiveShift = sessionStorage.getItem("ss_has_active_shift") === "true";
+      if (!hasActiveShift) {
+        // Thông báo nhẹ góc màn hình
+        Swal.fire({
+          icon: "warning",
+          title: "Chưa mở ca",
+          text: "Bạn cần có ca làm việc đang hoạt động để vào mục này.",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 3000
+        });
+        return next(false); // Từ chối chuyển trang
+      }
+    }
+  }
+  
+  // =========================================================
+  // ✅ LỚP BẢO VỆ 1: CHẶN VÀO CÁC TRANG THÊM/SỬA/CẬP NHẬT NẾU CHƯA MỞ CA
+  // =========================================================
+  const isActionRoute = to.path.includes("/new") || 
+                        to.path.includes("/them") || 
+                        to.path.includes("/edit") || 
+                        to.path.includes("/cap-nhat");
+
+  if (isActionRoute && role === "NHAN_VIEN") {
+    const hasActiveShift = sessionStorage.getItem("ss_has_active_shift") === "true";
+    if (!hasActiveShift) {
+      Swal.fire({
+        icon: "error",
+        title: "Chế độ Chỉ xem",
+        text: "Bạn cần Bắt đầu ca làm việc mới có thể Thêm hoặc Sửa dữ liệu!",
+      });
+      return next(false); // Chặn không cho vào trang form
+    }
+  }
+  // =========================================================
 
   if (!hasPermission(requiredRoles, role)) {
     Swal.fire({

@@ -12,7 +12,7 @@
             <i class="fa-regular fa-clock"></i>
             <span>MỞ CA LÀM VIỆC</span>
           </div>
-          <div class="ss-header-sub">Hệ thống - {{ formattedFullTime }}</div>
+          <div class="ss-header-sub">{{ formattedFullTime }}</div>
         </div>
 
         <div class="ss-body">
@@ -97,14 +97,14 @@
           </div>
           <div class="ho-header-text">
             <h2>Phiếu Bàn Giao Ca</h2>
-            <span class="ho-sub-text"
-              >#{{
+            <span class="ho-sub-text">
+              #{{
                 caHienTai.id
                   ? caHienTai.id.toString().substring(0, 8)
                   : "cccadd2e"
               }}
-              • {{ formattedFullTime }}</span
-            >
+              • {{ formattedFullTime }}
+            </span>
           </div>
         </div>
         <div class="ho-header-right">
@@ -368,7 +368,6 @@ const formatCurrency = (num) => {
   }).format(num || 0);
 };
 
-
 const onInputMoney = (event, type) => {
   const raw = event.target.value.replace(/\D/g, "");
   const val = Number(raw);
@@ -406,7 +405,7 @@ const handleBatDauCa = async () => {
   errorMessage.value = "";
   if (tienBanDauInput.value < 0) return alert("Tiền không hợp lệ");
   if (!lichHomNay.value) return;
-  
+
   isSubmitting.value = true;
   try {
     const idllv = lichHomNay.value.lichLamViec.id;
@@ -421,9 +420,13 @@ const handleBatDauCa = async () => {
 
     // ✅ GỬI TÍN HIỆU TẮT MODAL
     emit("ca-started");
-  } catch (error) {
-    errorMessage.value =
-      error.response?.data?.message || "Không thể bắt đầu ca vào lúc này.";
+  }catch (error) {
+  console.log("FULL ERROR:", error);
+
+  errorMessage.value =
+    error?.data?.message ||
+    error?.message ||
+    "Không thể bắt đầu ca vào lúc này.";
   } finally {
     isSubmitting.value = false;
   }
@@ -483,9 +486,6 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding-top: 50px;
-  background-color: #f3f4f6;
-  min-height: 100vh;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
@@ -647,17 +647,14 @@ onUnmounted(() => {
 }
 .ho-summary-title {
   color: #ff4d4f;
-  font-weight: 700;
-  font-size: 0.85rem;
+  font-weight: 500;
 }
 .ho-summary-value {
   color: #ff4d4f;
-  font-size: 2rem;
-  font-weight: 800;
+  font-weight: 500;
 }
 .ho-summary-note {
   color: #ff4d4f;
-  font-size: 0.8rem;
 }
 .ho-input-label {
   font-size: 0.8rem;
@@ -815,7 +812,7 @@ onUnmounted(() => {
   padding: 25px;
 }
 .ss-schedule-box {
-  background-color: #f0fdf4;
+  background-color: #fdf0f0;
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 15px;
@@ -823,7 +820,7 @@ onUnmounted(() => {
 .ss-schedule-label {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #059669;
+  color: #ff4d4f;
   margin-bottom: 6px;
 }
 .ss-schedule-info {
@@ -837,8 +834,8 @@ onUnmounted(() => {
   color: #111827;
 }
 .ss-shift-time {
-  background-color: #d1fae5;
-  color: #047857;
+  background-color: #fadbd1;
+  color: #ff4d4f;
   padding: 4px 12px;
   border-radius: 20px;
   font-weight: 600;
@@ -882,7 +879,7 @@ onUnmounted(() => {
   width: 100%;
   padding: 12px 15px 12px 35px;
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 400;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   color: #111827;
@@ -890,7 +887,7 @@ onUnmounted(() => {
 .money-input-new:focus,
 .note-textarea:focus {
   outline: none;
-  border-color: #10b981;
+  border-color: #ff4d4f;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 .note-textarea {
@@ -944,7 +941,6 @@ onUnmounted(() => {
   background: #9ca3af;
   cursor: not-allowed;
 }
-
 .error-box {
   margin-top: 15px;
   padding: 10px;

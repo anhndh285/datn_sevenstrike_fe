@@ -1,6 +1,5 @@
 <template>
   <div class="order-page p-4 ss-page ss-font">
-    <!-- HEADER -->
     <div class="order-header mb-4">
       <div>
         <h5 class="fw-bold mb-1">Chi tiết đơn hàng</h5>
@@ -16,13 +15,9 @@
     </div>
 
     <div class="row g-4">
-      <!-- CỘT TRÁI -->
       <div class="col-lg-8">
-        <!-- TRẠNG THÁI -->
-
         <div class="card ss-card mb-4">
           <div class="card-body">
-            <!-- HEADER + BUTTON -->
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h6 class="fw-bold mb-0">
                 <i class="bi bi-truck me-1"></i>
@@ -35,7 +30,6 @@
               </button>
             </div>
 
-            <!-- TIMELINE -->
             <div class="ss-status mt-3">
               <div
                 v-for="st in trangThaiHienThi"
@@ -55,7 +49,6 @@
           </div>
         </div>
 
-        <!-- THÔNG TIN KHÁCH HÀNG -->
         <div class="row g-4 mb-4">
           <div class="col-md-6">
             <div class="card ss-card">
@@ -82,7 +75,6 @@
             </div>
           </div>
 
-          <!-- THÔNG TIN GIAO HÀNG -->
           <div class="col-md-6">
             <div class="card ss-card">
               <div class="card-body">
@@ -109,7 +101,6 @@
           </div>
         </div>
 
-        <!-- DANH SÁCH SẢN PHẨM -->
         <div class="card ss-card">
           <div class="card-body">
             <h6 class="fw-bold mb-3">
@@ -173,7 +164,6 @@
         </div>
       </div>
 
-      <!-- CỘT PHẢI -->
       <div class="col-lg-4">
         <div class="sticky-summary">
           <div class="card ss-card mb-3">
@@ -224,10 +214,8 @@
                 :key="index"
                 class="d-flex justify-content-between border-bottom py-2"
               >
-                <!-- Cột bên trái: loại thanh toán -->
                 <div class="fw-bold">{{ item.loai }}</div>
 
-                <!-- Cột bên phải: số tiền + thời gian ở dưới -->
                 <div class="text-end">
                   <div class="fw-bold text-danger">
                     {{ item.soTien.toLocaleString() }} đ
@@ -244,9 +232,11 @@
           <button class="btn btn-primary w-100 mb-2" @click="inHoaDon">
             <i class="bi bi-printer me-1"></i> In hóa đơn
           </button>
-          <button class="btn btn-warning w-100" @click="moModalSua">
+          
+          <button class="btn btn-warning w-100" @click="checkQuyenThaoTac(moModalSua)">
             <i class="bi bi-pencil me-1"></i> Chỉnh sửa đơn hàng
           </button>
+
         </div>
       </div>
     </div>
@@ -261,7 +251,6 @@
         </div>
 
         <div class="modal-body">
-          <!-- TAB HEADER -->
           <ul class="nav nav-tabs mb-3">
             <li class="nav-item">
               <button
@@ -284,7 +273,6 @@
             </li>
           </ul>
 
-          <!-- TAB THÔNG TIN ĐƠN HÀNG -->
           <div v-if="tab === 'donhang'">
             <div class="row g-3">
               <div class="col-md-6">
@@ -313,7 +301,6 @@
             </div>
           </div>
 
-          <!-- TAB THÔNG TIN KHÁCH HÀNG -->
           <div v-if="tab === 'khachhang'">
             <div class="row g-3">
               <div class="col-md-6">
@@ -343,7 +330,6 @@
     </div>
   </div>
 
-  <!--Modal thanh toan-->
   <div class="modal fade" id="modalThanhToan" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content p-3">
@@ -360,7 +346,6 @@
             </b>
           </div>
 
-          <!-- CHỌN PHƯƠNG THỨC -->
           <div class="text-center mb-3">
             <button
               class="btn me-2"
@@ -379,7 +364,6 @@
             </button>
           </div>
 
-          <!-- KHU VỰC CHUYỂN KHOẢN -->
           <div v-if="phuongThuc === 'CK'" class="mb-3 text-center">
             <div class="border rounded p-3">
               <p class="mb-1"><b>Ngân hàng:</b> MB Bank</p>
@@ -397,7 +381,6 @@
             </div>
           </div>
 
-          <!-- KHU VỰC TIỀN MẶT -->
           <div v-if="phuongThuc === 'TM'" class="mb-3">
             <label class="form-label">Tiền khách đưa</label>
             <input
@@ -446,7 +429,6 @@
     </div>
   </div>
 
-  <!-- MODAL LỊCH SỬ THAO TÁC -->
   <div class="modal fade" id="modalLichSu" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content history-modal">
@@ -494,6 +476,27 @@ import { ref, watch, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
 import { Modal } from "bootstrap";
+import Swal from "sweetalert2"; // ✅ ĐÃ THÊM IMPORT SWEETALERT2
+
+// ✅ THÊM LOGIC KIỂM TRA QUYỀN MỞ CA
+const hasPermission = computed(() => {
+  return sessionStorage.getItem("ss_has_active_shift") === "true";
+});
+
+const checkQuyenThaoTac = (callback) => {
+  if (!hasPermission.value) {
+    Swal.fire({
+      icon: "error",
+      title: "Chế độ Chỉ xem",
+      text: "Bạn cần Bắt đầu ca làm việc mới có thể Thêm hoặc Sửa dữ liệu!",
+      confirmButtonColor: '#6366f1' // Thêm màu cho giống nút OK trong ảnh nếu bạn muốn
+    });
+    return;
+  }
+  if (typeof callback === 'function') {
+    callback();
+  }
+};
 
 const tab = ref("donhang");
 
