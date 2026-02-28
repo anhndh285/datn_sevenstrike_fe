@@ -7,6 +7,40 @@
       </div>
     </div>
 
+    <!-- ✅ TOAST thông báo (trang) -->
+    <div v-if="pageToast.show" class="ss-page-toast" :class="pageToast.type">
+      <span class="material-icons-outlined ss-page-toast-ic">
+        {{ pageToast.type === "success" ? "check_circle" : pageToast.type === "error" ? "error" : "info" }}
+      </span>
+      <div class="ss-page-toast-msg">{{ pageToast.msg }}</div>
+      <button class="ss-page-toast-x" type="button" @click="hidePageToast">×</button>
+    </div>
+
+    <!-- ✅ TOAST xác nhận đổi trạng thái (KHÔNG có nút x) -->
+    <div v-if="confirmTrangThai.show" class="ss-confirm-toast">
+      <span class="material-icons-outlined ss-confirm-ic">help_outline</span>
+      <div class="ss-confirm-msg">{{ confirmTrangThai.msg }}</div>
+
+      <div class="ss-confirm-actions">
+        <button
+          class="ss-confirm-btn ss-confirm-cancel"
+          type="button"
+          @click="cancelConfirmTrangThai"
+          :disabled="confirmTrangThai.loading"
+        >
+          Hủy
+        </button>
+        <button
+          class="ss-confirm-btn ss-confirm-ok"
+          type="button"
+          @click="okConfirmTrangThai"
+          :disabled="confirmTrangThai.loading"
+        >
+          {{ confirmTrangThai.loading ? "Đang cập nhật..." : "Xác nhận" }}
+        </button>
+      </div>
+    </div>
+
     <div class="taikhoan-nhanvien-container" v-if="!isPage">
       <div class="panel">
         <div class="toolbar">
@@ -116,8 +150,14 @@
 
                 <td class="text-center">
                   <div class="action-group">
-                    <label class="switch">
-                      <input type="checkbox" v-model="item.trangThai" @change="toggleStatus(item)" />
+                    <!-- ✅ Switch: bỏ v-model để không đổi ngay, chỉ đổi sau khi confirm -->
+                    <label class="switch" title="Đổi trạng thái nhanh">
+                      <input
+                        type="checkbox"
+                        :checked="!!item.trangThai"
+                        :disabled="dangCapNhatTrangThai.has(item.id)"
+                        @change="(e) => toggleStatus(item, e)"
+                      />
                       <span class="slider"></span>
                     </label>
 
@@ -172,7 +212,7 @@
 
 <script setup>
 import { searchNhanVien, pagingNhanVien, updateNhanVien, getAllNhanVien } from "@/services/tai_khoan/nhan_vien/nhan_vienService";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import * as XLSX from "xlsx";
 
@@ -193,6 +233,126 @@ const filters = ref({
 });
 
 const roleMap = ref(new Map());
+
+// ✅ Khóa theo id khi đang cập nhật + chống out-of-order khi bấm nhanh
+const dangCapNhatTrangThai = ref(new Set()); // Set<id>
+const trangThaiSeqMap = ref(new Map()); // Map<id, seq>
+
+// =======================
+// ✅ TOAST (TRANG)
+// =======================
+const pageToast = reactive({ show: false, type: "info", msg: "" });
+let pageToastTimer = null;
+
+const showPageToast = (type, msg) => {
+  pageToast.show = true;
+  pageToast.type = type || "info";
+  pageToast.msg = msg || "";
+
+  if (pageToastTimer) clearTimeout(pageToastTimer);
+  pageToastTimer = setTimeout(() => {
+    pageToast.show = false;
+  }, 2600);
+};
+
+const hidePageToast = () => {
+  pageToast.show = false;
+};
+
+// =======================
+// ✅ XÁC NHẬN ĐỔI TRẠNG THÁI (TOAST)
+// =======================
+const confirmTrangThai = reactive({
+  show: false,
+  loading: false,
+  msg: "",
+  item: null,
+  newValue: false,
+});
+
+const openConfirmTrangThai = (item, newValue) => {
+  const ten = (item?.tenNhanVien ?? item?.maNhanVien ?? "nhân viên").toString().trim() || "nhân viên";
+  const nextText = newValue ? "Hoạt động" : "Ngừng hoạt động";
+
+  confirmTrangThai.show = true;
+  confirmTrangThai.loading = false;
+  confirmTrangThai.item = item;
+  confirmTrangThai.newValue = !!newValue;
+  confirmTrangThai.msg = `Bạn có muốn chuyển trạng thái của "${ten}" sang "${nextText}" không?`;
+};
+
+const cancelConfirmTrangThai = () => {
+  if (confirmTrangThai.loading) return;
+  confirmTrangThai.show = false;
+  confirmTrangThai.loading = false;
+  confirmTrangThai.msg = "";
+  confirmTrangThai.item = null;
+  confirmTrangThai.newValue = false;
+};
+
+const reApplyFilters = () => {
+  applyStatusFilter();
+  applyRoleFilter();
+};
+
+const capNhatTrangThai = async (item, newValue) => {
+  const id = item?.id;
+  if (!id) return;
+
+  if (dangCapNhatTrangThai.value.has(id)) return;
+
+  const oldValue = !!item.trangThai;
+  const nextValue = !!newValue;
+
+  if (oldValue === nextValue) return;
+
+  const nextSeq = (trangThaiSeqMap.value.get(id) ?? 0) + 1;
+  trangThaiSeqMap.value.set(id, nextSeq);
+
+  // optimistic UI
+  item.trangThai = nextValue;
+  reApplyFilters();
+
+  dangCapNhatTrangThai.value.add(id);
+
+  try {
+    await updateNhanVien(id, { trangThai: nextValue });
+
+    if (trangThaiSeqMap.value.get(id) !== nextSeq) return;
+
+    reApplyFilters();
+    showPageToast("success", "Đã cập nhật trạng thái");
+  } catch (e) {
+    console.log(e);
+    if (trangThaiSeqMap.value.get(id) === nextSeq) {
+      item.trangThai = oldValue;
+      reApplyFilters();
+      showPageToast("error", "Không thể cập nhật trạng thái");
+    }
+  } finally {
+    if (trangThaiSeqMap.value.get(id) === nextSeq) {
+      dangCapNhatTrangThai.value.delete(id);
+    }
+  }
+};
+
+const okConfirmTrangThai = async () => {
+  const item = confirmTrangThai.item;
+  if (!item?.id) {
+    cancelConfirmTrangThai();
+    return;
+  }
+
+  if (confirmTrangThai.loading) return;
+
+  confirmTrangThai.loading = true;
+  try {
+    await capNhatTrangThai(item, confirmTrangThai.newValue);
+  } finally {
+    confirmTrangThai.loading = false;
+    cancelConfirmTrangThai();
+  }
+};
 
 /** ✅ Map mã quyền -> text hiển thị */
 const mapTenQuyenHan = (raw) => {
@@ -267,6 +427,8 @@ const applyRoleFilter = () => {
 
 const handleFilter = async () => {
   try {
+    cancelConfirmTrangThai();
+
     if (filters.value.keyword.trim()) {
       const res = await searchNhanVien(filters.value.keyword.trim());
       const arr = Array.isArray(res) ? res : res?.content ?? [];
@@ -332,14 +494,25 @@ const initials = (name) => {
   return last2.map((p) => p[0]?.toUpperCase() || "").join("");
 };
 
-const toggleStatus = async (item) => {
-  try {
-    await updateNhanVien(item.id, { trangThai: item.trangThai });
-  } catch (e) {
-    console.log(e);
-    alert("Không thể cập nhật trạng thái");
-    item.trangThai = !item.trangThai;
+// ✅ CHUYỂN TRẠNG THÁI (có xác nhận)
+const toggleStatus = async (item, e) => {
+  const id = item?.id;
+  if (!id) return;
+
+  if (dangCapNhatTrangThai.value.has(id)) {
+    if (e?.target) e.target.checked = !!item.trangThai;
+    return;
   }
+
+  const oldValue = !!item.trangThai;
+  const newValue = !!e?.target?.checked;
+
+  if (oldValue === newValue) return;
+
+  // ✅ chưa xác nhận: trả switch về trạng thái cũ
+  if (e?.target) e.target.checked = oldValue;
+
+  openConfirmTrangThai(item, newValue);
 };
 
 const exportExcel = async () => {
@@ -748,8 +921,121 @@ onMounted(async () => {
   transition: .3s;
   box-shadow: 0 2px 6px rgba(17,24,39,0.12);
 }
-.switch input:checked + .slider { background-color: #22c55e; }
+
+/* ✅ ON = ĐỎ (đồng bộ) */
+.switch input:checked + .slider { background-color: #ff4d4f; }
 .switch input:checked + .slider:before { transform: translateX(14px); }
+
+.switch input:disabled + .slider { opacity: 0.6; cursor: not-allowed; }
+
+/* =======================
+   ✅ TOAST (TRANG)
+   ======================= */
+.ss-page-toast {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 2500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 280px;
+  max-width: 460px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  box-shadow: 0 18px 45px rgba(17, 24, 39, 0.14);
+}
+.ss-page-toast.success { border-color: rgba(34, 197, 94, 0.25); }
+.ss-page-toast.error { border-color: rgba(239, 68, 68, 0.25); }
+.ss-page-toast.info { border-color: rgba(59, 130, 246, 0.25); }
+.ss-page-toast-ic { font-size: 18px; color: rgba(17, 24, 39, 0.55); }
+.ss-page-toast.success .ss-page-toast-ic { color: rgba(34, 197, 94, 0.95); }
+.ss-page-toast.error .ss-page-toast-ic { color: rgba(239, 68, 68, 0.95); }
+.ss-page-toast.info .ss-page-toast-ic { color: rgba(59, 130, 246, 0.95); }
+.ss-page-toast-msg {
+  color: rgba(17, 24, 39, 0.86);
+  font-size: 13px;
+  line-height: 1.35;
+  flex: 1;
+}
+.ss-page-toast-x {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  color: rgba(17, 24, 39, 0.45);
+}
+.ss-page-toast-x:hover { color: rgba(17, 24, 39, 0.7); }
+
+/* =======================
+   ✅ TOAST XÁC NHẬN
+   ======================= */
+.ss-confirm-toast {
+  position: fixed;
+  top: 64px;
+  right: 14px;
+  z-index: 2501;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: min(520px, calc(100vw - 28px));
+  padding: 12px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(255, 77, 79, 0.25);
+  box-shadow: 0 18px 55px rgba(17, 24, 39, 0.18);
+}
+
+.ss-confirm-ic {
+  font-size: 20px;
+  color: rgba(255, 77, 79, 0.95);
+  margin-top: 1px;
+}
+
+.ss-confirm-msg {
+  flex: 1;
+  color: rgba(17, 24, 39, 0.86);
+  font-size: 13.5px;
+  line-height: 1.35;
+  padding-right: 8px;
+}
+
+.ss-confirm-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.ss-confirm-btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: 0.15s ease;
+}
+.ss-confirm-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.ss-confirm-cancel {
+  background: #f3f4f6;
+  border-color: rgba(17, 24, 39, 0.12);
+  color: rgba(17, 24, 39, 0.82);
+}
+.ss-confirm-cancel:hover { background: #eef0f3; }
+
+.ss-confirm-ok {
+  background: #ff4d4f;
+  border-color: rgba(255, 77, 79, 0.35);
+  color: #fff;
+  box-shadow: 0 10px 18px rgba(255, 77, 79, 0.16);
+}
+.ss-confirm-ok:hover { filter: brightness(0.98); }
 
 /* Responsive */
 @media (max-width: 900px){

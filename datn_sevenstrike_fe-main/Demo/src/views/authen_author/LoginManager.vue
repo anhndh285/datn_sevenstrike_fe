@@ -84,13 +84,21 @@
         </div>
       </div>
     </div>
+    <div v-if="showToast" class="toast-notification">
+  <div class="toast-icon">
+    <i class="fa-solid fa-circle-check"></i>
+  </div>
+  <div class="toast-body">
+    <h4 class="toast-title">Thành công</h4>
+    <p class="toast-msg">{{ toastMessage }}</p>
+  </div>
+</div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
 import Swal from "sweetalert2";
-
 export default {
   data() {
     return {
@@ -99,6 +107,9 @@ export default {
       rememberMe: false,
       showPassword: false,
       loading: false,
+
+      showToast: false,
+    toastMessage: "",
     };
   },
   methods: {
@@ -242,6 +253,17 @@ export default {
   },
 
   mounted() {
+    const message = this.$route.query.message;
+    if (message) {
+      this.toastMessage = message;
+      this.showToast = true;
+
+      setTimeout(() => {
+        this.showToast = false;
+      }, 3000);
+
+      this.$router.replace({ query: {} });
+    }
     // ✅ đã có user + role hợp lệ thì về trang chủ
     try {
       const raw = localStorage.getItem("user") || sessionStorage.getItem("user");
