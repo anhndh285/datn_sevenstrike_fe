@@ -18,9 +18,7 @@
           @click="createOrderTab"
           :disabled="submitting"
         >
-          <span class="material-icons-outlined" style="font-size: 18px"
-            >add</span
-          >
+          <span class="material-icons-outlined" style="font-size: 18px">add</span>
           Tạo đơn hàng
         </button>
       </div>
@@ -51,12 +49,7 @@
               stroke-width="6"
               stroke-linecap="round"
             />
-            <path
-              d="M26 28h12"
-              stroke="#e5e7eb"
-              stroke-width="4"
-              stroke-linecap="round"
-            />
+            <path d="M26 28h12" stroke="#e5e7eb" stroke-width="4" stroke-linecap="round" />
           </svg>
         </div>
         <div class="ss-empty-text">Chưa có đơn hàng</div>
@@ -87,9 +80,7 @@
               </span>
             </span>
 
-            <span class="ss-tab-x" title="Đóng" @click.stop="closeTab(idx)"
-              >×</span
-            >
+            <span class="ss-tab-x" title="Đóng" @click.stop="closeTab(idx)">×</span>
           </button>
         </div>
       </div>
@@ -101,18 +92,10 @@
           <div class="ss-section-title">Sản phẩm</div>
 
           <div class="ss-section-actions">
-            <button
-              class="btn ss-btn-outline"
-              type="button"
-              @click="openQrModal"
-            >
+            <button class="btn ss-btn-outline" type="button" @click="openQrModal">
               QUÉT QR SẢN PHẨM
             </button>
-            <button
-              class="btn ss-btn-primary"
-              type="button"
-              @click="openCtspModal"
-            >
+            <button class="btn ss-btn-primary" type="button" @click="openCtspModal">
               THÊM SẢN PHẨM
             </button>
           </div>
@@ -120,10 +103,7 @@
 
         <!-- Cart -->
         <div class="ss-cart-box ss-border">
-          <div
-            v-if="cartItems.length === 0"
-            class="ss-empty-wrap ss-empty-cart"
-          >
+          <div v-if="cartItems.length === 0" class="ss-empty-wrap ss-empty-cart">
             <div class="ss-empty-icon" aria-hidden="true">
               <svg width="54" height="54" viewBox="0 0 64 64">
                 <path
@@ -137,12 +117,7 @@
                   stroke-width="6"
                   stroke-linecap="round"
                 />
-                <path
-                  d="M26 28h12"
-                  stroke="#e5e7eb"
-                  stroke-width="4"
-                  stroke-linecap="round"
-                />
+                <path d="M26 28h12" stroke="#e5e7eb" stroke-width="4" stroke-linecap="round" />
               </svg>
             </div>
             <div class="ss-empty-text ss-empty-eng">Không có dữ liệu</div>
@@ -150,11 +125,7 @@
 
           <div v-else class="ss-cart-list">
             <div v-for="it in cartItems" :key="it.id" class="ss-cart-item">
-              <input
-                class="ss-cart-check"
-                type="checkbox"
-                v-model="it.checked"
-              />
+              <input class="ss-cart-check" type="checkbox" v-model="it.checked" />
 
               <div class="ss-cart-thumb thumb-wrap">
                 <img
@@ -229,12 +200,7 @@
                 </button>
               </div>
 
-              <button
-                class="ss-trash"
-                type="button"
-                title="Xóa"
-                @click="removeItem(it.id)"
-              >
+              <button class="ss-trash" type="button" title="Xóa" @click="removeItem(it.id)">
                 <span class="material-icons-outlined">delete</span>
               </button>
             </div>
@@ -256,11 +222,7 @@
               <div class="ss-panel-title">Thông tin khách hàng</div>
 
               <div class="ss-panel-actions">
-                <button
-                  class="btn ss-btn-outline"
-                  type="button"
-                  @click="openKhModal"
-                >
+                <button class="btn ss-btn-outline" type="button" @click="openKhModal">
                   Chọn khách hàng
                 </button>
 
@@ -277,9 +239,7 @@
                 <button
                   class="btn ss-btn-outline"
                   type="button"
-                  :disabled="
-                    !isCounter || !selectedKh || diaChiList.length <= 1
-                  "
+                  :disabled="!isCounter || !selectedKh || diaChiList.length <= 1"
                   @click="openDiaChiModal"
                   title="Chỉ bật khi giao hàng và khách có nhiều địa chỉ"
                 >
@@ -297,9 +257,7 @@
                     {{ selectedKh ? getKhName(selectedKh) : "Khách lẻ" }}
                   </div>
                 </div>
-                <div class="ss-hint">
-                  Tại quầy: chỉ cần chọn sản phẩm và thanh toán.
-                </div>
+                <div class="ss-hint">Tại quầy: chỉ cần chọn sản phẩm và thanh toán.</div>
               </template>
 
               <!-- ✅ GIAO HÀNG (ON) -->
@@ -324,9 +282,7 @@
                   <div class="ss-kv">
                     <div class="ss-k">Địa chỉ giao hàng</div>
                     <div class="ss-v">
-                      <span v-if="selectedDiaChi">{{
-                        renderDiaChi(selectedDiaChi)
-                      }}</span>
+                      <span v-if="selectedDiaChi">{{ renderDiaChi(selectedDiaChi) }}</span>
                       <span v-else>Chưa chọn địa chỉ.</span>
                     </div>
                   </div>
@@ -334,9 +290,7 @@
 
                 <!-- KHÁCH VÃNG LAI -->
                 <template v-else>
-                  <div class="ss-guest-hint">
-                    Khách vãng lai (không cần tạo tài khoản)
-                  </div>
+                  <div class="ss-guest-hint">Khách vãng lai (không cần tạo tài khoản)</div>
 
                   <div class="ss-guest-grid">
                     <div class="ss-field">
@@ -418,9 +372,7 @@
 
               <!-- ✅ Switch: OFF = tại quầy, ON = giao hàng -->
               <div class="ss-ship-toggle">
-                <span class="ss-toggle-label">{{
-                  isCounter ? "Giao hàng" : "Tại quầy"
-                }}</span>
+                <span class="ss-toggle-label">{{ isCounter ? "Giao hàng" : "Tại quầy" }}</span>
                 <label class="ss-switch">
                   <input type="checkbox" v-model="isCounter" />
                   <span class="ss-slider"></span>
@@ -443,29 +395,18 @@
 
                 <div class="ss-field ss-voucher-val">
                   <div class="ss-filter-label">Giá trị</div>
-                  <input
-                    class="form-control ss-input"
-                    :value="voucherValueText"
-                    disabled
-                  />
+                  <input class="form-control ss-input" :value="voucherValueText" disabled />
                 </div>
               </div>
 
-              <div
-                v-if="effectiveVoucher && tongTienHang > 0"
-                class="ss-voucher-auto"
-              >
+              <div v-if="effectiveVoucher && tongTienHang > 0" class="ss-voucher-auto">
                 <div class="ss-voucher-auto-line">
                   Áp dụng thành công phiếu giảm giá
-                  <span class="ss-voucher-strong">{{
-                    getVoucherLabel(effectiveVoucher)
-                  }}</span>
+                  <span class="ss-voucher-strong">{{ getVoucherLabel(effectiveVoucher) }}</span>
                 </div>
                 <div class="ss-voucher-auto-sub">
                   Giảm {{ formatMoney(giamGia) }}
-                  <span v-if="voucherManual" class="ss-voucher-tag"
-                    >Đã nhập mã</span
-                  >
+                  <span v-if="voucherManual" class="ss-voucher-tag">Đã nhập mã</span>
                 </div>
               </div>
 
@@ -499,29 +440,27 @@
                 <div class="ss-pay-v">{{ formatMoney(tongPhaiTra) }}</div>
               </div>
 
-              <!-- ✅ Tại quầy mới cần nhập thanh toán -->
-              <template v-if="!isCounter">
-                <div class="ss-pay-kv">
-                  <div class="ss-pay-k ss-pay-k-strong">
-                    Khách thanh toán
-                    <button
-                      class="ss-icon-btn ss-icon-inline"
-                      type="button"
-                      title="Nhập thanh toán"
-                      @click="openPayModal"
-                    >
-                      <span class="material-icons-outlined">payments</span>
-                    </button>
-                  </div>
-
-                  <div class="ss-pay-v">{{ formatMoney(khachThanhToan) }}</div>
+              <!-- ✅ Thanh toán (tại quầy + giao hàng) -->
+              <div class="ss-pay-kv">
+                <div class="ss-pay-k ss-pay-k-strong">
+                  Khách thanh toán
+                  <button
+                    class="ss-icon-btn ss-icon-inline"
+                    type="button"
+                    title="Nhập thanh toán"
+                    @click="openPayModal"
+                  >
+                    <span class="material-icons-outlined">payments</span>
+                  </button>
                 </div>
 
-                <div class="ss-pay-kv">
-                  <div class="ss-pay-k">Tiền thiếu</div>
-                  <div class="ss-pay-v">{{ formatMoney(tienThieu) }}</div>
-                </div>
-              </template>
+                <div class="ss-pay-v">{{ formatMoney(khachThanhToan) }}</div>
+              </div>
+
+              <div class="ss-pay-kv">
+                <div class="ss-pay-k">Tiền thiếu</div>
+                <div class="ss-pay-v">{{ formatMoney(tienThieu) }}</div>
+              </div>
 
               <button
                 class="btn ss-btn-primary ss-confirm"
@@ -578,10 +517,7 @@
 
             <div class="ss-field">
               <div class="ss-filter-label">Sản phẩm</div>
-              <select
-                v-model="ctspFilter.tenSanPham"
-                class="form-select ss-input"
-              >
+              <select v-model="ctspFilter.tenSanPham" class="form-select ss-input">
                 <option value="">Tất cả sản phẩm</option>
                 <option v-for="p in ctspSanPhamOptions" :key="p" :value="p">
                   {{ p }}
@@ -589,11 +525,7 @@
               </select>
             </div>
 
-            <button
-              class="btn ss-btn-outline ss-reset"
-              type="button"
-              @click="resetCtspFilter"
-            >
+            <button class="btn ss-btn-outline ss-reset" type="button" @click="resetCtspFilter">
               Đặt lại
             </button>
           </div>
@@ -644,7 +576,10 @@
                   <td>{{ row.mauSac }}</td>
                   <td>{{ row.kichCo }}</td>
 
-                  <td class="col-qty">{{ row.__available }}</td>
+                  <!-- đúng: hiển thị tồn còn lại theo phiên (local) + tooltip tồn DB -->
+                  <td class="col-qty" :title="`Tồn kho DB: ${Number(row.soLuong || 0)}`">
+                    {{ Number(row.__available || 0) }}
+                  </td>
 
                   <td class="col-price">
                     <div v-if="showGiaGoc(row)" class="ss-price-old">
@@ -671,11 +606,7 @@
                         type="button"
                         @click="pickCtsp(row, ctspPickQty[row.id] ?? 1)"
                         :disabled="Number(row.__available || 0) <= 0"
-                        :title="
-                          Number(row.__available || 0) <= 0
-                            ? 'Hết hàng'
-                            : 'Thêm vào đơn'
-                        "
+                        :title="Number(row.__available || 0) <= 0 ? 'Hết hàng' : 'Thêm vào đơn'"
                       >
                         Thêm
                       </button>
@@ -717,11 +648,7 @@
         </div>
 
         <div class="ss-modal-actions">
-          <button
-            class="btn ss-btn-outline"
-            type="button"
-            @click="closeCtspModal"
-          >
+          <button class="btn ss-btn-outline" type="button" @click="closeCtspModal">
             Đóng
           </button>
         </div>
@@ -737,30 +664,18 @@
         </div>
 
         <div class="ss-modal-body">
-          <div class="ss-qr-hint">
-            Đưa QR vào khung, hệ thống sẽ tự nhận và thêm CTSP vào đơn.
-          </div>
+          <div class="ss-qr-hint">Đưa QR vào khung, hệ thống sẽ tự nhận và thêm CTSP vào đơn.</div>
 
           <div class="ss-qr-wrap">
             <div id="ss-qr-reader" class="ss-qr-reader"></div>
           </div>
 
-          <div v-if="qrError" class="ss-api-hint">
-            {{ qrError }}
-          </div>
+          <div v-if="qrError" class="ss-api-hint">{{ qrError }}</div>
         </div>
 
         <div class="ss-modal-actions">
-          <button class="btn ss-btn-outline" type="button" @click="restartQr">
-            Quét lại
-          </button>
-          <button
-            class="btn ss-btn-primary"
-            type="button"
-            @click="closeQrModal"
-          >
-            Đóng
-          </button>
+          <button class="btn ss-btn-outline" type="button" @click="restartQr">Quét lại</button>
+          <button class="btn ss-btn-primary" type="button" @click="closeQrModal">Đóng</button>
         </div>
       </div>
     </div>
@@ -780,9 +695,7 @@
               class="form-control ss-kh-search"
               placeholder="Tìm theo tên, SĐT, địa chỉ..."
             />
-            <button class="btn ss-kh-reload" type="button" @click="reloadKh">
-              Tải lại
-            </button>
+            <button class="btn ss-kh-reload" type="button" @click="reloadKh">Tải lại</button>
           </div>
 
           <div v-if="khErr" class="ss-api-hint">{{ khErr }}</div>
@@ -808,13 +721,7 @@
                     {{ khAddrCache[k.id] || renderKhDiaChi(k) || "—" }}
                   </td>
                   <td class="kh-col-act">
-                    <button
-                      class="btn ss-kh-pick"
-                      type="button"
-                      @click="pickKh(k)"
-                    >
-                      Chọn
-                    </button>
+                    <button class="btn ss-kh-pick" type="button" @click="pickKh(k)">Chọn</button>
                   </td>
                 </tr>
 
@@ -826,9 +733,7 @@
           </div>
 
           <div class="ss-kh-foot">
-            <button class="btn ss-kh-close" type="button" @click="closeKhModal">
-              Đóng
-            </button>
+            <button class="btn ss-kh-close" type="button" @click="closeKhModal">Đóng</button>
           </div>
         </div>
       </div>
@@ -839,9 +744,7 @@
       <div class="ss-modal ss-modal-md" role="dialog" aria-modal="true">
         <div class="ss-modal-head">
           <div class="ss-modal-title">Chọn địa chỉ</div>
-          <button class="ss-x" type="button" @click="closeDiaChiModal">
-            ×
-          </button>
+          <button class="ss-x" type="button" @click="closeDiaChiModal">×</button>
         </div>
 
         <div class="ss-modal-body">
@@ -865,20 +768,12 @@
               <div class="ss-dc-text">{{ renderDiaChi(dc) }}</div>
             </button>
 
-            <div v-if="diaChiList.length === 0" class="ss-empty-row">
-              Khách hàng chưa có địa chỉ.
-            </div>
+            <div v-if="diaChiList.length === 0" class="ss-empty-row">Khách hàng chưa có địa chỉ.</div>
           </div>
         </div>
 
         <div class="ss-modal-actions">
-          <button
-            class="btn ss-btn-outline"
-            type="button"
-            @click="closeDiaChiModal"
-          >
-            Đóng
-          </button>
+          <button class="btn ss-btn-outline" type="button" @click="closeDiaChiModal">Đóng</button>
         </div>
       </div>
     </div>
@@ -895,20 +790,14 @@
           <div class="ss-paybox">
             <div class="ss-paybox-row">
               <div class="ss-paybox-k">Tổng số tiền</div>
-              <div class="ss-paybox-v ss-paybox-red">
-                {{ formatMoney(tongPhaiTra) }}
-              </div>
+              <div class="ss-paybox-v ss-paybox-red">{{ formatMoney(tongPhaiTra) }}</div>
             </div>
 
             <div class="ss-paygrid">
               <div class="ss-field">
                 <div class="ss-label-row">
                   <div class="ss-label">Tiền mặt</div>
-                  <button
-                    class="ss-link"
-                    type="button"
-                    @click="fillPayConLai('TIEN_MAT')"
-                  >
+                  <button class="ss-link" type="button" @click="fillPayConLai('TIEN_MAT')">
                     Còn lại
                   </button>
                 </div>
@@ -924,11 +813,7 @@
               <div class="ss-field">
                 <div class="ss-label-row">
                   <div class="ss-label">Chuyển khoản</div>
-                  <button
-                    class="ss-link"
-                    type="button"
-                    @click="fillPayConLai('CHUYEN_KHOAN')"
-                  >
+                  <button class="ss-link" type="button" @click="fillPayConLai('CHUYEN_KHOAN')">
                     Còn lại
                   </button>
                 </div>
@@ -959,23 +844,16 @@
 
             <div class="ss-paybox-row">
               <div class="ss-paybox-k">Tiền thiếu</div>
-              <div class="ss-paybox-v">
-                {{ formatMoney(Math.max(0, tongPhaiTra - payTotalNum)) }}
-              </div>
+              <div class="ss-paybox-v">{{ formatMoney(Math.max(0, tongPhaiTra - payTotalNum)) }}</div>
             </div>
 
             <div class="ss-paybox-row">
               <div class="ss-paybox-k">Tiền thừa</div>
-              <div class="ss-paybox-v">
-                {{ formatMoney(Math.max(0, payTotalNum - tongPhaiTra)) }}
-              </div>
+              <div class="ss-paybox-v">{{ formatMoney(Math.max(0, payTotalNum - tongPhaiTra)) }}</div>
             </div>
 
             <div class="ss-pay-note">
-              <div
-                class="ss-pay-note-line"
-                v-if="payTienMatNum > 0 && payChuyenKhoanNum > 0"
-              >
+              <div class="ss-pay-note-line" v-if="payTienMatNum > 0 && payChuyenKhoanNum > 0">
                 Hình thức: Kết hợp (tiền mặt + chuyển khoản)
               </div>
               <div class="ss-pay-note-line" v-else-if="payChuyenKhoanNum > 0">
@@ -989,36 +867,25 @@
         </div>
 
         <div class="ss-modal-actions ss-pay-actions">
-          <button
-            class="btn ss-btn-outline"
-            type="button"
-            @click="closePayModal"
-          >
-            Đóng
-          </button>
-          <button class="btn ss-btn-primary" type="button" @click="confirmPay">
-            Xong
-          </button>
+          <button class="btn ss-btn-outline" type="button" @click="closePayModal">Đóng</button>
+          <button class="btn ss-btn-primary" type="button" @click="confirmPay">Xong</button>
         </div>
       </div>
     </div>
+
     <!-- ========================= MODAL: CONFIRM ĐẶT HÀNG ========================= -->
     <div v-if="showSubmitConfirmModal" class="ss-modal-backdrop">
       <div class="ss-modal ss-modal-md" role="dialog" aria-modal="true">
         <div class="ss-modal-head">
           <div class="ss-modal-title">Xác nhận đặt hàng</div>
-          <button class="ss-x" type="button" @click="closeSubmitConfirm">
-            ×
-          </button>
+          <button class="ss-x" type="button" @click="closeSubmitConfirm">×</button>
         </div>
 
         <div class="ss-modal-body">
           <div class="ss-paybox">
             <div class="ss-paybox-row">
               <div class="ss-paybox-k">Loại đơn</div>
-              <div class="ss-paybox-v">
-                {{ isCounter ? "Giao hàng" : "Tại quầy" }}
-              </div>
+              <div class="ss-paybox-v">{{ isCounter ? "Giao hàng" : "Tại quầy" }}</div>
             </div>
 
             <div class="ss-paybox-row">
@@ -1038,31 +905,22 @@
 
             <div class="ss-paybox-row">
               <div class="ss-paybox-k">Tổng phải trả</div>
-              <div class="ss-paybox-v ss-paybox-red">
-                {{ formatMoney(tongPhaiTra) }}
-              </div>
+              <div class="ss-paybox-v ss-paybox-red">{{ formatMoney(tongPhaiTra) }}</div>
             </div>
 
-            <div v-if="!isCounter" class="ss-paybox-row">
+            <div class="ss-paybox-row">
               <div class="ss-paybox-k">Khách thanh toán</div>
               <div class="ss-paybox-v">{{ formatMoney(khachThanhToan) }}</div>
             </div>
           </div>
 
           <div class="ss-api-hint" style="margin-top: 10px">
-            Bạn có chắc muốn xác nhận? Sau khi xác nhận, hệ thống sẽ lưu/chốt
-            đơn và cập nhật tồn kho.
+            Bạn có chắc muốn xác nhận? Sau khi xác nhận, hệ thống sẽ lưu/chốt đơn và cập nhật tồn kho.
           </div>
         </div>
 
         <div class="ss-modal-actions">
-          <button
-            class="btn ss-btn-outline"
-            type="button"
-            @click="closeSubmitConfirm"
-          >
-            Hủy
-          </button>
+          <button class="btn ss-btn-outline" type="button" @click="closeSubmitConfirm">Hủy</button>
           <button
             class="btn ss-btn-primary"
             type="button"
@@ -1077,2825 +935,639 @@
   </div>
 </template>
 
-<script>
-import { Html5Qrcode } from "html5-qrcode";
+<script setup>
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
+
 import SalesService from "@/services/sales/salesService.js";
 import apiClient from "@/services/apiClient";
 
-export default {
-  name: "SalesPage",
-
-  data() {
-    return {
-      showSubmitConfirmModal: false,
-
-      maxOrderTabs: 10,
-
-      nguoiBan: null,
-
-      tabs: [],
-      activeTab: 0,
-
-      // OFF = tại quầy | ON = giao hàng
-      isCounter: false,
-
-      cartItems: [],
-
-      guest: {
-        tenKhachHang: "",
-        soDienThoai: "",
-        diaChiCuThe: "",
-        tinhThanh: "",
-        huyenQuan: "",
-        xaPhuong: "",
-      },
-
-      tinhOptions: [],
-      huyenOptions: [],
-      xaOptions: [],
-
-      phiVanChuyen: 0,
-      phiVanChuyenText: "0",
-
-      voucherCode: "",
-      voucherManual: null,
-
-      showCtspModal: false,
-      ctspLoading: false,
-      ctspErr: "",
-      ctspList: [],
-      ctspFilter: { keyword: "", mauSac: "", kichCo: "", tenSanPham: "" },
-      ctspPage: 1,
-      ctspPageSize: 5,
-
-      ctspBaseQtyMap: {},
-      ctspPickQty: {},
-
-      showQrModal: false,
-      qr: null,
-      qrError: "",
-
-      showKhModal: false,
-      khLoading: false,
-      khErr: "",
-      khList: [],
-      khFilter: { keyword: "" },
-      selectedKh: null,
-
-      showDiaChiModal: false,
-      dcLoading: false,
-      dcErr: "",
-      diaChiList: [],
-      selectedDiaChi: null,
-
-      khAddrCache: {},
-      khAddrLoading: {},
-
-      autoVoucher: null,
-      loadingVoucher: false,
-      voucherDebounce: null,
-      voucherCache: {
-        all: [],
-        personal: [],
-        personalKhId: null,
-        loadedAt: 0,
-        loadedAtPersonal: 0,
-      },
-
-      showPayModal: false,
-      payMethod: "TIEN_MAT",
-      payTienMat: 0,
-      payChuyenKhoan: 0,
-      payMaThamChieu: "",
-      payTienMatText: "",
-      payChuyenKhoanText: "",
-      khachThanhToan: 0,
-
-      syncHdTimer: null,
-      syncingHoaDon: false,
-
-      toast: { show: false, msg: "", type: "success" },
-      toastTimer: null,
-
-      midnightTimer: null,
-      midnightInterval: null,
-      lastDayKey: "",
-
-      submitting: false,
-    };
-  },
-
-  computed: {
-    nguoiBanTen() {
-      const u = this.nguoiBan || {};
-      return u.hoTen || u.tenNhanVien || u.ten || u.username || "";
-    },
-
-    hasOrders() {
-      return Array.isArray(this.tabs) && this.tabs.length > 0;
-    },
-
-    effectiveVoucher() {
-      return this.voucherManual || this.autoVoucher;
-    },
-
-    getTongTienHangCore() {
-      let s = 0;
-      for (const it of this.cartItems) {
-        const price = Number(this.getGiaThucTe(it) || 0);
-        const qty = Number(it.qty || 0);
-        s += price * qty;
-      }
-      return s;
-    },
-
-    tongTienHang() {
-      return this.getTongTienHangCore;
-    },
-
-    phiVanChuyenNum() {
-      const n = Number(this.phiVanChuyen || 0);
-      return Number.isFinite(n) && n >= 0 ? n : 0;
-    },
-
-    giamGia() {
-      const v = this.effectiveVoucher;
-      const tong = Number(this.tongTienHang || 0);
-      if (!v || tong <= 0) return 0;
-
-      const min = Number(v.hoaDonToiThieu ?? v.hoaDonToiThieuTien ?? 0);
-      if (Number.isFinite(min) && min > 0 && tong < min) return 0;
-
-      if (v.xoaMem === true || v.trangThai === false) return 0;
-
-      const remain = Number(v.soLuongSuDung ?? 0);
-      if (Number.isFinite(remain) && remain <= 0) return 0;
-
-      const today = this.todayYmd();
-      const start = this.toYmd(v.ngayBatDau);
-      const end = this.toYmd(v.ngayKetThuc);
-      if (start && today < start) return 0;
-      if (end && today > end) return 0;
-
-      const isPercent = v.loaiPhieuGiamGia === true;
-      const giaTri = Number(v.giaTriGiamGia ?? v.giaTriGiam ?? 0);
-
-      let discount = 0;
-
-      if (isPercent) {
-        const pct = Math.max(0, Math.min(100, giaTri));
-        discount = Math.round((tong * pct) / 100);
-
-        const cap = Number(v.soTienGiamToiDa ?? 0);
-        if (Number.isFinite(cap) && cap > 0) discount = Math.min(discount, cap);
-      } else {
-        discount = Math.round(Math.max(0, giaTri));
-      }
-
-      discount = Math.min(discount, tong);
-      return discount > 0 ? discount : 0;
-    },
-
-    tongPhaiTra() {
-      const ship = this.isCounter ? this.phiVanChuyenNum : 0;
-      return Math.max(0, this.tongTienHang - this.giamGia + ship);
-    },
-
-    tienThieu() {
-      return Math.max(0, this.tongPhaiTra - Number(this.khachThanhToan || 0));
-    },
-
-    canSubmit() {
-      if (!this.hasOrders) return false;
-      if (this.cartItems.length === 0) return false;
-      if (this.submitting) return false;
-
-      for (const it of this.cartItems) {
-        const qty = Number(it?.qty || 0);
-        if (!Number.isFinite(qty) || qty < 1) return false;
-        const max = this.getMaxQtyForItem(it);
-        if (qty > max) return false;
-      }
-
-      // ✅ Tại quầy: bắt buộc có thanh toán
-      if (!this.isCounter) {
-        const pay = Number(this.khachThanhToan || 0);
-        const total = Number(this.tongPhaiTra || 0);
-
-        if (!Number.isFinite(pay) || pay <= 0) return false;
-
-        if (this.payMethod === "CHUYEN_KHOAN" || this.payMethod === "KET_HOP") {
-          if (pay !== total) return false;
-        } else {
-          if (pay < total) return false;
-        }
-
-        return true;
-      }
-
-      // ✅ Giao hàng: validate địa chỉ/SDT
-      if (this.isCounter) {
-        if (this.selectedKh) {
-          if (!this.selectedDiaChi) return false;
-          return true;
-        }
-
-        const sdt = String(this.guest.soDienThoai || "").replace(/\D/g, "");
-        const dc = (this.guest.diaChiCuThe || "").trim();
-        const tinh = (this.guest.tinhThanh || "").trim();
-        const huyen = (this.guest.huyenQuan || "").trim();
-        const xa = (this.guest.xaPhuong || "").trim();
-
-        if (!/^\d{9,11}$/.test(sdt)) return false;
-        if (!dc || !tinh || !huyen || !xa) return false;
-
-        return true;
-      }
-
-      return true;
-    },
-
-    filteredCtsp() {
-      const kw = (this.ctspFilter.keyword || "").toLowerCase();
-      const ms = this.ctspFilter.mauSac || "";
-      const kc = this.ctspFilter.kichCo || "";
-      const sp = this.ctspFilter.tenSanPham || "";
-
-      return this.ctspList
-        .map((x) => ({
-          ...x,
-          __available: this.getAvailableQtyByCtspId(x.id),
-        }))
-        .filter((x) => {
-          const s =
-            `${x.maCtsp || ""} ${x.tenSanPham || ""} ${x.mauSac || ""} ${x.kichCo || ""}`.toLowerCase();
-          if (kw && !s.includes(kw)) return false;
-          if (ms && x.mauSac !== ms) return false;
-          if (kc && x.kichCo !== kc) return false;
-          if (sp && x.tenSanPham !== sp) return false;
-          return true;
-        });
-    },
-
-    ctspTotalPages() {
-      return Math.max(
-        1,
-        Math.ceil(this.filteredCtsp.length / this.ctspPageSize),
-      );
-    },
-
-    pagedCtsp() {
-      const start = (this.ctspPage - 1) * this.ctspPageSize;
-      return this.filteredCtsp.slice(start, start + this.ctspPageSize);
-    },
-
-    ctspMauSacOptions() {
-      return [
-        ...new Set(this.ctspList.map((x) => x.mauSac).filter(Boolean)),
-      ].sort();
-    },
-
-    ctspKichCoOptions() {
-      return [
-        ...new Set(this.ctspList.map((x) => x.kichCo).filter(Boolean)),
-      ].sort();
-    },
-
-    ctspSanPhamOptions() {
-      return [
-        ...new Set(this.ctspList.map((x) => x.tenSanPham).filter(Boolean)),
-      ].sort();
-    },
-
-    filteredKh() {
-      const kw = (this.khFilter.keyword || "").toLowerCase();
-      if (!kw) return this.khList;
-
-      return this.khList.filter((k) => {
-        const addr = this.khAddrCache[k.id] || this.renderKhDiaChi(k) || "";
-        const s =
-          `${this.getKhName(k)} ${this.getKhPhone(k)} ${addr}`.toLowerCase();
-        return s.includes(kw);
-      });
-    },
-
-    payTienMatNum() {
-      return this.parseMoneyText(this.payTienMatText);
-    },
-
-    payChuyenKhoanNum() {
-      return this.parseMoneyText(this.payChuyenKhoanText);
-    },
-
-    payTotalNum() {
-      return Math.max(0, this.payTienMatNum + this.payChuyenKhoanNum);
-    },
-
-    voucherValueText() {
-      const v = this.effectiveVoucher;
-      if (!v) return "";
-
-      const isPercent = v.loaiPhieuGiamGia === true;
-      const giaTri = Number(v.giaTriGiamGia ?? v.giaTriGiam ?? 0);
-      if (isPercent) return `${Math.max(0, Math.min(100, giaTri))}%`;
-      return this.formatMoney(giaTri);
-    },
-
-    anyModalOpen() {
-      return !!(
-        this.showCtspModal ||
-        this.showQrModal ||
-        this.showKhModal ||
-        this.showDiaChiModal ||
-        this.showPayModal ||
-        this.showSubmitConfirmModal
-      );
-    },
-  },
-
-  watch: {
-    showSubmitConfirmModal() {
-      this.updateBodyLock();
-    },
-    tongTienHang() {
-      this.scheduleAutoVoucher();
-      this.persistActiveTab();
-    },
-    cartItems: {
-      deep: true,
-      handler() {
-        this.persistActiveTab();
-      },
-    },
-    selectedKh() {
-      this.scheduleAutoVoucher();
-      this.persistActiveTab();
-    },
-    selectedDiaChi() {
-      this.persistActiveTab();
-    },
-    khachThanhToan() {
-      this.persistActiveTab();
-    },
-    payMethod() {
-      this.persistActiveTab();
-    },
-
-    // modal lock scroll
-    showCtspModal() {
-      this.updateBodyLock();
-    },
-    showQrModal() {
-      this.updateBodyLock();
-    },
-    showKhModal() {
-      this.updateBodyLock();
-    },
-    showDiaChiModal() {
-      this.updateBodyLock();
-    },
-    showPayModal() {
-      this.updateBodyLock();
-    },
-
-    // OFF = tại quầy | ON = giao hàng
-    isCounter(val) {
-      if (val) {
-        // sang giao hàng: bỏ thanh toán tại quầy
-        this.khachThanhToan = 0;
-        this.payMethod = "TIEN_MAT";
-        this.payTienMat = 0;
-        this.payChuyenKhoan = 0;
-        this.payMaThamChieu = "";
-        this.payTienMatText = "";
-        this.payChuyenKhoanText = "";
-
-        const khId = this.selectedKh?.id;
-        if (khId) {
-          if (!Array.isArray(this.diaChiList) || this.diaChiList.length === 0) {
-            this.loadDiaChiAndPickDefault(khId);
-          } else if (!this.selectedDiaChi) {
-            let def = this.diaChiList.find(
-              (x) => x.macDinh === true || x.macDinh === 1,
-            );
-            if (!def && this.diaChiList.length > 0) def = this.diaChiList[0];
-            this.selectedDiaChi = def || null;
-          }
-        }
-      } else {
-        // sang tại quầy: bỏ địa chỉ + ship
-        this.selectedDiaChi = null;
-        this.diaChiList = [];
-        this.phiVanChuyen = 0;
-        this.phiVanChuyenText = "0";
-      }
-
-      this.persistActiveTab();
-      this.scheduleSyncHoaDon();
-    },
-  },
-
-  async mounted() {
-    this.checkNewDayAndClearIfNeeded();
-    this.scheduleClearAtNextMidnight();
-    window.addEventListener("storage", this.onStorageSync);
-
-    this.nguoiBan = this.getNguoiBanDangNhap();
-
-    // ✅ restore tồn local để tránh lệch tồn sau refresh
-    this.restoreCtspBaseQtyMap();
-
-    const savedTabs = this.safeParse(
-      localStorage.getItem("ss_pos_tabs") || "[]",
-      [],
-    );
-    if (Array.isArray(savedTabs) && savedTabs.length > 0) {
-      this.tabs = savedTabs;
-      this.activeTab = Number(localStorage.getItem("ss_pos_active_tab") || "0");
-      if (this.activeTab < 0 || this.activeTab >= this.tabs.length)
-        this.activeTab = 0;
-      this.applyTabState(this.tabs[this.activeTab]);
+import { useBanHangHoaDonSubmit } from "./composables/useBanHangHoaDonSubmit";
+import { useBanHangKhachHang } from "./composables/useBanHangKhachHang";
+import { useBanHangQr } from "./composables/useBanHangQr";
+import { useBanHangSanPham } from "./composables/useBanHangSanPham";
+import { useBanHangTabs } from "./composables/useBanHangTabs";
+import { useBanHangTienIch } from "./composables/useBanHangTienIch";
+import { useBanHangToast } from "./composables/useBanHangToast";
+import { useBanHangTonKho } from "./composables/useBanHangTonKho";
+import { useBanHangVoucherThanhToan } from "./composables/useBanHangVoucherThanhToan";
+
+defineOptions({ name: "SalesPage" });
+
+const router = useRouter();
+
+/* =========================
+   TOAST + TIỆN ÍCH
+========================= */
+const { toast, showToast, hideToast } = useBanHangToast();
+const tienIch = useBanHangTienIch();
+
+/* =========================
+   CORE STATE
+========================= */
+const nguoiBan = ref(null);
+const isCounter = ref(false); // OFF=tại quầy | ON=giao hàng
+const cartItems = ref([]);
+
+/* =========================
+   TỒN KHO LOCAL
+========================= */
+const tonKho = useBanHangTonKho({ safeParse: tienIch.safeParse });
+
+/* =========================
+   PLACEHOLDER callbacks (tránh vòng phụ thuộc)
+========================= */
+let scheduleAutoVoucher = () => {};
+let scheduleSyncHoaDon = () => {};
+let persistActiveTab = () => {};
+let persistTabs = () => {};
+let applyTabState = () => {};
+
+/* =========================
+   KHÁCH HÀNG
+========================= */
+const kh = useBanHangKhachHang({
+  SalesService,
+  isCounter,
+  showToast,
+  scheduleAutoVoucher: () => scheduleAutoVoucher(),
+  persistActiveTab: () => persistActiveTab(),
+  scheduleSyncHoaDon: () => scheduleSyncHoaDon(),
+  blurActive: tienIch.blurActive,
+});
+
+/* =========================
+   SẢN PHẨM / GIỎ HÀNG
+========================= */
+const sp = useBanHangSanPham({
+  SalesService,
+  apiClient,
+  cartItems,
+
+  // tồn local
+  getAvailableQtyByCtspId: tonKho.getAvailableQtyByCtspId,
+  getBaseQtyByCtspId: tonKho.getBaseQtyByCtspId,
+  capNhatTonLocal: tonKho.capNhatTonLocal,
+  dongBoTonKhoTuApi: tonKho.dongBoTonKhoTuApi,
+  persistCtspBaseQtyMap: tonKho.persistCtspBaseQtyMap,
+
+  // helpers + toast
+  showToast,
+  clampInt: tienIch.clampInt,
+  safeParse: tienIch.safeParse,
+  resolveImage: tienIch.resolveImage,
+  normalizePercent: tienIch.normalizePercent,
+  toNumberSafe: tienIch.toNumberSafe,
+
+  // callbacks
+  scheduleAutoVoucher: () => scheduleAutoVoucher(),
+  scheduleSyncHoaDon: () => scheduleSyncHoaDon(),
+  blurActive: tienIch.blurActive,
+});
+
+/* =========================
+   TỔNG TIỀN HÀNG
+========================= */
+const tongTienHang = computed(() => {
+  let s = 0;
+  for (const it of cartItems.value) {
+    const price = Number(sp.getGiaThucTe(it) || 0);
+    const qty = Number(it.qty || 0);
+    s += price * qty;
+  }
+  return s;
+});
+
+/* =========================
+   VOUCHER + THANH TOÁN + SHIP
+========================= */
+const pay = useBanHangVoucherThanhToan({
+  SalesService,
+  isCounter,
+  selectedKh: kh.selectedKh,
+  tongTienHang,
+
+  // helpers
+  todayYmd: tienIch.todayYmd,
+  toYmd: tienIch.toYmd,
+  formatMoney: tienIch.formatMoney,
+  parseMoneyText: tienIch.parseMoneyText,
+  formatNumberText: tienIch.formatNumberText,
+
+  // callbacks
+  showToast,
+  persistActiveTab: () => persistActiveTab(),
+  scheduleSyncHoaDon: () => scheduleSyncHoaDon(),
+});
+
+// gán scheduleAutoVoucher thật
+scheduleAutoVoucher = pay.scheduleAutoVoucher;
+
+/* =========================
+   TABS + AUTO CLEAR
+========================= */
+function dongTatCaModal() {
+  sp.showCtspModal.value = false;
+  qr.showQrModal.value = false;
+  kh.showKhModal.value = false;
+  kh.showDiaChiModal.value = false;
+  pay.showPayModal.value = false;
+  hd.showSubmitConfirmModal.value = false;
+}
+
+const tabsApi = useBanHangTabs({
+  // state
+  isCounter,
+  cartItems,
+
+  selectedKh: kh.selectedKh,
+  diaChiList: kh.diaChiList,
+  selectedDiaChi: kh.selectedDiaChi,
+
+  autoVoucher: pay.autoVoucher,
+  voucherManual: pay.voucherManual,
+  voucherCode: pay.voucherCode,
+
+  khachThanhToan: pay.khachThanhToan,
+  payMethod: pay.payMethod,
+  payTienMat: pay.payTienMat,
+  payChuyenKhoan: pay.payChuyenKhoan,
+  payMaThamChieu: pay.payMaThamChieu,
+  payTienMatText: pay.payTienMatText,
+  payChuyenKhoanText: pay.payChuyenKhoanText,
+
+  guest: kh.guest,
+
+  phiVanChuyen: pay.phiVanChuyen,
+  phiVanChuyenText: pay.phiVanChuyenText,
+
+  // deps
+  apiClient,
+  showToast,
+  capNhatTonLocal: tonKho.capNhatTonLocal,
+
+  // callbacks
+  scheduleAutoVoucher: () => scheduleAutoVoucher(),
+  scheduleSyncHoaDon: () => scheduleSyncHoaDon(),
+  ensureBaseQtyIfCartHasItems: sp.ensureBaseQtyIfCartHasItems,
+  capNhatDotGiamGiaChoGioHang: sp.capNhatDotGiamGiaChoGioHang,
+  loadDiaChiAndPickDefault: kh.loadDiaChiAndPickDefault,
+
+  // clear helpers
+  xoaTonKhoLocal: tonKho.xoaTonKhoLocal,
+  dongTatCaModal,
+  blurActive: tienIch.blurActive,
+  formatNumberText: tienIch.formatNumberText,
+});
+
+const tabs = tabsApi.tabs;
+const activeTab = tabsApi.activeTab;
+
+persistActiveTab = tabsApi.persistActiveTab;
+persistTabs = tabsApi.persistTabs;
+applyTabState = tabsApi.applyTabState;
+
+/* =========================
+   ĐỒNG BỘ DB + SUBMIT
+========================= */
+const hd = useBanHangHoaDonSubmit({
+  apiClient,
+  router,
+
+  tabs,
+  activeTab,
+
+  isCounter,
+  cartItems,
+
+  selectedKh: kh.selectedKh,
+  selectedDiaChi: kh.selectedDiaChi,
+  diaChiList: kh.diaChiList,
+  guest: kh.guest,
+
+  nguoiBan,
+
+  effectiveVoucher: pay.effectiveVoucher,
+  phiVanChuyenNum: pay.phiVanChuyenNum,
+  tongTienHang,
+  tongPhaiTra: pay.tongPhaiTra,
+
+  // sản phẩm
+  ctspList: sp.ctspList,
+  loadCtspForPos: sp.loadCtspForPos,
+  ensureBaseQtyIfCartHasItems: sp.ensureBaseQtyIfCartHasItems,
+  capNhatDotGiamGiaChoGioHang: sp.capNhatDotGiamGiaChoGioHang,
+
+  // callbacks
+  scheduleAutoVoucher: () => scheduleAutoVoucher(),
+  persistActiveTab: () => persistActiveTab(),
+  persistTabs: () => persistTabs(),
+  applyTabState: (t) => applyTabState(t),
+
+  showToast,
+
+  // helper dùng trong payload
+  getKhName: kh.getKhName,
+  getKhPhone: kh.getKhPhone,
+  getKhEmail: kh.getKhEmail,
+  renderDiaChi: kh.renderDiaChi,
+
+  blurActive: tienIch.blurActive,
+  getMaxQtyForItem: sp.getMaxQtyForItem,
+});
+
+// gán scheduleSyncHoaDon thật
+scheduleSyncHoaDon = hd.scheduleSyncHoaDon;
+
+const submitting = hd.submitting;
+
+/* =========================
+   QR
+========================= */
+const qr = useBanHangQr({
+  ctspList: sp.ctspList,
+  loadCtspForPos: sp.loadCtspForPos,
+  pickCtsp: sp.pickCtsp,
+  getAvailableQtyByCtspId: tonKho.getAvailableQtyByCtspId,
+  blurActive: tienIch.blurActive,
+});
+
+/* =========================
+   COMPUTED HIỂN THỊ
+========================= */
+const nguoiBanTen = computed(() => {
+  const u = nguoiBan.value || {};
+  return u.hoTen || u.tenNhanVien || u.ten || u.username || "";
+});
+
+const hasOrders = computed(() => Array.isArray(tabs.value) && tabs.value.length > 0);
+
+/* ✅ FIX: Giao hàng cũng bắt buộc nhập thanh toán */
+const canSubmit = computed(() => {
+  if (!hasOrders.value) return false;
+  if (cartItems.value.length === 0) return false;
+  if (submitting.value) return false;
+
+  // validate qty
+  for (const it of cartItems.value) {
+    const qty = Number(it?.qty || 0);
+    if (!Number.isFinite(qty) || qty < 1) return false;
+    const max = sp.getMaxQtyForItem(it);
+    if (qty > max) return false;
+  }
+
+  // validate giao hàng (địa chỉ/SDT)
+  if (isCounter.value) {
+    if (kh.selectedKh.value) {
+      if (!kh.selectedDiaChi.value) return false;
     } else {
-      this.resetPageState();
-      this.persistTabs();
+      const sdt = String(kh.guest.soDienThoai || "").replace(/\D/g, "");
+      const dc = (kh.guest.diaChiCuThe || "").trim();
+      const tinh = (kh.guest.tinhThanh || "").trim();
+      const huyen = (kh.guest.huyenQuan || "").trim();
+      const xa = (kh.guest.xaPhuong || "").trim();
+
+      if (!/^\d{9,11}$/.test(sdt)) return false;
+      if (!dc || !tinh || !huyen || !xa) return false;
     }
+  }
 
-    await this.ensureBaseQtyIfCartHasItems();
-    await this.capNhatDotGiamGiaChoGioHang();
-    this.scheduleAutoVoucher();
+  // ✅ validate thanh toán (áp dụng cho cả 2 loại)
+  const payNum = Number(pay.khachThanhToan.value || 0);
+  const total = Number(pay.tongPhaiTra.value || 0);
+  if (!Number.isFinite(payNum) || payNum <= 0) return false;
 
-    if (this.hasOrders) this.scheduleSyncHoaDon();
+  if (pay.payMethod.value === "CHUYEN_KHOAN" || pay.payMethod.value === "KET_HOP") {
+    if (payNum !== total) return false;
+  } else {
+    if (payNum < total) return false;
+  }
 
-    this.updateBodyLock();
+  return true;
+});
+
+const anyModalOpen = computed(() => {
+  return !!(
+    sp.showCtspModal.value ||
+    qr.showQrModal.value ||
+    kh.showKhModal.value ||
+    kh.showDiaChiModal.value ||
+    pay.showPayModal.value ||
+    hd.showSubmitConfirmModal.value
+  );
+});
+
+/* =========================
+   BODY LOCK MODAL
+========================= */
+watch(anyModalOpen, (val) => {
+  try {
+    document.body.style.overflow = val ? "hidden" : "";
+  } catch (e) {}
+});
+
+/* =========================
+   WATCH (giữ hành vi như file cũ)
+========================= */
+watch(tongTienHang, () => {
+  scheduleAutoVoucher();
+  persistActiveTab();
+});
+
+watch(
+  cartItems,
+  () => {
+    persistActiveTab();
   },
+  { deep: true },
+);
 
-  beforeUnmount() {
-    if (this.midnightTimer) clearTimeout(this.midnightTimer);
-    if (this.midnightInterval) clearInterval(this.midnightInterval);
-    window.removeEventListener("storage", this.onStorageSync);
+watch(kh.selectedKh, () => {
+  scheduleAutoVoucher();
+  persistActiveTab();
+});
 
-    try {
-      this.stopQr();
-    } catch (e) {}
+watch(kh.selectedDiaChi, () => {
+  persistActiveTab();
+});
 
-    try {
-      if (this.voucherDebounce) clearTimeout(this.voucherDebounce);
-      if (this.syncHdTimer) clearTimeout(this.syncHdTimer);
-      if (this.toastTimer) clearTimeout(this.toastTimer);
-    } catch (e) {}
+watch(pay.khachThanhToan, () => {
+  persistActiveTab();
+});
 
-    try {
-      document.body.style.overflow = "";
-    } catch (e) {}
-  },
+watch(pay.payMethod, () => {
+  persistActiveTab();
+});
 
-  methods: {
-    // ======= AUTO CLEAR TABS LÚC 0H (HÀ NỘI) =======
-
-    // yyyy-mm-dd theo giờ máy (Hà Nội nếu máy đang để VN)
-    getTodayKeyLocal() {
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
-    },
-
-    clearPosTabsLocal(reason = "") {
-      try {
-        localStorage.removeItem("ss_pos_tabs");
-        localStorage.removeItem("ss_pos_active_tab");
-        localStorage.removeItem("ss_pos_hd_seq");
-      } catch (e) {}
-
-      try {
-        localStorage.removeItem(this.baseQtyKey());
-      } catch (e) {}
-
-      this.ctspBaseQtyMap = {};
-      // reset state UI ngay lập tức
-      this.resetPageState();
-      this.persistTabs();
-
-      // đóng modal nếu đang mở
-      this.showCtspModal = false;
-      this.showQrModal = false;
-      this.showKhModal = false;
-      this.showDiaChiModal = false;
-      this.showPayModal = false;
-
-      // thông báo nhẹ
-      this.showToast(
-        reason || "Đã sang ngày mới, hệ thống tự động làm mới màn bán hàng.",
-        "info",
-      );
-    },
-
-    checkNewDayAndClearIfNeeded() {
-      const key = "ss_pos_day";
-      const today = this.getTodayKeyLocal();
-      const last = localStorage.getItem(key);
-
-      // lần đầu mở
-      if (!last) {
-        localStorage.setItem(key, today);
-        this.lastDayKey = today;
-        return;
+// OFF=tại quầy | ON=giao hàng
+watch(isCounter, async (val) => {
+  if (val) {
+    // ✅ giao hàng: vẫn cần thanh toán => KHÔNG reset các biến thanh toán nữa
+    const khId = kh.selectedKh.value?.id;
+    if (khId) {
+      if (!Array.isArray(kh.diaChiList.value) || kh.diaChiList.value.length === 0) {
+        await kh.loadDiaChiAndPickDefault(khId);
+      } else if (!kh.selectedDiaChi.value) {
+        let def = kh.diaChiList.value.find((x) => x.macDinh === true || x.macDinh === 1);
+        if (!def && kh.diaChiList.value.length > 0) def = kh.diaChiList.value[0];
+        kh.selectedDiaChi.value = def || null;
       }
-
-      // sang ngày mới -> clear tabs
-      if (last !== today) {
-        localStorage.setItem(key, today);
-        this.lastDayKey = today;
-        this.clearPosTabsLocal(
-          "Đã sang ngày mới, hệ thống đã xoá các hoá đơn chờ và làm mới tabs.",
-        );
-        return;
-      }
-
-      this.lastDayKey = today;
-    },
-
-    scheduleClearAtNextMidnight() {
-      // clear timer cũ
-      if (this.midnightTimer) clearTimeout(this.midnightTimer);
-      if (this.midnightInterval) clearInterval(this.midnightInterval);
-
-      const now = new Date();
-      const next = new Date(now);
-      next.setHours(24, 0, 0, 0); // 00:00 ngày kế tiếp theo giờ máy
-
-      let ms = next.getTime() - now.getTime();
-      if (!Number.isFinite(ms) || ms < 0) ms = 5_000;
-
-      // đúng 0h -> check ngày và clear
-      this.midnightTimer = setTimeout(() => {
-        this.checkNewDayAndClearIfNeeded();
-        // lập lịch tiếp cho ngày sau
-        this.scheduleClearAtNextMidnight();
-      }, ms + 500);
-
-      // thêm 1 lớp “đề phòng”: mỗi 30s check ngày (phòng máy sleep/wake)
-      this.midnightInterval = setInterval(() => {
-        this.checkNewDayAndClearIfNeeded();
-      }, 30_000);
-    },
-
-    onStorageSync(e) {
-      // nếu tab khác clear localStorage -> tab này cũng reset UI ngay
-      if (!e) return;
-      if (
-        e.key === "ss_pos_tabs" ||
-        e.key === "ss_pos_active_tab" ||
-        e.key === "ss_pos_day"
-      ) {
-        // chỉ cần check lại ngày & state
-        this.checkNewDayAndClearIfNeeded();
-
-        const savedTabs = this.safeParse(
-          localStorage.getItem("ss_pos_tabs") || "[]",
-          [],
-        );
-        if (Array.isArray(savedTabs) && savedTabs.length > 0) {
-          this.tabs = savedTabs;
-          this.activeTab = Number(
-            localStorage.getItem("ss_pos_active_tab") || "0",
-          );
-          if (this.activeTab < 0 || this.activeTab >= this.tabs.length)
-            this.activeTab = 0;
-          this.applyTabState(this.tabs[this.activeTab]);
-        } else {
-          this.resetPageState();
-          this.persistTabs();
-        }
-      }
-    },
-
-    openSubmitConfirm() {
-      if (!this.canSubmit) return;
-
-      // Đóng focus input nếu đang gõ
-      this.blurActive();
-
-      // Mở modal confirm
-      this.showSubmitConfirmModal = true;
-    },
-
-    closeSubmitConfirm() {
-      this.blurActive();
-      this.showSubmitConfirmModal = false;
-    },
-
-    async confirmSubmitOrder() {
-      // Đóng modal trước để UI gọn
-      this.blurActive();
-      this.showSubmitConfirmModal = false;
-
-      // Gọi logic submit cũ
-      await this.submitOrder();
-    },
-    // ================== A11Y / tránh cảnh báo aria-hidden ==================
-    blurActive() {
-      try {
-        document.activeElement?.blur?.();
-      } catch (e) {}
-    },
-
-    updateBodyLock() {
-      try {
-        document.body.style.overflow = this.anyModalOpen ? "hidden" : "";
-      } catch (e) {}
-    },
-
-    // ================== REALTIME SYNC (DB) ==================
-    getActiveTabObj() {
-      return this.tabs?.[this.activeTab] || null;
-    },
-
-    async ensureHoaDonChoTab() {
-      const t = this.getActiveTabObj();
-      if (!t) throw new Error("NO_TAB");
-      if (t.hoaDonId) return t.hoaDonId;
-
-      const isShipping = this.isCounter === true;
-
-      const tenKhachHang = isShipping
-        ? this.selectedKh
-          ? this.getKhName(this.selectedKh)
-          : this.guest.tenKhachHang || "Khách vãng lai"
-        : this.selectedKh
-          ? this.getKhName(this.selectedKh)
-          : "Khách lẻ";
-
-      const soDienThoaiKhachHang =
-        (isShipping
-          ? this.selectedKh
-            ? this.getKhPhone(this.selectedKh)
-            : this.guest.soDienThoai
-          : this.selectedKh
-            ? this.getKhPhone(this.selectedKh)
-            : "0000000000") || "0000000000";
-
-      const diaChiKhachHang = isShipping
-        ? this.selectedKh
-          ? this.selectedDiaChi
-            ? this.renderDiaChi(this.selectedDiaChi)
-            : "Chờ cập nhật"
-          : "Chờ cập nhật"
-        : "Tại quầy";
-
-      const payload = {
-        idKhachHang: this.selectedKh?.id || null,
-        idNhanVien: this.nguoiBan?.id ?? null,
-
-        idPhieuGiamGia: this.effectiveVoucher?.id || null,
-        idPhieuGiamGiaCaNhan: this.effectiveVoucher?.__pggcnId || null,
-
-        loaiDon: isShipping ? 1 : 0,
-        phiVanChuyen: Math.round(isShipping ? this.phiVanChuyenNum : 0),
-
-        tongTien: 0,
-        tongTienSauGiam: 0,
-
-        tenKhachHang:
-          (tenKhachHang || "").trim() ||
-          (isShipping ? "Khách vãng lai" : "Khách lẻ"),
-        soDienThoaiKhachHang:
-          String(soDienThoaiKhachHang || "").replace(/\D/g, "") || "0000000000",
-        diaChiKhachHang:
-          diaChiKhachHang || (isShipping ? "Chờ cập nhật" : "Tại quầy"),
-        emailKhachHang: this.selectedKh
-          ? this.getKhEmail(this.selectedKh) || null
-          : null,
-
-        ghiChu: "Hóa đơn chờ POS",
-      };
-
-      const res = await apiClient.post("/api/admin/hoa-don", payload);
-      const id = res?.data?.id;
-      if (!id) throw new Error("CREATE_HD_FAIL");
-
-      t.hoaDonId = id;
-      this.persistTabs();
-
-      return id;
-    },
-
-    buildThongTinHoaDonPayload() {
-      const isShipping = this.isCounter === true;
-      const loaiDon = isShipping ? 1 : 0;
-
-      let tenKh = isShipping
-        ? this.selectedKh
-          ? this.getKhName(this.selectedKh)
-          : this.guest.tenKhachHang || "Khách vãng lai"
-        : this.selectedKh
-          ? this.getKhName(this.selectedKh)
-          : "Khách lẻ";
-
-      tenKh =
-        (tenKh || "").trim() || (isShipping ? "Khách vãng lai" : "Khách lẻ");
-
-      const sdtDigits = this.selectedKh
-        ? String(this.getKhPhone(this.selectedKh) || "").replace(/\D/g, "")
-        : String(this.guest.soDienThoai || "").replace(/\D/g, "");
-
-      const soDienThoai = sdtDigits || "0000000000";
-
-      let diaChi = isShipping ? "" : "Tại quầy";
-      if (isShipping) {
-        if (this.selectedKh)
-          diaChi = this.selectedDiaChi
-            ? this.renderDiaChi(this.selectedDiaChi)
-            : "";
-        else {
-          const parts = [
-            this.guest.diaChiCuThe,
-            this.guest.xaPhuong,
-            this.guest.huyenQuan,
-            this.guest.tinhThanh,
-          ].filter((x) => String(x || "").trim());
-          diaChi = parts.join(", ");
-        }
-        diaChi = diaChi || "Chờ cập nhật";
-      }
-
-      return {
-        idKhachHang: this.selectedKh?.id || null,
-        idNhanVien: this.nguoiBan?.id ?? null,
-
-        idPhieuGiamGia: this.effectiveVoucher?.id || null,
-        idPhieuGiamGiaCaNhan: this.effectiveVoucher?.__pggcnId || null,
-
-        loaiDon,
-        phiVanChuyen: Math.round(isShipping ? this.phiVanChuyenNum : 0),
-
-        tongTien: Math.round(
-          this.tongTienHang + (isShipping ? this.phiVanChuyenNum : 0),
-        ),
-        tongTienSauGiam: Math.round(this.tongPhaiTra),
-
-        tenKhachHang: tenKh,
-        soDienThoaiKhachHang: soDienThoai,
-        diaChiKhachHang: diaChi,
-        emailKhachHang: this.selectedKh
-          ? this.getKhEmail(this.selectedKh) || null
-          : null,
-        ghiChu: null,
-      };
-    },
-
-    buildChiTietSnapshotPayload(idHoaDon) {
-      return (this.cartItems || []).map((it) => ({
-        idHoaDon,
-        idChiTietSanPham: it.id,
-        soLuong: Number(it.qty || 1),
-        ghiChu: null,
-        xoaMem: false,
-      }));
-    },
-
-    async reloadCartFromDb(idHoaDon) {
-      try {
-        const res = await apiClient.get(`/api/admin/hoa-don/${idHoaDon}`);
-        const hd = res?.data || null;
-        const list = Array.isArray(hd?.chiTietHoaDon) ? hd.chiTietHoaDon : [];
-
-        const out = list
-          .map((x) => {
-            const ctspId = x?.idChiTietSanPham ?? null;
-            const found =
-              ctspId != null
-                ? this.ctspList.find((k) => Number(k?.id) === Number(ctspId))
-                : null;
-
-            return {
-              id: ctspId,
-              maCtsp: x?.maChiTietSanPham || found?.maCtsp || "",
-              tenSanPham: x?.tenSanPham || found?.tenSanPham || "",
-              mauSac: x?.mauSac || found?.mauSac || "",
-              kichCo: x?.kichCo || found?.kichCo || "",
-              giaGoc: found?.giaGoc ?? 0,
-              giaBan: found?.giaBan ?? (Number(x?.donGia || 0) || 0),
-              phanTramGiam: found?.phanTramGiam ?? 0,
-              idDotGiamGia: found?.idDotGiamGia ?? null,
-              maDotGiamGia: found?.maDotGiamGia ?? null,
-              tenDotGiamGia: found?.tenDotGiamGia ?? null,
-              anhUrl: found?.anhUrl ?? null,
-              qty: Number(x?.soLuong || 1),
-              checked: true,
-            };
-          })
-          .filter((x) => x.id != null);
-
-        this.cartItems = out;
-        await this.ensureBaseQtyIfCartHasItems();
-        await this.capNhatDotGiamGiaChoGioHang();
-        this.scheduleAutoVoucher();
-        this.persistActiveTab();
-      } catch (e) {}
-    },
-
-    async syncHoaDonToDb(opts = {}) {
-      const silent = !!opts.silent;
-      const t = this.getActiveTabObj();
-      if (!t) return;
-
-      if (this.syncingHoaDon) return;
-      this.syncingHoaDon = true;
-
-      try {
-        const idHoaDon = await this.ensureHoaDonChoTab();
-
-        await apiClient.put(
-          `/api/admin/hoa-don/${idHoaDon}/thong-tin`,
-          this.buildThongTinHoaDonPayload(),
-        );
-        await apiClient.post(
-          `/api/admin/hoa-don/${idHoaDon}/chi-tiet`,
-          this.buildChiTietSnapshotPayload(idHoaDon),
-        );
-
-        return true;
-      } catch (e) {
-        if (!silent) {
-          const msg =
-            e?.response?.data?.message || "Không đồng bộ được hoá đơn với DB.";
-          this.showToast(msg, "error");
-        }
-
-        try {
-          const idHoaDon = t?.hoaDonId;
-          if (idHoaDon) {
-            await this.loadCtspForPos();
-            await this.reloadCartFromDb(idHoaDon);
-          }
-        } catch (e2) {}
-
-        if (!silent) throw e;
-        return false;
-      } finally {
-        this.syncingHoaDon = false;
-      }
-    },
-
-    scheduleSyncHoaDon() {
-      if (this.syncHdTimer) clearTimeout(this.syncHdTimer);
-      this.syncHdTimer = setTimeout(() => {
-        this.syncHoaDonToDb({ silent: true }).catch(() => {});
-      }, 200);
-    },
-
-    // ================== stock helpers (local) ==================
-    baseQtyKey() {
-      return "ss_pos_ctsp_base_qty_map";
-    },
-
-    restoreCtspBaseQtyMap() {
-      const raw = localStorage.getItem(this.baseQtyKey());
-      const map = this.safeParse(raw || "{}", {});
-      this.ctspBaseQtyMap = map && typeof map === "object" ? map : {};
-    },
-
-    persistCtspBaseQtyMap() {
-      try {
-        localStorage.setItem(
-          this.baseQtyKey(),
-          JSON.stringify(this.ctspBaseQtyMap || {}),
-        );
-      } catch (e) {}
-    },
-
-    capNhatTonLocal(ctspId, delta) {
-      const id = Number(ctspId);
-      if (!Number.isFinite(id)) return;
-
-      const map = { ...(this.ctspBaseQtyMap || {}) };
-
-      for (const x of list) {
-        const id = x?.id;
-        if (id == null) continue;
-
-        const apiQty = Math.max(0, Number(x?.soLuong || 0));
-
-        if (map[id] == null) {
-          // lần đầu thấy id này -> lấy theo API
-          map[id] = apiQty;
-        } else {
-          // tránh local lớn hơn tồn DB
-          const cur = Math.max(0, Number(map[id] || 0));
-          map[id] = Math.min(cur, apiQty);
-        }
-      }
-
-      this.ctspBaseQtyMap = map;
-      this.persistCtspBaseQtyMap();
-    },
-
-    async ensureBaseQtyIfCartHasItems() {
-      const hasCart =
-        Array.isArray(this.cartItems) && this.cartItems.length > 0;
-      if (!hasCart) return;
-
-      const mapSize =
-        this.ctspBaseQtyMap && typeof this.ctspBaseQtyMap === "object"
-          ? Object.keys(this.ctspBaseQtyMap).length
-          : 0;
-
-      if (
-        mapSize > 0 &&
-        Array.isArray(this.ctspList) &&
-        this.ctspList.length > 0
-      )
-        return;
-
-      try {
-        await this.loadCtspForPos();
-      } catch (e) {}
-    },
-
-    // ================== login user ==================
-    getNguoiBanDangNhap() {
-      const tryParse = (raw) => this.safeParse(raw || "null", null);
-      const prefer = tryParse(localStorage.getItem("ss_nguoi_ban"));
-      if (prefer) return prefer;
-
-      const u1 = tryParse(localStorage.getItem("user"));
-      if (u1) return this.normalizeNguoiBan(u1);
-
-      const u2 = tryParse(sessionStorage.getItem("ss_nguoi_ban"));
-      if (u2) return u2;
-
-      const u3 = tryParse(sessionStorage.getItem("user"));
-      if (u3) return this.normalizeNguoiBan(u3);
-
-      return null;
-    },
-
-    normalizeNguoiBan(u) {
-      if (!u || typeof u !== "object") return null;
-      const id =
-        u.idNhanVien ||
-        u.nhanVienId ||
-        u.id ||
-        u.userId ||
-        u.nhanVien?.id ||
-        null;
-      const hoTen =
-        u.hoTen ||
-        u.tenNhanVien ||
-        u.ten ||
-        u.fullName ||
-        u.name ||
-        u.username ||
-        "";
-      return { id, hoTen, role: u.role || u.quyen || null };
-    },
-
-    // ================== toast ==================
-    showToast(msg, type = "success") {
-      if (this.toastTimer) clearTimeout(this.toastTimer);
-      this.toast = { show: true, msg, type };
-      this.toastTimer = setTimeout(() => {
-        this.toast.show = false;
-      }, 2600);
-    },
-    hideToast() {
-      this.toast.show = false;
-    },
-
-    // ================== money helpers ==================
-    parseMoneyText(text) {
-      const digits = String(text || "").replace(/\D/g, "");
-      const n = digits ? Number(digits) : 0;
-      return Number.isFinite(n) && n >= 0 ? n : 0;
-    },
-
-    formatMoney(v) {
-      const n = Number(v || 0);
-      try {
-        return n.toLocaleString("vi-VN") + " đ";
-      } catch (e) {
-        return n + " đ";
-      }
-    },
-
-    formatNumberText(n) {
-      const x = Number(n || 0);
-      if (!Number.isFinite(x) || x <= 0) return "";
-      try {
-        return x.toLocaleString("vi-VN");
-      } catch (e) {
-        return String(x);
-      }
-    },
-
-    // ================== HD sequential (UI) ==================
-    nextHdCode() {
-      const key = "ss_pos_hd_seq";
-      let seq = parseInt(localStorage.getItem(key) || "1", 10);
-      if (!Number.isFinite(seq) || seq <= 0) seq = 1;
-      const code = this.pad3(seq);
-      localStorage.setItem(key, String(seq + 1));
-      return code;
-    },
-
-    pad3(n) {
-      const x = Number(n || 0);
-      if (x < 10) return `00${x}`;
-      if (x < 100) return `0${x}`;
-      return `${x}`;
-    },
-
-    makeEmptyTab(orderNo, hdCode) {
-      return {
-        id: Date.now() + Math.random(),
-        orderNo,
-        hdCode,
-        name: `Đơn hàng ${orderNo} - HD-${hdCode}`,
-        hoaDonId: null,
-
-        isCounter: false,
-        cartItems: [],
-        selectedKh: null,
-        diaChiList: [],
-        selectedDiaChi: null,
-        autoVoucher: null,
-        voucherManual: null,
-        voucherCode: "",
-        khachThanhToan: 0,
-        payMethod: "TIEN_MAT",
-        payTienMat: 0,
-        payChuyenKhoan: 0,
-        payMaThamChieu: "",
-        guest: {
-          tenKhachHang: "",
-          soDienThoai: "",
-          diaChiCuThe: "",
-          tinhThanh: "",
-          huyenQuan: "",
-          xaPhuong: "",
-        },
-        phiVanChuyen: 0,
-        phiVanChuyenText: "0",
-      };
-    },
-
-    resetPageState() {
-      this.tabs = [];
-      this.activeTab = 0;
-      this.isCounter = false;
-      this.cartItems = [];
-      this.selectedKh = null;
-      this.diaChiList = [];
-      this.selectedDiaChi = null;
-      this.autoVoucher = null;
-      this.voucherManual = null;
-      this.voucherCode = "";
-      this.khachThanhToan = 0;
-      this.payMethod = "TIEN_MAT";
-      this.payTienMat = 0;
-      this.payChuyenKhoan = 0;
-      this.payMaThamChieu = "";
-      this.payTienMatText = "";
-      this.payChuyenKhoanText = "";
-      this.guest = {
-        tenKhachHang: "",
-        soDienThoai: "",
-        diaChiCuThe: "",
-        tinhThanh: "",
-        huyenQuan: "",
-        xaPhuong: "",
-      };
-      this.phiVanChuyen = 0;
-      this.phiVanChuyenText = "0";
-    },
-
-    persistTabs() {
-      localStorage.setItem("ss_pos_tabs", JSON.stringify(this.tabs || []));
-      localStorage.setItem("ss_pos_active_tab", String(this.activeTab));
-    },
-
-    persistActiveTab() {
-      const t = this.tabs[this.activeTab];
-      if (!t) return;
-
-      t.isCounter = this.isCounter;
-      t.cartItems = Array.isArray(this.cartItems)
-        ? this.cartItems.map((x) => ({ ...x }))
-        : [];
-      t.selectedKh = this.selectedKh;
-      t.diaChiList = Array.isArray(this.diaChiList)
-        ? this.diaChiList.map((x) => ({ ...x }))
-        : [];
-      t.selectedDiaChi = this.selectedDiaChi;
-      t.autoVoucher = this.autoVoucher;
-      t.voucherManual = this.voucherManual;
-      t.voucherCode = this.voucherCode;
-
-      t.khachThanhToan = this.khachThanhToan;
-      t.payMethod = this.payMethod;
-      t.payTienMat = this.payTienMat;
-      t.payChuyenKhoan = this.payChuyenKhoan;
-      t.payMaThamChieu = this.payMaThamChieu;
-
-      t.guest = { ...(this.guest || {}) };
-      t.phiVanChuyen = this.phiVanChuyen;
-      t.phiVanChuyenText = this.phiVanChuyenText;
-
-      this.persistTabs();
-    },
-
-    applyTabState(t) {
-      this.isCounter = !!t.isCounter;
-      this.cartItems = Array.isArray(t.cartItems)
-        ? t.cartItems.map((x) => ({ ...x }))
-        : [];
-      this.selectedKh = t.selectedKh || null;
-      this.diaChiList = Array.isArray(t.diaChiList)
-        ? t.diaChiList.map((x) => ({ ...x }))
-        : [];
-      this.selectedDiaChi = t.selectedDiaChi || null;
-      this.autoVoucher = t.autoVoucher || null;
-      this.voucherManual = t.voucherManual || null;
-      this.voucherCode = t.voucherCode || "";
-
-      this.khachThanhToan = Number(t.khachThanhToan || 0) || 0;
-      this.payMethod = t.payMethod || "TIEN_MAT";
-      this.payTienMat = Number(t.payTienMat || 0) || 0;
-      this.payChuyenKhoan = Number(t.payChuyenKhoan || 0) || 0;
-      this.payMaThamChieu = (t.payMaThamChieu || "").trim();
-
-      this.payTienMatText = this.formatNumberText(this.payTienMat);
-      this.payChuyenKhoanText = this.formatNumberText(this.payChuyenKhoan);
-
-      this.guest = t.guest || {
-        tenKhachHang: "",
-        soDienThoai: "",
-        diaChiCuThe: "",
-        tinhThanh: "",
-        huyenQuan: "",
-        xaPhuong: "",
-      };
-      this.phiVanChuyen = Number(t.phiVanChuyen || 0) || 0;
-      this.phiVanChuyenText = String(t.phiVanChuyenText || "0");
-
-      if (
-        this.isCounter &&
-        this.selectedKh?.id &&
-        this.diaChiList.length === 0
-      ) {
-        this.loadDiaChiAndPickDefault(this.selectedKh.id);
-      }
-    },
-
-    async switchTab(idx) {
-      if (idx === this.activeTab) return;
-      this.persistActiveTab();
-      this.activeTab = idx;
-      this.applyTabState(this.tabs[idx]);
-      this.persistTabs();
-
-      await this.ensureBaseQtyIfCartHasItems();
-      await this.capNhatDotGiamGiaChoGioHang();
-      this.scheduleAutoVoucher();
-      this.scheduleSyncHoaDon();
-    },
-
-    tabItemCount(t) {
-      const items = Array.isArray(t?.cartItems) ? t.cartItems : [];
-      return items.reduce(
-        (sum, it) => sum + Math.max(0, Number(it?.qty || 0)),
-        0,
-      );
-    },
-
-    createOrderTab() {
-      if (this.tabs.length >= this.maxOrderTabs) {
-        this.showToast(
-          `Chỉ được tạo tối đa ${this.maxOrderTabs} đơn để tránh spam.`,
-          "error",
-        );
-        return;
-      }
-
-      this.persistActiveTab();
-
-      const n = this.tabs.length + 1;
-      const hdCode = this.nextHdCode();
-      const tab = this.makeEmptyTab(n, hdCode);
-
-      this.tabs.push(tab);
-      this.activeTab = this.tabs.length - 1;
-      this.applyTabState(tab);
-      this.persistTabs();
-
-      this.showToast(`Đã tạo đơn hàng: HD-${hdCode}`, "success");
-
-      this.scheduleSyncHoaDon();
-      this.scheduleAutoVoucher();
-    },
-
-    async closeTab(idx) {
-      this.persistActiveTab();
-
-      const tab = this.tabs[idx];
-      const hasItems =
-        Array.isArray(tab?.cartItems) && tab.cartItems.length > 0;
-
-      if (hasItems) {
-        const ok = window.confirm(
-          "Đơn hàng đang có sản phẩm. Bạn có chắc muốn hủy đơn này không? (Hệ thống sẽ hoàn lại tồn kho)",
-        );
-        if (!ok) return;
-      }
-      const items = Array.isArray(tab?.cartItems) ? tab.cartItems : [];
-      for (const it of items) {
-        const qty = Math.max(0, Number(it?.qty || 0));
-        if (qty > 0) this.capNhatTonLocal(it?.id, qty);
-      }
-
-      const hdId = tab?.hoaDonId;
-      if (hdId) {
-        try {
-          await apiClient.delete(`/api/admin/hoa-don/${hdId}/reset`);
-        } catch (e) {
-          try {
-            await apiClient.delete(`/api/admin/hoa-don/${hdId}`);
-          } catch (e2) {}
-        }
-      }
-
-      const wasActive = idx === this.activeTab;
-
-      this.tabs.splice(idx, 1);
-
-      this.tabs = this.tabs.map((t, i) => ({
-        ...t,
-        orderNo: i + 1,
-        name: `Đơn hàng ${i + 1} - HD-${t.hdCode}`,
-      }));
-
-      if (this.tabs.length === 0) {
-        this.resetPageState();
-        this.persistTabs();
-        return;
-      }
-
-      if (wasActive) {
-        this.activeTab = idx > 0 ? idx - 1 : 0;
-      } else if (idx < this.activeTab) {
-        this.activeTab = Math.max(0, this.activeTab - 1);
-      }
-
-      if (this.activeTab >= this.tabs.length)
-        this.activeTab = this.tabs.length - 1;
-
-      this.applyTabState(this.tabs[this.activeTab]);
-      this.persistTabs();
-      this.scheduleAutoVoucher();
-      this.scheduleSyncHoaDon();
-    },
-
-    // ================== tồn khả dụng / validate qty ==================
-    getBaseQtyByCtspId(ctspId) {
-      const id = Number(ctspId);
-      const base = Number(this.ctspBaseQtyMap?.[id] ?? 0);
-      return Number.isFinite(base) && base >= 0 ? base : 0;
-    },
-
-    getAvailableQtyByCtspId(ctspId) {
-      return this.getBaseQtyByCtspId(ctspId);
-    },
-
-    getMaxQtyForItem(it) {
-      const id = it?.id;
-      const conLai = this.getBaseQtyByCtspId(id);
-      const cur = Math.max(0, Number(it?.qty || 0));
-      return Math.max(0, cur + conLai);
-    },
-
-    clampInt(n, min, max) {
-      let x = Number(n);
-      if (!Number.isFinite(x)) x = min;
-      x = Math.floor(x);
-      if (x < min) x = min;
-      if (x > max) x = max;
-      return x;
-    },
-
-    resolveImage(url) {
-      if (!url) return "";
-      const u = String(url).trim();
-      if (!u) return "";
-      if (u.startsWith("http://") || u.startsWith("https://")) return u;
-
-      const base =
-        import.meta.env.VITE_FILE_BASE_URL || "http://localhost:8080";
-      if (u.startsWith("/")) return base + u;
-      return base + "/" + u;
-    },
-
-    onImgErr(e) {
-      if (e?.target) e.target.style.display = "none";
-    },
-
-    safeParse(str, fallback) {
-      try {
-        const v = JSON.parse(str);
-        return v;
-      } catch (e) {
-        return fallback;
-      }
-    },
-
-    // ================== Date helpers ==================
-    todayYmd() {
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
-    },
-
-    toYmd(v) {
-      if (!v) return "";
-      if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v.trim()))
-        return v.trim();
-
-      try {
-        const d = new Date(v);
-        if (Number.isNaN(d.getTime())) return "";
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        return `${y}-${m}-${day}`;
-      } catch (e) {
-        return "";
-      }
-    },
-
-    // ================== Customer normalize ==================
-    getKhName(k) {
-      if (!k) return "";
-      return k.hoTen || k.tenKhachHang || k.ten || k.fullName || k.name || "";
-    },
-
-    getKhPhone(k) {
-      if (!k) return "";
-      return k.sdt || k.soDienThoai || k.phone || k.soDienThoaiKhachHang || "";
-    },
-
-    getKhEmail(k) {
-      if (!k) return "";
-      return k.email || k.mail || "";
-    },
-
-    onGuestPhoneInput(e) {
-      const raw = String(e?.target?.value || "");
-      const digits = raw.replace(/\D/g, "");
-      this.guest.soDienThoai = digits;
-      this.scheduleSyncHoaDon();
-    },
-
-    chonKhachVangLai() {
-      if (!this.isCounter) {
-        this.showToast("Chức năng này dùng cho giao hàng.", "info");
-        return;
-      }
-
-      this.selectedKh = null;
-      this.diaChiList = [];
-      this.selectedDiaChi = null;
-
-      this.showToast("Đã chuyển sang khách vãng lai.", "info");
-      this.scheduleAutoVoucher();
-      this.persistActiveTab();
-      this.scheduleSyncHoaDon();
-    },
-
-    renderKhDiaChi(k) {
-      if (!k) return "";
-
-      const direct =
-        k.diaChiDayDu ||
-        k.diaChiMacDinh ||
-        k.diaChiGiaoHang ||
-        k.diaChiKhachHang ||
-        k.diaChi ||
-        k.address ||
-        "";
-      if (typeof direct === "string" && direct.trim()) return direct.trim();
-
-      const soNha = k.soNha || k.diaChiCuThe || k.diaChiChiTiet || "";
-      const xa = k.xaPhuong || k.phuongXa || k.xa || "";
-      const huyen = k.quanHuyen || k.huyenQuan || k.huyen || "";
-      const tinh = k.tinhThanh || k.thanhPho || k.tinh || "";
-      const parts = [soNha, xa, huyen, tinh].filter((x) =>
-        String(x || "").trim(),
-      );
-      if (parts.length) return parts.join(", ");
-
-      if (k.diaChiMacDinh && typeof k.diaChiMacDinh === "object") {
-        const s = this.renderDiaChi(k.diaChiMacDinh);
-        if (s) return s;
-      }
-
-      const list =
-        k.diaChiList ||
-        k.danhSachDiaChi ||
-        k.diaChiKhachHangs ||
-        k.addresses ||
-        null;
-      if (Array.isArray(list) && list.length > 0) {
-        let def = list.find((x) => x.macDinh === true || x.macDinh === 1);
-        if (!def) def = list[0];
-        const s = this.renderDiaChi(def);
-        if (s) return s;
-      }
-
-      return "";
-    },
-
-    // ================== Voucher label ==================
-    getVoucherLabel(v) {
-      if (!v) return "";
-      const code = v.maPhieuGiamGia || v.ma || v.code || "";
-
-      const isPercent = v.loaiPhieuGiamGia === true;
-      const giaTri = Number(v.giaTriGiamGia ?? v.giaTriGiam ?? 0);
-
-      if (code && isPercent)
-        return `${code} (${Math.max(0, Math.min(100, giaTri))}%)`;
-      if (code && !isPercent) return `${code} (${this.formatMoney(giaTri)})`;
-      if (code) return code;
-
-      if (isPercent) return `${Math.max(0, Math.min(100, giaTri))}%`;
-      return this.formatMoney(giaTri);
-    },
-
-    // ================== ĐỢT GIẢM GIÁ: lấy best theo CTSP ==================
-    async fetchBestDotGiamGiaByCtspIds(ids) {
-      const list = [
-        ...new Set(
-          (ids || []).map((x) => Number(x)).filter((x) => Number.isFinite(x)),
-        ),
-      ];
-      if (!list.length) return [];
-
-      const tries = [
-        "/api/admin/chi-tiet-dot-giam-gia/ban-hang/best-by-ctsp-ids",
-        "/api/chi-tiet-dot-giam-gia/ban-hang/best-by-ctsp-ids",
-      ];
-
-      let lastErr = null;
-      for (const url of tries) {
-        try {
-          const res = await apiClient.post(url, list);
-          const data = res?.data;
-          return Array.isArray(data) ? data : [];
-        } catch (e) {
-          lastErr = e;
-        }
-      }
-
-      console.error("Không lấy được đợt giảm giá theo CTSP:", lastErr);
-      return [];
-    },
-
-    getCtspIdFromDotBestRow(x) {
-      if (!x || typeof x !== "object") return null;
-      const v =
-        x.idChiTietSanPham ??
-        x.idCtsp ??
-        x.idChiTietSanPhamApDung ??
-        x.idChiTietSanPhamId ??
-        x.chiTietSanPhamId ??
-        x.ctspId ??
-        null;
-      const n = Number(v);
-      return Number.isFinite(n) ? n : null;
-    },
-
-    getLoaiGiamGiaFromDotBestRow(x) {
-      if (!x || typeof x !== "object") return true;
-      const v =
-        x.loaiGiamGia ??
-        x.loaiGiam ??
-        x.isPercent ??
-        x.laPhanTram ??
-        x.phanTram ??
-        true;
-      return v === true || v === 1 || String(v).toLowerCase() === "true";
-    },
-
-    getGiaTriGiamFromDotBestRow(x) {
-      if (!x || typeof x !== "object") return 0;
-      const raw =
-        x.giaTriGiamApDung ??
-        x.giaTriGiam ??
-        x.phanTramGiam ??
-        x.phanTramGiamGia ??
-        x.giaTri ??
-        x.soTienGiam ??
-        x.tienGiam ??
-        0;
-      return this.toNumberSafe(raw);
-    },
-
-    getDotInfoFromDotBestRow(x) {
-      const dot = x?.dotGiamGia || x?.dot || x?.dotKhuyenMai || null;
-
-      const idDot =
-        x?.idDotGiamGia ?? dot?.id ?? x?.dotGiamGiaId ?? x?.idDot ?? null;
-
-      const maDot =
-        x?.maDotGiamGia ??
-        dot?.maDotGiamGia ??
-        dot?.maDot ??
-        dot?.ma ??
-        x?.maDot ??
-        null;
-
-      const tenDot =
-        x?.tenDotGiamGia ??
-        dot?.tenDotGiamGia ??
-        dot?.tenDot ??
-        dot?.ten ??
-        x?.tenDot ??
-        null;
-
-      return { idDot, maDot, tenDot };
-    },
-
-    async ganDotGiamGiaChoDanhSachCtsp(dsCtsp) {
-      const list = Array.isArray(dsCtsp) ? dsCtsp : [];
-      const ids = [...new Set(list.map((x) => x?.id).filter((x) => x != null))];
-      if (!ids.length) return;
-
-      const dsBest = await this.fetchBestDotGiamGiaByCtspIds(ids);
-
-      const map = new Map();
-      for (const x of dsBest) {
-        const idCtsp = this.getCtspIdFromDotBestRow(x);
-        if (idCtsp != null) map.set(idCtsp, x);
-      }
-
-      for (const sp of list) {
-        if (!sp || sp.id == null) continue;
-
-        const best = map.get(Number(sp.id));
-
-        const giaBase =
-          this.toNumberSafe(sp.giaGoc ?? 0) > 0
-            ? Math.round(this.toNumberSafe(sp.giaGoc))
-            : Math.round(this.toNumberSafe(sp.giaBan ?? 0));
-
-        if (!best) {
-          sp.phanTramGiam = 0;
-          sp.idDotGiamGia = null;
-          sp.maDotGiamGia = null;
-          sp.tenDotGiamGia = null;
-
-          sp.giaGoc = 0;
-          sp.giaBan =
-            giaBase > 0
-              ? giaBase
-              : Math.round(this.toNumberSafe(sp.giaBan ?? 0));
-          continue;
-        }
-
-        const loaiPercent = this.getLoaiGiamGiaFromDotBestRow(best);
-        let giaTri = this.getGiaTriGiamFromDotBestRow(best);
-
-        if (loaiPercent) {
-          if (giaTri > 0 && giaTri <= 1) giaTri = giaTri * 100;
-          giaTri = Math.max(0, Math.min(100, Math.round(giaTri)));
-        } else {
-          giaTri = Math.max(0, Math.round(giaTri));
-        }
-
-        const { idDot, maDot, tenDot } = this.getDotInfoFromDotBestRow(best);
-
-        let giaSau = giaBase;
-        if (giaBase > 0 && giaTri > 0) {
-          if (loaiPercent) {
-            giaSau = Math.round((giaBase * (100 - giaTri)) / 100);
-          } else {
-            giaSau = Math.round(Math.max(0, giaBase - giaTri));
-          }
-        }
-
-        sp.giaGoc = giaBase > 0 ? giaBase : 0;
-        sp.giaBan = giaSau > 0 ? giaSau : 0;
-
-        sp.phanTramGiam = loaiPercent
-          ? giaTri
-          : giaBase > 0 && giaTri > 0
-            ? Math.round(Math.min(100, (giaTri / giaBase) * 100))
-            : 0;
-
-        sp.idDotGiamGia = idDot ?? null;
-        sp.maDotGiamGia = maDot ?? null;
-        sp.tenDotGiamGia = tenDot ?? null;
-      }
-    },
-
-    async capNhatDotGiamGiaChoGioHang() {
-      if (!Array.isArray(this.cartItems) || this.cartItems.length === 0) return;
-      await this.ganDotGiamGiaChoDanhSachCtsp(this.cartItems);
-    },
-
-    // ================== NORMALIZE ĐỢT GIẢM GIÁ fallback ==================
-    toNumberSafe(v) {
-      if (v == null) return 0;
-      const n = Number(String(v).replace("%", "").trim());
-      return Number.isFinite(n) ? n : 0;
-    },
-
-    normalizePercent(raw) {
-      let n = this.toNumberSafe(raw);
-      if (!Number.isFinite(n) || n <= 0) return 0;
-
-      if (n > 0 && n <= 1) n = n * 100;
-
-      n = Math.round(n);
-      if (n < 0) n = 0;
-      if (n > 100) n = 100;
-      return n;
-    },
-
-    extractDotInfo(x) {
-      const dot =
-        x?.dotGiamGia || x?.dot_giam_gia || x?.dot || x?.dotKhuyenMai || null;
-      const ct =
-        x?.chiTietDotGiamGia ||
-        x?.chi_tiet_dot_giam_gia ||
-        x?.chiTietDot ||
-        null;
-
-      const idDot =
-        x?.idDotGiamGia ??
-        dot?.id ??
-        ct?.idDotGiamGia ??
-        ct?.dotGiamGia?.id ??
-        null;
-
-      const maDot =
-        x?.maDotGiamGia ??
-        dot?.maDotGiamGia ??
-        dot?.maDot ??
-        dot?.ma ??
-        ct?.maDotGiamGia ??
-        ct?.dotGiamGia?.maDotGiamGia ??
-        ct?.dotGiamGia?.maDot ??
-        null;
-
-      const tenDot =
-        x?.tenDotGiamGia ??
-        dot?.tenDotGiamGia ??
-        dot?.tenDot ??
-        dot?.ten ??
-        ct?.tenDotGiamGia ??
-        ct?.dotGiamGia?.tenDotGiamGia ??
-        ct?.dotGiamGia?.tenDot ??
-        null;
-
-      return { idDot, maDot, tenDot, dot, ct };
-    },
-
-    extractDiscountPercent(x) {
-      const { dot, ct } = this.extractDotInfo(x);
-
-      const raw =
-        x?.phanTramGiam ??
-        x?.phanTramGiamGia ??
-        x?.phanTramKhuyenMai ??
-        x?.phanTram ??
-        x?.giaTriGiamPhanTram ??
-        x?.giaTriGiam ??
-        ct?.phanTramGiam ??
-        ct?.phanTramGiamGia ??
-        ct?.giaTriGiam ??
-        dot?.phanTramGiam ??
-        dot?.phanTramGiamGia ??
-        dot?.giaTriGiam ??
-        0;
-
-      return this.normalizePercent(raw);
-    },
-
-    extractDiscountAmount(x) {
-      const { dot, ct } = this.extractDotInfo(x);
-      const raw =
-        x?.soTienGiam ??
-        x?.tienGiam ??
-        x?.giaTriGiamTien ??
-        x?.soTienGiamGia ??
-        x?.giaGiam ??
-        ct?.soTienGiam ??
-        ct?.tienGiam ??
-        ct?.giaTriGiamTien ??
-        ct?.soTienGiamGia ??
-        ct?.giaGiam ??
-        dot?.soTienGiam ??
-        dot?.tienGiam ??
-        dot?.giaTriGiamTien ??
-        dot?.soTienGiamGia ??
-        dot?.giaGiam ??
-        0;
-
-      const n = this.toNumberSafe(raw);
-      return n > 0 ? Math.round(n) : 0;
-    },
-
-    extractGiaGoc(x) {
-      const raw =
-        x?.giaGoc ??
-        x?.giaBanGoc ??
-        x?.giaNiemYet ??
-        x?.giaGocSanPham ??
-        x?.donGiaGoc ??
-        0;
-      const n = this.toNumberSafe(raw);
-      if (n > 0) return Math.round(n);
-
-      const gb = this.toNumberSafe(x?.giaBan ?? 0);
-      return gb > 0 ? Math.round(gb) : 0;
-    },
-
-    extractGiaSauGiam(x) {
-      const raw =
-        x?.giaSauGiam ??
-        x?.giaSauGiamGia ??
-        x?.giaKhuyenMai ??
-        x?.giaDaGiam ??
-        x?.giaBanSauGiam ??
-        x?.giaSauKhuyenMai ??
-        x?.donGiaSauGiam ??
-        0;
-
-      const n = this.toNumberSafe(raw);
-      return n > 0 ? Math.round(n) : 0;
-    },
-
-    normalizeCtspRow(x) {
-      if (!x || typeof x !== "object") return x;
-
-      const { idDot, maDot, tenDot } = this.extractDotInfo(x);
-
-      const giaGoc = this.extractGiaGoc(x);
-      const pct = this.extractDiscountPercent(x);
-      const amt = pct > 0 ? 0 : this.extractDiscountAmount(x);
-
-      let giaSau = this.extractGiaSauGiam(x);
-
-      if (!(giaSau > 0)) {
-        if (giaGoc > 0 && pct > 0) {
-          giaSau = Math.round((giaGoc * (100 - pct)) / 100);
-        } else if (giaGoc > 0 && amt > 0) {
-          giaSau = Math.round(Math.max(0, giaGoc - amt));
-        } else {
-          const gb = this.toNumberSafe(x?.giaBan ?? 0);
-          giaSau = gb > 0 ? Math.round(gb) : giaGoc;
-        }
-      }
-
-      if (giaGoc > 0 && pct > 0) {
-        const expect = Math.round((giaGoc * (100 - pct)) / 100);
-        const gb = this.toNumberSafe(x?.giaBan ?? 0);
-        if (gb > 0 && Math.round(gb) === giaGoc) giaSau = expect;
-      }
-
-      const pctDisplay =
-        pct > 0
-          ? pct
-          : giaGoc > 0 && amt > 0
-            ? Math.round(Math.min(100, (amt / giaGoc) * 100))
-            : 0;
-
-      return {
-        ...x,
-
-        idDotGiamGia: idDot ?? x?.idDotGiamGia ?? null,
-        maDotGiamGia: maDot ?? x?.maDotGiamGia ?? null,
-        tenDotGiamGia: tenDot ?? x?.tenDotGiamGia ?? null,
-
-        giaGoc: giaGoc || 0,
-        giaBan: giaSau || giaGoc || 0,
-
-        phanTramGiam: pctDisplay,
-      };
-    },
-
-    // ================== Giá bán ==================
-    getGiaGoc(it) {
-      if (!it) return 0;
-
-      const goc = Number(it.giaGoc);
-      if (Number.isFinite(goc) && goc > 0) return goc;
-
-      const giaBanOld = Number(it.giaBan || 0);
-      return Number.isFinite(giaBanOld) && giaBanOld > 0 ? giaBanOld : 0;
-    },
-
-    getGiaThucTe(it) {
-      if (!it) return 0;
-
-      const gb = Number(it.giaBan ?? 0);
-      if (Number.isFinite(gb) && gb > 0) return Math.round(gb);
-
-      const giaGoc = this.getGiaGoc(it);
-      const pct = this.normalizePercent(
-        it.phanTramGiam ?? it.phanTramKhuyenMai ?? 0,
-      );
-      if (giaGoc > 0 && pct > 0)
-        return Math.round((giaGoc * (100 - pct)) / 100);
-
-      return Math.round(giaGoc || 0);
-    },
-
-    showGiaGoc(it) {
-      const giaGoc = Number(this.getGiaGoc(it) || 0);
-      const giaThuc = Number(this.getGiaThucTe(it) || 0);
-      return giaGoc > 0 && giaThuc > 0 && giaThuc < giaGoc;
-    },
-
-    getPhanTramGiamDisplay(it) {
-      const p = this.normalizePercent(
-        it?.phanTramGiam ?? it?.phanTramKhuyenMai ?? 0,
-      );
-      if (!Number.isFinite(p) || p <= 0) return 0;
-      return Math.round(p);
-    },
-
-    getGiamGiaTitle(it) {
-      const pct = this.getPhanTramGiamDisplay(it);
-      const tenDot = it?.tenDotGiamGia || it?.tenDot || "";
-      const maDot = it?.maDotGiamGia || it?.maDot || "";
-      if (maDot || tenDot)
-        return `Đợt giảm giá: ${[maDot, tenDot].filter(Boolean).join(" - ")} · Giảm ${pct}%`;
-      return `Giảm ${pct}%`;
-    },
-
-    // ================== Cart ==================
-    incQty(it) {
-      const old = Number(it.qty || 1);
-      const conLai = this.getAvailableQtyByCtspId(it?.id);
-      if (conLai <= 0) {
-        this.showToast("Số lượng mua không được vượt tồn kho.", "error");
-        return;
-      }
-
-      it.qty = old + 1;
-      this.capNhatTonLocal(it?.id, -1);
-      this.scheduleSyncHoaDon();
-    },
-
-    decQty(it) {
-      const old = Number(it.qty || 1);
-      if (old > 1) {
-        it.qty = old - 1;
-        this.capNhatTonLocal(it?.id, +1);
-        this.scheduleSyncHoaDon();
-      }
-    },
-
-    onQtyInput(it, e) {
-      const raw = String(e?.target?.value || "");
-      const digits = raw.replace(/\D/g, "");
-      const n = digits ? Number(digits) : 0;
-
-      const old = Number(it.qty || 1);
-      const max = this.getMaxQtyForItem(it);
-
-      // ✅ báo vượt tồn dựa theo số user nhập (n), không phải next sau clamp
-      const vuotTon = digits && n > max;
-
-      const next = this.clampInt(n, 1, Math.max(1, max));
-
-      // ✅ phải đặt trước return để không bị “return sớm”
-      if (vuotTon)
-        this.showToast("Số lượng mua không được vượt tồn kho.", "error");
-
-      if (next === old) return;
-
-      const delta = next - old;
-      it.qty = next;
-
-      if (delta > 0) this.capNhatTonLocal(it?.id, -delta);
-      else this.capNhatTonLocal(it?.id, Math.abs(delta));
-
-      this.scheduleSyncHoaDon();
-    },
-
-    onQtyBlur(it) {
-      const old = Number(it.qty || 0);
-      const max = this.getMaxQtyForItem(it);
-      let next = old;
-
-      if (!Number.isFinite(next) || next < 1) next = 1;
-      if (next > max) next = Math.max(1, max);
-
-      if (next !== old) {
-        const delta = next - old;
-        it.qty = next;
-
-        if (delta > 0) this.capNhatTonLocal(it?.id, -delta);
-        else this.capNhatTonLocal(it?.id, Math.abs(delta));
-
-        this.showToast(
-          "Số lượng mua đã được tự điều chỉnh theo tồn kho.",
-          "info",
-        );
-      }
-
-      this.scheduleAutoVoucher();
-      this.scheduleSyncHoaDon();
-    },
-
-    removeItem(id) {
-      const it = this.cartItems.find((x) => x.id === id);
-      const qty = Math.max(0, Number(it?.qty || 0));
-      if (qty > 0) this.capNhatTonLocal(id, qty);
-
-      this.cartItems = this.cartItems.filter((x) => x.id !== id);
-      this.scheduleAutoVoucher();
-      this.scheduleSyncHoaDon();
-    },
-
-    onCtspPickQtyInput(row, e) {
-      const id = row?.id;
-      if (id == null) return;
-
-      const raw = String(e?.target?.value || "");
-      const digits = raw.replace(/\D/g, "");
-      const n = digits ? Number(digits) : 0;
-
-      const max = Math.max(0, Number(row.__available || 0));
-      const next = this.clampInt(n, 1, Math.max(1, max));
-
-      this.ctspPickQty = { ...this.ctspPickQty, [id]: next };
-    },
-
-    pickCtsp(row, qtyToAdd = 1) {
-      if (!row) return;
-
-      const nx = this.normalizeCtspRow(row);
-
-      const id = nx?.id;
-      if (id == null) return;
-
-      const available = this.getAvailableQtyByCtspId(id);
-      if (available <= 0) {
-        this.showToast("Sản phẩm đã hết hàng.", "error");
-        return;
-      }
-
-      const want = this.clampInt(qtyToAdd, 1, Math.max(1, available));
-      const exist = this.cartItems.find((x) => x.id === id);
-
-      if (exist) {
-        const old = Number(exist.qty || 1);
-        const max = this.getMaxQtyForItem(exist);
-        const newQty = Math.min(max, old + want);
-
-        const delta = newQty - old;
-        if (delta <= 0) {
-          this.showToast("Số lượng mua không được vượt tồn kho.", "error");
-          return;
-        }
-
-        exist.giaGoc = nx.giaGoc ?? exist.giaGoc ?? exist.giaBan;
-        exist.giaBan = nx.giaBan ?? exist.giaBan;
-        exist.phanTramGiam = nx.phanTramGiam ?? exist.phanTramGiam ?? 0;
-        exist.idDotGiamGia = nx.idDotGiamGia ?? exist.idDotGiamGia ?? null;
-        exist.maDotGiamGia = nx.maDotGiamGia ?? exist.maDotGiamGia ?? null;
-        exist.tenDotGiamGia = nx.tenDotGiamGia ?? exist.tenDotGiamGia ?? null;
-
-        exist.qty = newQty;
-        exist.checked = true;
-
-        this.capNhatTonLocal(id, -delta);
-      } else {
-        const addQty = Math.min(want, available);
-
-        this.cartItems.unshift({
-          id: nx.id,
-          maCtsp: nx.maCtsp,
-          tenSanPham: nx.tenSanPham,
-          mauSac: nx.mauSac,
-          kichCo: nx.kichCo,
-
-          giaGoc: nx.giaGoc ?? nx.giaBan,
-          giaBan: nx.giaBan,
-
-          phanTramGiam: nx.phanTramGiam ?? 0,
-          idDotGiamGia: nx.idDotGiamGia ?? null,
-          maDotGiamGia: nx.maDotGiamGia ?? null,
-          tenDotGiamGia: nx.tenDotGiamGia ?? null,
-
-          anhUrl: nx.anhUrl,
-
-          qty: addQty,
-          checked: true,
-        });
-
-        this.capNhatTonLocal(id, -addQty);
-      }
-
-      this.ctspPickQty = { ...this.ctspPickQty, [id]: 1 };
-
-      this.scheduleAutoVoucher();
-      this.scheduleSyncHoaDon();
-    },
-
-    // ================== CTSP Modal ==================
-    async openCtspModal() {
-      this.showCtspModal = true;
-      this.ctspPage = 1;
-      this.ctspPickQty = {};
-      await this.loadCtspForPos();
-    },
-
-    closeCtspModal() {
-      this.blurActive();
-      this.showCtspModal = false;
-    },
-
-    resetCtspFilter() {
-      this.ctspFilter = { keyword: "", mauSac: "", kichCo: "", tenSanPham: "" };
-      this.ctspPage = 1;
-    },
-
-    async loadCtspForPos() {
-      this.ctspLoading = true;
-      this.ctspErr = "";
-      try {
-        const data = await SalesService.getCtspBanHang();
-        const rawList = Array.isArray(data) ? data : [];
-
-        const list = rawList.map((x) => this.normalizeCtspRow(x));
-
-        await this.ganDotGiamGiaChoDanhSachCtsp(list);
-
-        this.ctspList = list;
-
-        const map = { ...(this.ctspBaseQtyMap || {}) };
-        for (const x of list) {
-          const id = x?.id;
-          if (id == null) continue;
-          const base = Math.max(0, Number(x?.soLuong || 0));
-          map[id] = base;
-        }
-        this.ctspBaseQtyMap = map;
-        this.persistCtspBaseQtyMap();
-
-        await this.capNhatDotGiamGiaChoGioHang();
-        this.ctspPage = 1;
-      } catch (e) {
-        this.ctspErr = "Không tải được danh sách biến thể (API đang lỗi).";
-        this.ctspList = [];
-      } finally {
-        this.ctspLoading = false;
-      }
-    },
-
-    // ================== QR Modal ==================
-    async openQrModal() {
-      this.showQrModal = true;
-      this.qrError = "";
-      this.$nextTick(async () => {
-        await this.startQr();
-      });
-    },
-
-    async closeQrModal() {
-      this.blurActive();
-      this.showQrModal = false;
-      await this.stopQr();
-    },
-
-    async restartQr() {
-      this.qrError = "";
-      await this.stopQr();
-      await this.startQr();
-    },
-
-    async startQr() {
-      try {
-        if (!this.qr) this.qr = new Html5Qrcode("ss-qr-reader");
-
-        const config = {
-          fps: 10,
-          qrbox: { width: 240, height: 240 },
-          aspectRatio: 1.0,
-        };
-
-        await this.qr.start(
-          { facingMode: "environment" },
-          config,
-          async (decodedText) => {
-            const text = String(decodedText || "").trim();
-            if (!text) return;
-
-            if (this.ctspList.length === 0) await this.loadCtspForPos();
-
-            let row = this.ctspList.find(
-              (x) => String(x.maCtsp || "").trim() === text,
-            );
-
-            if (!row) {
-              const id = Number(text);
-              if (Number.isFinite(id))
-                row = this.ctspList.find((x) => Number(x.id) === id);
-            }
-
-            if (row) {
-              this.pickCtsp(
-                { ...row, __available: this.getAvailableQtyByCtspId(row.id) },
-                1,
-              );
-              await this.stopQr();
-              this.blurActive();
-              this.showQrModal = false;
-            }
-          },
-        );
-      } catch (e) {
-        this.qrError =
-          "Không mở được camera/QR. Vui lòng cấp quyền camera hoặc dùng thiết bị khác.";
-      }
-    },
-
-    async stopQr() {
-      try {
-        if (this.qr && (await this.qr.getState()) === 2) await this.qr.stop();
-      } catch (e) {}
-      try {
-        if (this.qr) await this.qr.clear();
-      } catch (e) {}
-    },
-
-    // ================== Customer Modal ==================
-    async openKhModal() {
-      this.showKhModal = true;
-      await this.loadKh();
-      this.preloadKhAddr(this.filteredKh.slice(0, 12));
-    },
-
-    closeKhModal() {
-      this.blurActive();
-      this.showKhModal = false;
-    },
-
-    async reloadKh() {
-      await this.loadKh();
-      this.preloadKhAddr(this.filteredKh.slice(0, 12));
-    },
-
-    async loadKh() {
-      this.khLoading = true;
-      this.khErr = "";
-      try {
-        const data = await SalesService.getKhachHangAll();
-        this.khList = Array.isArray(data) ? data : [];
-      } catch (e) {
-        this.khErr = "Không tải được dữ liệu khách hàng (API đang lỗi).";
-        this.khList = [];
-      } finally {
-        this.khLoading = false;
-      }
-    },
-
-    async pickKh(k) {
-      this.selectedKh = k;
-      this.blurActive();
-      this.showKhModal = false;
-
-      this.guest = {
-        tenKhachHang: "",
-        soDienThoai: "",
-        diaChiCuThe: "",
-        tinhThanh: "",
-        huyenQuan: "",
-        xaPhuong: "",
-      };
-
-      if (this.isCounter && k?.id) {
-        await this.loadDiaChiAndPickDefault(k.id);
-      } else {
-        this.diaChiList = [];
-        this.selectedDiaChi = null;
-      }
-
-      this.ensureKhAddr(k);
-      this.scheduleAutoVoucher();
-      this.persistActiveTab();
-      this.scheduleSyncHoaDon();
-    },
-
-    preloadKhAddr(list) {
-      if (!Array.isArray(list)) return;
-      list.forEach((k) => this.ensureKhAddr(k));
-    },
-
-    async ensureKhAddr(k) {
-      if (!k?.id) return;
-      if (this.khAddrCache[k.id]) return;
-      if (this.khAddrLoading[k.id]) return;
-
-      const direct = this.renderKhDiaChi(k);
-      if (direct) {
-        this.khAddrCache = { ...this.khAddrCache, [k.id]: direct };
-        return;
-      }
-
-      this.khAddrLoading = { ...this.khAddrLoading, [k.id]: true };
-      try {
-        const list = await SalesService.getDiaChiByKhachHangId(k.id);
-        let def = list.find((x) => x.macDinh === true || x.macDinh === 1);
-        if (!def && list.length > 0) def = list[0];
-
-        const addr = def ? this.renderDiaChi(def) : "";
-        if (addr) this.khAddrCache = { ...this.khAddrCache, [k.id]: addr };
-      } catch (e) {
-      } finally {
-        const { [k.id]: _, ...rest } = this.khAddrLoading;
-        this.khAddrLoading = rest;
-      }
-    },
-
-    // ================== Address ==================
-    async openDiaChiModal() {
-      if (!this.selectedKh?.id) return;
-      this.showDiaChiModal = true;
-      await this.loadDiaChiAndPickDefault(this.selectedKh.id, false);
-    },
-
-    closeDiaChiModal() {
-      this.blurActive();
-      this.showDiaChiModal = false;
-    },
-
-    async loadDiaChiAndPickDefault(khachHangId, autoCloseIfSingle = true) {
-      this.dcLoading = true;
-      this.dcErr = "";
-      try {
-        const list = await SalesService.getDiaChiByKhachHangId(khachHangId);
-
-        this.diaChiList = Array.isArray(list) ? list : [];
-
-        let def = this.diaChiList.find(
-          (x) => x.macDinh === true || x.macDinh === 1,
-        );
-        if (!def && this.diaChiList.length > 0) def = this.diaChiList[0];
-
-        this.selectedDiaChi = def || null;
-
-        if (this.selectedKh?.id && this.selectedDiaChi) {
-          const addr = this.renderDiaChi(this.selectedDiaChi);
-          if (addr)
-            this.khAddrCache = {
-              ...this.khAddrCache,
-              [this.selectedKh.id]: addr,
-            };
-        }
-
-        if (autoCloseIfSingle && this.diaChiList.length <= 1) {
-          this.blurActive();
-          this.showDiaChiModal = false;
-        }
-      } catch (e) {
-        this.dcErr = "Không tải được địa chỉ khách hàng (API đang lỗi).";
-        this.diaChiList = [];
-        this.selectedDiaChi = null;
-      } finally {
-        this.dcLoading = false;
-      }
-    },
-
-    pickDiaChi(dc) {
-      this.selectedDiaChi = dc;
-      this.blurActive();
-      this.showDiaChiModal = false;
-
-      if (this.selectedKh?.id && dc) {
-        const addr = this.renderDiaChi(dc);
-        if (addr)
-          this.khAddrCache = {
-            ...this.khAddrCache,
-            [this.selectedKh.id]: addr,
-          };
-      }
-
-      this.persistActiveTab();
-      this.scheduleSyncHoaDon();
-    },
-
-    renderDiaChi(dc) {
-      if (!dc) return "";
-      const soNha =
-        dc.soNha || dc.diaChiCuThe || dc.diaChi || dc.diaChiChiTiet || "";
-      const xa = dc.xaPhuong || dc.phuongXa || dc.xa || "";
-      const huyen = dc.quanHuyen || dc.huyenQuan || dc.huyen || "";
-      const tinh = dc.tinhThanh || dc.thanhPho || dc.tinh || "";
-      const parts = [soNha, xa, huyen, tinh].filter((x) =>
-        String(x || "").trim(),
-      );
-      return parts.join(", ");
-    },
-
-    // ================== Voucher (auto best) ==================
-    scheduleAutoVoucher() {
-      if (this.voucherDebounce) clearTimeout(this.voucherDebounce);
-      this.voucherDebounce = setTimeout(async () => {
-        await this.loadBestVoucher();
-      }, 350);
-    },
-
-    async loadBestVoucher() {
-      if (this.voucherManual) {
-        this.persistActiveTab();
-        return;
-      }
-
-      this.autoVoucher = null;
-
-      const tong = Math.round(Number(this.tongTienHang || 0));
-      if (tong <= 0) {
-        this.persistActiveTab();
-        return;
-      }
-
-      this.loadingVoucher = true;
-      try {
-        await this.loadPublicVouchersIfNeeded();
-
-        const all = Array.isArray(this.voucherCache.all)
-          ? this.voucherCache.all
-          : [];
-        let candidates = [...all];
-
-        if (this.selectedKh?.id) {
-          const personal = await this.loadPersonalVouchersMaybe(
-            this.selectedKh.id,
-          );
-          if (Array.isArray(personal) && personal.length) {
-            const normalized = personal
-              .map((x) => {
-                if (x?.phieuGiamGia) {
-                  return {
-                    ...x.phieuGiamGia,
-                    __pggcnId:
-                      x.id || x.idPhieuGiamGiaCaNhan || x.idPggcn || null,
-                    __isPersonal: true,
-                  };
-                }
-                return { ...x, __isPersonal: true };
-              })
-              .filter(Boolean);
-
-            candidates = candidates.concat(normalized);
-          }
-        }
-
-        const best = this.pickBestVoucher(candidates, tong);
-        this.autoVoucher = best || null;
-      } catch (e) {
-        this.autoVoucher = null;
-      } finally {
-        this.loadingVoucher = false;
-        this.persistActiveTab();
-      }
-    },
-
-    async loadPublicVouchersIfNeeded() {
-      const now = Date.now();
-      if (
-        this.voucherCache.loadedAt &&
-        now - this.voucherCache.loadedAt < 60_000 &&
-        Array.isArray(this.voucherCache.all)
-      ) {
-        return;
-      }
-
-      const data = await SalesService.getVouchersPublic().catch(() => []);
-      this.voucherCache.all = Array.isArray(data) ? data : [];
-      this.voucherCache.loadedAt = now;
-    },
-
-    async loadPersonalVouchersMaybe(khachHangId) {
-      const now = Date.now();
-      if (
-        this.voucherCache.loadedAtPersonal &&
-        now - this.voucherCache.loadedAtPersonal < 30_000 &&
-        Array.isArray(this.voucherCache.personal) &&
-        this.voucherCache.personalKhId === khachHangId
-      ) {
-        return this.voucherCache.personal;
-      }
-
-      try {
-        const data = await SalesService.getVouchersPersonalByKhachHangId(
-          khachHangId,
-        ).catch(() => []);
-        this.voucherCache.personal = Array.isArray(data) ? data : [];
-        this.voucherCache.personalKhId = khachHangId;
-        this.voucherCache.loadedAtPersonal = now;
-        return this.voucherCache.personal;
-      } catch (e) {
-        this.voucherCache.personal = [];
-        this.voucherCache.personalKhId = khachHangId;
-        this.voucherCache.loadedAtPersonal = now;
-        return [];
-      }
-    },
-
-    pickBestVoucher(list, tongTien) {
-      if (!Array.isArray(list) || list.length === 0) return null;
-
-      let best = null;
-      let bestDiscount = 0;
-
-      for (const v of list) {
-        const discount = this.calcVoucherDiscount(v, tongTien);
-        if (discount > bestDiscount) {
-          bestDiscount = discount;
-          best = v;
-        }
-      }
-
-      return bestDiscount > 0 ? best : null;
-    },
-
-    calcVoucherDiscount(v, tongTien) {
-      const tong = Number(tongTien || 0);
-      if (!v || tong <= 0) return 0;
-
-      if (v.xoaMem === true || v.trangThai === false) return 0;
-
-      const remain = Number(v.soLuongSuDung ?? 0);
-      if (Number.isFinite(remain) && remain <= 0) return 0;
-
-      const min = Number(v.hoaDonToiThieu ?? 0);
-      if (Number.isFinite(min) && min > 0 && tong < min) return 0;
-
-      const today = this.todayYmd();
-      const start = this.toYmd(v.ngayBatDau);
-      const end = this.toYmd(v.ngayKetThuc);
-      if (start && today < start) return 0;
-      if (end && today > end) return 0;
-
-      const isPercent = v.loaiPhieuGiamGia === true;
-      const giaTri = Number(v.giaTriGiamGia ?? v.giaTriGiam ?? 0);
-      let discount = 0;
-
-      if (isPercent) {
-        const pct = Math.max(0, Math.min(100, giaTri));
-        discount = Math.round((tong * pct) / 100);
-
-        const cap = Number(v.soTienGiamToiDa ?? 0);
-        if (Number.isFinite(cap) && cap > 0) discount = Math.min(discount, cap);
-      } else {
-        discount = Math.round(Math.max(0, giaTri));
-      }
-
-      discount = Math.min(discount, tong);
-      return discount > 0 ? discount : 0;
-    },
-
-    // ================== Voucher manual ==================
-    async applyVoucherCode() {
-      const code = (this.voucherCode || "").trim();
-      if (!code) {
-        this.voucherManual = null;
-        this.showToast("Đã bỏ mã phiếu giảm giá.", "info");
-        this.scheduleAutoVoucher();
-        this.scheduleSyncHoaDon();
-        return;
-      }
-
-      try {
-        await this.loadPublicVouchersIfNeeded();
-
-        let candidates = Array.isArray(this.voucherCache.all)
-          ? [...this.voucherCache.all]
-          : [];
-
-        if (this.selectedKh?.id) {
-          const personal = await this.loadPersonalVouchersMaybe(
-            this.selectedKh.id,
-          );
-          if (Array.isArray(personal) && personal.length) {
-            const normalized = personal
-              .map((x) =>
-                x?.phieuGiamGia
-                  ? { ...x.phieuGiamGia, __pggcnId: x.id, __isPersonal: true }
-                  : { ...x, __isPersonal: true },
-              )
-              .filter(Boolean);
-            candidates = candidates.concat(normalized);
-          }
-        }
-
-        const found = candidates.find(
-          (v) =>
-            String(v.maPhieuGiamGia || v.ma || v.code || "").trim() === code,
-        );
-
-        if (!found) {
-          this.voucherManual = null;
-          this.showToast("Không tìm thấy mã phiếu giảm giá.", "error");
-          return;
-        }
-
-        const disc = this.calcVoucherDiscount(
-          found,
-          Math.round(this.tongTienHang || 0),
-        );
-        if (disc <= 0) {
-          this.voucherManual = null;
-          this.showToast(
-            "Mã không hợp lệ hoặc không đủ điều kiện áp dụng.",
-            "error",
-          );
-          return;
-        }
-
-        this.voucherManual = found;
-        this.autoVoucher = null;
-        this.showToast(`Đã áp dụng mã: ${code}`, "success");
-        this.persistActiveTab();
-        this.scheduleSyncHoaDon();
-      } catch (e) {
-        this.voucherManual = null;
-        this.showToast("Áp dụng mã thất bại (API đang lỗi).", "error");
-      }
-    },
-
-    // ================== Payment modal ==================
-    openPayModal() {
-      this.showPayModal = true;
-      this.payTienMatText = this.formatNumberText(this.payTienMat || 0);
-      this.payChuyenKhoanText = this.formatNumberText(this.payChuyenKhoan || 0);
-    },
-
-    closePayModal() {
-      this.blurActive();
-      this.showPayModal = false;
-    },
-
-    onPayTienMatInput(e) {
-      const raw = String(e?.target?.value || "");
-      const digits = raw.replace(/\D/g, "");
-      const n = digits ? Number(digits) : 0;
-      this.payTienMatText = n > 0 ? n.toLocaleString("vi-VN") : "";
-    },
-
-    onPayChuyenKhoanInput(e) {
-      const raw = String(e?.target?.value || "");
-      const digits = raw.replace(/\D/g, "");
-      const n = digits ? Number(digits) : 0;
-      this.payChuyenKhoanText = n > 0 ? n.toLocaleString("vi-VN") : "";
-    },
-
-    fillPayConLai(target) {
-      const total = Math.round(Number(this.tongPhaiTra || 0));
-      if (total <= 0) return;
-
-      const tienMat = this.payTienMatNum;
-      const chuyenKhoan = this.payChuyenKhoanNum;
-
-      if (target === "TIEN_MAT") {
-        const remain = Math.max(0, total - chuyenKhoan);
-        this.payTienMatText = remain > 0 ? remain.toLocaleString("vi-VN") : "";
-      } else {
-        const remain = Math.max(0, total - tienMat);
-        this.payChuyenKhoanText =
-          remain > 0 ? remain.toLocaleString("vi-VN") : "";
-      }
-    },
-
-    confirmPay() {
-      const tienMat = this.payTienMatNum;
-      const chuyenKhoan = this.payChuyenKhoanNum;
-      const total = tienMat + chuyenKhoan;
-
-      if (total <= 0) {
-        this.showToast("Vui lòng nhập số tiền thanh toán.", "error");
-        return;
-      }
-
-      this.payTienMat = tienMat;
-      this.payChuyenKhoan = chuyenKhoan;
-      this.payMaThamChieu = (this.payMaThamChieu || "").trim();
-
-      this.khachThanhToan = total;
-
-      if (tienMat > 0 && chuyenKhoan > 0) this.payMethod = "KET_HOP";
-      else if (chuyenKhoan > 0) this.payMethod = "CHUYEN_KHOAN";
-      else this.payMethod = "TIEN_MAT";
-
-      this.blurActive();
-      this.showPayModal = false;
-      this.persistActiveTab();
-      this.scheduleSyncHoaDon();
-    },
-
-    // ================== Ship fee input ==================
-    onShipFeeInput(e) {
-      const raw = String(e?.target?.value || "");
-      const digits = raw.replace(/\D/g, "");
-      const n = digits ? Number(digits) : 0;
-      this.phiVanChuyen = n;
-      this.phiVanChuyenText = n > 0 ? n.toLocaleString("vi-VN") : "0";
-      this.scheduleSyncHoaDon();
-    },
-
-    // ================== Submit ==================
-    async submitOrder() {
-      if (!this.canSubmit) return;
-
-      for (const it of this.cartItems) {
-        const qty = Number(it.qty || 0);
-        if (!Number.isFinite(qty) || qty < 1) {
-          this.showToast("Số lượng mua không hợp lệ.", "error");
-          return;
-        }
-
-        const max = this.getMaxQtyForItem(it);
-        if (qty > max) {
-          this.showToast(`Sản phẩm ${it.maCtsp || ""} vượt tồn kho.`, "error");
-          it.qty = Math.max(1, max);
-          return;
-        }
-      }
-
-      this.submitting = true;
-      try {
-        const idHoaDon = await this.ensureHoaDonChoTab();
-        await this.syncHoaDonToDb({ silent: false });
-
-        if (!this.isCounter) {
-          const noteBase = "Chốt đơn tại quầy";
-
-          if (this.payMethod === "KET_HOP") {
-            if (
-              Number(this.khachThanhToan || 0) !== Number(this.tongPhaiTra || 0)
-            ) {
-              this.showToast(
-                "Kết hợp: tổng tiền mặt + chuyển khoản phải đúng bằng tổng phải trả.",
-                "error",
-              );
-              this.openPayModal();
-              return;
-            }
-
-            const body = {
-              ghiChu: noteBase,
-              thanhToans: [
-                ...(this.payTienMatNum > 0
-                  ? [{ tenPhuongThuc: "Tiền mặt", soTien: this.payTienMatNum }]
-                  : []),
-                ...(this.payChuyenKhoanNum > 0
-                  ? [
-                      {
-                        tenPhuongThuc: "Chuyển khoản",
-                        soTien: this.payChuyenKhoanNum,
-                        maThamChieu: (this.payMaThamChieu || "").trim() || null,
-                      },
-                    ]
-                  : []),
-              ],
-            };
-
-            const done = await apiClient.put(
-              `/api/admin/hoa-don/${idHoaDon}/confirm-tai-quay-ket-hop`,
-              body,
-            );
-            const finalHd = done?.data || { id: idHoaDon };
-
-            this.showToast("Đã chốt đơn tại quầy.", "success");
-            this.goToHoaDon(finalHd);
-            this.resetActiveTabAfterSubmit();
-            return;
-          }
-
-          if (this.payMethod === "CHUYEN_KHOAN") {
-            if (
-              Number(this.khachThanhToan || 0) !== Number(this.tongPhaiTra || 0)
-            ) {
-              this.showToast(
-                "Chuyển khoản: số tiền phải đúng bằng tổng phải trả.",
-                "error",
-              );
-              this.openPayModal();
-              return;
-            }
-
-            const done = await apiClient.put(
-              `/api/admin/hoa-don/${idHoaDon}/confirm-tai-quay-chuyen-khoan`,
-              {
-                ghiChu: "Chốt đơn tại quầy - chuyển khoản",
-              },
-            );
-            const finalHd = done?.data || { id: idHoaDon };
-
-            this.showToast("Đã chốt đơn tại quầy.", "success");
-            this.goToHoaDon(finalHd);
-            this.resetActiveTabAfterSubmit();
-            return;
-          }
-
-          if (
-            Number(this.khachThanhToan || 0) < Number(this.tongPhaiTra || 0)
-          ) {
-            this.showToast("Tiền mặt: khách thanh toán chưa đủ.", "error");
-            this.openPayModal();
-            return;
-          }
-
-          const done = await apiClient.put(
-            `/api/admin/hoa-don/${idHoaDon}/confirm-tai-quay-tien-mat`,
-            {
-              ghiChu: "Chốt đơn tại quầy - tiền mặt",
-            },
-          );
-          const finalHd = done?.data || { id: idHoaDon };
-
-          this.showToast("Đã chốt đơn tại quầy.", "success");
-          this.goToHoaDon(finalHd);
-          this.resetActiveTabAfterSubmit();
-          return;
-        }
-
-        this.showToast("Đã lưu đơn giao hàng.", "success");
-        this.goToHoaDon({ id: idHoaDon });
-        this.resetActiveTabAfterSubmit();
-      } catch (e) {
-        const msg =
-          e?.response?.data?.message ||
-          "Xác nhận đơn thất bại. Vui lòng kiểm tra lại.";
-        this.showToast(msg, "error");
-      } finally {
-        this.submitting = false;
-      }
-    },
-
-    goToHoaDon(created) {
-      const id = created?.id;
-      try {
-        if (id != null) {
-          this.$router.push(`/admin/hoa-don/${id}`);
-        } else {
-          this.$router.push(`/admin/hoa-don`);
-        }
-      } catch (e) {
-        try {
-          this.$router.push(`/admin/hoa-don`);
-        } catch (e2) {}
-      }
-    },
-
-    resetActiveTabAfterSubmit() {
-      const t = this.tabs[this.activeTab];
-      if (!t) return;
-
-      t.hoaDonId = null;
-
-      t.isCounter = false;
-      t.cartItems = [];
-      t.selectedKh = null;
-      t.diaChiList = [];
-      t.selectedDiaChi = null;
-      t.autoVoucher = null;
-      t.voucherManual = null;
-      t.voucherCode = "";
-
-      t.khachThanhToan = 0;
-      t.payMethod = "TIEN_MAT";
-      t.payTienMat = 0;
-      t.payChuyenKhoan = 0;
-      t.payMaThamChieu = "";
-
-      t.guest = {
-        tenKhachHang: "",
-        soDienThoai: "",
-        diaChiCuThe: "",
-        tinhThanh: "",
-        huyenQuan: "",
-        xaPhuong: "",
-      };
-      t.phiVanChuyen = 0;
-      t.phiVanChuyenText = "0";
-
-      this.applyTabState(t);
-      this.persistTabs();
-      this.scheduleAutoVoucher();
-    },
-  },
-};
+    }
+  } else {
+    // sang tại quầy: bỏ địa chỉ + ship
+    kh.selectedDiaChi.value = null;
+    kh.diaChiList.value = [];
+    pay.phiVanChuyen.value = 0;
+    pay.phiVanChuyenText.value = "0";
+  }
+
+  persistActiveTab();
+  scheduleSyncHoaDon();
+});
+
+/* =========================
+   LOGIN USER
+========================= */
+function normalizeNguoiBan(u) {
+  if (!u || typeof u !== "object") return null;
+  const id = u.idNhanVien || u.nhanVienId || u.id || u.userId || u.nhanVien?.id || null;
+  const hoTen = u.hoTen || u.tenNhanVien || u.ten || u.fullName || u.name || u.username || "";
+  return { id, hoTen, role: u.role || u.quyen || null };
+}
+
+function getNguoiBanDangNhap() {
+  const tryParse = (raw) => tienIch.safeParse(raw || "null", null);
+
+  const prefer = tryParse(localStorage.getItem("ss_nguoi_ban"));
+  if (prefer) return prefer;
+
+  const u1 = tryParse(localStorage.getItem("user"));
+  if (u1) return normalizeNguoiBan(u1);
+
+  const u2 = tryParse(sessionStorage.getItem("ss_nguoi_ban"));
+  if (u2) return u2;
+
+  const u3 = tryParse(sessionStorage.getItem("user"));
+  if (u3) return normalizeNguoiBan(u3);
+
+  return null;
+}
+
+/* =========================
+   MOUNT / UNMOUNT
+========================= */
+onMounted(async () => {
+  tabsApi.khoiTaoAutoClearVaSyncStorage();
+
+  nguoiBan.value = getNguoiBanDangNhap();
+
+  // restore tồn local
+  tonKho.restoreCtspBaseQtyMap();
+
+  // restore tabs
+  tabsApi.khoiPhucTabsTuLocal();
+
+  await sp.ensureBaseQtyIfCartHasItems();
+  await sp.capNhatDotGiamGiaChoGioHang();
+  scheduleAutoVoucher();
+
+  if (hasOrders.value) scheduleSyncHoaDon();
+});
+
+onBeforeUnmount(() => {
+  try {
+    qr.stopQr?.();
+  } catch (e) {}
+  try {
+    document.body.style.overflow = "";
+  } catch (e) {}
+});
+
+/* =========================
+   HÀM PHỤ CHO TEMPLATE
+========================= */
+function getVoucherLabel(v) {
+  if (!v) return "";
+
+  const code = v.maPhieuGiamGia || v.ma || v.code || "";
+  const giaTriRaw = Number(v.giaTriGiamGia ?? v.giaTriGiam ?? 0);
+
+  // ✅ dùng đúng rule giống composable:
+  // false/0 => % ; true/1 => tiền
+  const isPercent = typeof pay?.isVoucherPercent === "function" ? pay.isVoucherPercent(v) : (() => {
+    const raw = v?.loaiPhieuGiamGia;
+    if (raw === false || raw === 0 || raw === "0") return true;
+    if (raw === true || raw === 1 || raw === "1") return false;
+    const s = String(raw ?? "").trim().toLowerCase();
+    if (s === "false" || s === "0") return true;
+    if (s === "true" || s === "1") return false;
+    const n = Number(giaTriRaw || 0);
+    if (Number.isFinite(n) && n > 100) return false;
+    return true;
+  })();
+
+  const normalizePct = (x) => {
+    let n = Number(x ?? 0);
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    if (n > 0 && n <= 1) n = n * 100;
+    n = Math.round(n);
+    return Math.max(0, Math.min(100, n));
+  };
+
+  if (code && isPercent) return `${code} (${normalizePct(giaTriRaw)}%)`;
+  if (code && !isPercent) return `${code} (${tienIch.formatMoney(giaTriRaw)})`;
+  if (code) return code;
+
+  if (isPercent) return `${normalizePct(giaTriRaw)}%`;
+  return tienIch.formatMoney(giaTriRaw);
+}
+
+/* =========================
+   ALIAS ĐÚNG TÊN TEMPLATE (để khỏi sửa template)
+========================= */
+// money
+const formatMoney = tienIch.formatMoney;
+
+// tabs
+const tabItemCount = tabsApi.tabItemCount;
+const createOrderTab = tabsApi.createOrderTab;
+const switchTab = tabsApi.switchTab;
+const closeTab = tabsApi.closeTab;
+
+// sản phẩm
+const showCtspModal = sp.showCtspModal;
+const openCtspModal = sp.openCtspModal;
+const closeCtspModal = sp.closeCtspModal;
+
+const ctspFilter = sp.ctspFilter;
+const filteredCtsp = sp.filteredCtsp;
+const ctspPage = sp.ctspPage;
+const ctspPageSize = sp.ctspPageSize;
+const ctspTotalPages = sp.ctspTotalPages;
+const pagedCtsp = sp.pagedCtsp;
+
+const ctspMauSacOptions = sp.ctspMauSacOptions;
+const ctspKichCoOptions = sp.ctspKichCoOptions;
+const ctspSanPhamOptions = sp.ctspSanPhamOptions;
+
+const ctspPickQty = sp.ctspPickQty;
+
+const resolveImage = sp.resolveImage;
+const onImgErr = sp.onImgErr;
+
+const getGiaGoc = sp.getGiaGoc;
+const getGiaThucTe = sp.getGiaThucTe;
+const showGiaGoc = sp.showGiaGoc;
+
+const getPhanTramGiamDisplay = sp.getPhanTramGiamDisplay;
+const getGiamGiaTitle = sp.getGiamGiaTitle;
+
+const getMaxQtyForItem = sp.getMaxQtyForItem;
+const incQty = sp.incQty;
+const decQty = sp.decQty;
+const onQtyInput = sp.onQtyInput;
+const onQtyBlur = sp.onQtyBlur;
+const removeItem = sp.removeItem;
+
+const onCtspPickQtyInput = sp.onCtspPickQtyInput;
+const pickCtsp = sp.pickCtsp;
+const resetCtspFilter = sp.resetCtspFilter;
+
+// QR
+const showQrModal = qr.showQrModal;
+const qrError = qr.qrError;
+const openQrModal = qr.openQrModal;
+const closeQrModal = qr.closeQrModal;
+const restartQr = qr.restartQr;
+
+// khách hàng
+const showKhModal = kh.showKhModal;
+const khLoading = kh.khLoading;
+const khErr = kh.khErr;
+const khList = kh.khList;
+const khFilter = kh.khFilter;
+const filteredKh = kh.filteredKh;
+
+const selectedKh = kh.selectedKh;
+const guest = kh.guest;
+const tinhOptions = kh.tinhOptions;
+const huyenOptions = kh.huyenOptions;
+const xaOptions = kh.xaOptions;
+
+const showDiaChiModal = kh.showDiaChiModal;
+const dcLoading = kh.dcLoading;
+const dcErr = kh.dcErr;
+const diaChiList = kh.diaChiList;
+const selectedDiaChi = kh.selectedDiaChi;
+
+const khAddrCache = kh.khAddrCache;
+
+const getKhName = kh.getKhName;
+const getKhPhone = kh.getKhPhone;
+const getKhEmail = kh.getKhEmail;
+const renderDiaChi = kh.renderDiaChi;
+const renderKhDiaChi = kh.renderKhDiaChi;
+
+const onGuestPhoneInput = kh.onGuestPhoneInput;
+const chonKhachVangLai = kh.chonKhachVangLai;
+
+const openKhModal = kh.openKhModal;
+const closeKhModal = kh.closeKhModal;
+const reloadKh = kh.reloadKh;
+const pickKh = kh.pickKh;
+
+const openDiaChiModal = kh.openDiaChiModal;
+const closeDiaChiModal = kh.closeDiaChiModal;
+const pickDiaChi = kh.pickDiaChi;
+
+// voucher + thanh toán
+const voucherCode = pay.voucherCode;
+const voucherManual = pay.voucherManual;
+const effectiveVoucher = pay.effectiveVoucher;
+const voucherValueText = pay.voucherValueText;
+const giamGia = pay.giamGia;
+
+const phiVanChuyenText = pay.phiVanChuyenText;
+const phiVanChuyenNum = pay.phiVanChuyenNum;
+const onShipFeeInput = pay.onShipFeeInput;
+
+const tongPhaiTra = pay.tongPhaiTra;
+const khachThanhToan = pay.khachThanhToan;
+const tienThieu = pay.tienThieu;
+
+const applyVoucherCode = pay.applyVoucherCode;
+
+const showPayModal = pay.showPayModal;
+const payMethod = pay.payMethod;
+
+const payTienMatText = pay.payTienMatText;
+const payChuyenKhoanText = pay.payChuyenKhoanText;
+const payTienMatNum = pay.payTienMatNum;
+const payChuyenKhoanNum = pay.payChuyenKhoanNum;
+const payTotalNum = pay.payTotalNum;
+
+const payMaThamChieu = pay.payMaThamChieu;
+
+const openPayModal = pay.openPayModal;
+function closePayModal() {
+  pay.closePayModal(tienIch.blurActive);
+}
+function confirmPay() {
+  pay.confirmPay(tienIch.blurActive);
+}
+const onPayTienMatInput = pay.onPayTienMatInput;
+const onPayChuyenKhoanInput = pay.onPayChuyenKhoanInput;
+const fillPayConLai = pay.fillPayConLai;
+
+// submit confirm modal
+const showSubmitConfirmModal = hd.showSubmitConfirmModal;
+function openSubmitConfirm() {
+  hd.openSubmitConfirm(canSubmit);
+}
+const closeSubmitConfirm = hd.closeSubmitConfirm;
+async function confirmSubmitOrder() {
+  await hd.confirmSubmitOrder(() => hd.submitOrder(canSubmit, pay));
+}
 </script>
 
 <style scoped>
@@ -4073,11 +1745,7 @@ export default {
 
 /* Buttons */
 .ss-btn-primary {
-  background: linear-gradient(
-    90deg,
-    rgba(153, 27, 27, 0.95),
-    rgba(17, 24, 39, 0.95)
-  );
+  background: linear-gradient(90deg, rgba(153, 27, 27, 0.95), rgba(17, 24, 39, 0.95));
   border: none;
   color: #fff;
   border-radius: 12px;
@@ -4554,11 +2222,7 @@ export default {
   border-bottom: 1px solid rgba(17, 24, 39, 0.1);
 }
 .ss-pay-head {
-  background: linear-gradient(
-    90deg,
-    rgba(153, 27, 27, 0.08),
-    rgba(17, 24, 39, 0.05)
-  );
+  background: linear-gradient(90deg, rgba(153, 27, 27, 0.08), rgba(17, 24, 39, 0.05));
 }
 .ss-modal-title {
   font-size: 14px;
