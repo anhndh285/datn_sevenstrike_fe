@@ -4,7 +4,7 @@
       <div class="filter-header">
         <h3>Bộ lọc tìm kiếm</h3>
         <button class="btn-icon-bg" title="Xóa bộ lọc" @click="resetFilter">
-          <i class="fa-solid fa-filter-circle-xmark"></i>
+          <span><i class="fa-solid fa-filter-circle-xmark"></i></span>
         </button>
       </div>
 
@@ -12,35 +12,23 @@
         <div class="form-group filter-col">
           <label>Tìm kiếm chung</label>
           <div class="search-input-wrapper">
-            <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input 
-              type="text" 
-              class="form-control pl-35" 
-              placeholder="Nhập tên ca, mã ca..." 
-              v-model="filters.keyword"
-            />
+            <span><i class="fa-solid fa-magnifying-glass search-icon"></i></span>
+            <input type="text" class="form-control pl-35" placeholder="Nhập tên ca, mã ca..."
+              v-model="filters.keyword" />
           </div>
         </div>
 
         <div class="form-group filter-col">
           <label>Thời gian bắt đầu</label>
           <div class="time-input-wrapper">
-            <input 
-              type="time" 
-              class="form-control" 
-              v-model="filters.gioBatDau"
-            />
+            <input type="time" class="form-control" v-model="filters.gioBatDau" />
           </div>
         </div>
 
         <div class="form-group filter-col">
           <label>Thời gian kết thúc</label>
           <div class="time-input-wrapper">
-            <input 
-              type="time" 
-              class="form-control" 
-              v-model="filters.gioKetThuc"
-            />
+            <input type="time" class="form-control" v-model="filters.gioKetThuc" />
           </div>
         </div>
 
@@ -67,13 +55,13 @@
     <div class="card-box mt-20">
       <div class="table-header-row">
         <h3>Danh sách Ca làm việc</h3>
-        
+
         <div class="action-buttons">
-          <button class="btn-circle btn-success" @click="openModal(null)" title="Thêm mới">
-            <i class="fa-solid fa-plus"></i>
+          <button v-if="hasPermission" class="btn-circle btn-success" @click="openModal(null)" title="Thêm mới">
+            <span><i class="fa-solid fa-plus"></i></span>
           </button>
           <button class="btn-circle btn-light" @click="loadData" title="Làm mới">
-            <i class="fa-solid fa-rotate-right"></i>
+            <span><i class="fa-solid fa-rotate-right"></i></span>
           </button>
         </div>
       </div>
@@ -96,7 +84,7 @@
               <td>
                 <div class="shift-info">
                   <div class="shift-icon">
-                    <i class="fa-regular fa-clock"></i>
+                    <span><i class="fa-regular fa-clock"></i></span>
                   </div>
                   <div class="shift-details">
                     <span class="shift-name">{{ ca.tenCa }}</span>
@@ -112,17 +100,14 @@
               </td>
               <td class="text-center">
                 <label class="switch">
-                  <input type="checkbox" v-model="ca.trangThai" @change="toggleTrangThai(ca)">
+                  <input type="checkbox" v-model="ca.trangThai" :disabled="!hasPermission"
+                    @change="toggleTrangThai(ca)">
                   <span class="slider round"></span>
                 </label>
               </td>
               <td class="text-center action-col">
-                <button class="ss-icon-btn-view" type="button" @click="openModal(ca)" title="Xem / Sửa">
+                <button class="ss-icon-btn-view" type="button" @click="openModal(ca)">
                   <span class="material-icons-outlined">visibility</span>
-                </button>
-
-                <button class="ss-icon-btn-danger" type="button" @click="deleteCa(ca.id)" title="Xóa">
-                  <span class="fa-solid fa-trash"></span>
                 </button>
               </td>
             </tr>
@@ -145,69 +130,61 @@
         <div class="modal-body">
           <div class="form-group mb-15">
             <label>Tên ca <span class="text-danger">*</span></label>
-            <input 
-              type="text" 
-              class="form-control" 
-              v-model="form.tenCa" 
-              placeholder="VD: Ca Sáng, Ca Chiều..." 
-            />
+            <input type="text" class="form-control" v-model="form.tenCa" placeholder="VD: Ca Sáng, Ca Chiều..." />
           </div>
 
           <div class="row-flex mb-15">
             <div class="form-group flex-1 mr-10">
               <label>Giờ bắt đầu</label>
-              <input 
-                type="time" 
-                lang="en-GB" class="form-control" 
-                v-model="form.gioBatDau" 
-              />
+              <input type="time" lang="en-GB" class="form-control" v-model="form.gioBatDau" />
             </div>
             <div class="form-group flex-1">
               <label>Giờ kết thúc</label>
-              <input 
-                type="time" 
-                lang="en-GB" class="form-control" 
-                v-model="form.gioKetThuc" 
-              />
+              <input type="time" lang="en-GB" class="form-control" v-model="form.gioKetThuc" />
             </div>
           </div>
 
           <div class="form-group mb-15">
             <label>Mô tả</label>
-            <textarea 
-              class="form-control textarea" 
-              v-model="form.moTa" 
-              rows="3" 
-              placeholder="Ghi chú thêm về ca làm việc..."
-            ></textarea>
-          </div>
-
-          <div class="form-group" v-if="isEditing">
-            <label>Trạng thái</label>
-            <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-              <label class="switch">
-                <input type="checkbox" v-model="form.trangThai">
-                <span class="slider round"></span>
-              </label>
-              <span class="text-status">{{ form.trangThai ? 'Đang hoạt động' : 'Ngưng hoạt động' }}</span>
-            </div>
+            <textarea class="form-control textarea" v-model="form.moTa" rows="3"
+              placeholder="Ghi chú thêm về ca làm việc..."></textarea>
           </div>
         </div>
 
         <div class="modal-footer">
           <button class="btn-cancel" type="button" @click="closeModal">Hủy bỏ</button>
-          <button class="btn-save" type="button" @click="handleSubmit">
+          <button v-if="hasPermission" class="btn-save" type="button" @click="handleSubmit">
             {{ isEditing ? 'Lưu' : 'Thêm mới' }}
           </button>
         </div>
       </div>
     </div>
-  </div> 
+  </div>
 </template>
 
 <script setup>
 import { createCaLam, getAllCaLam, updateCaLam } from '@/services/lich_lam_viec/ca_lamService';
+import { computed } from 'vue';
 import { ref, reactive, onMounted } from 'vue';
+
+const getUser = () => {
+  const raw = localStorage.getItem("user") || sessionStorage.getItem("user") ||
+    localStorage.getItem("nguoiDung") || sessionStorage.getItem("nguoiDung");
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+};
+
+const hasPermission = computed(() => {
+  const u = getUser();
+  const role = u?.role || u?.quyen || u?.vaiTro || u?.tenVaiTro;
+
+  if (role === "NHAN_VIEN") {
+    return false;
+  }
+
+
+  return true;
+});
 
 const showModal = ref(false);
 const isEditing = ref(false);
@@ -251,12 +228,12 @@ const openModal = (ca) => {
   if (ca) {
     isEditing.value = true;
     currentId.value = ca.id;
-    
+
     form.tenCa = ca.tenCa || '';
-    
+
     form.gioBatDau = ca.gioBatDau ? String(ca.gioBatDau).substring(0, 5) : '';
     form.gioKetThuc = ca.gioKetThuc ? String(ca.gioKetThuc).substring(0, 5) : '';
-    
+
     form.moTa = ca.moTa || '';
     form.trangThai = ca.trangThai !== undefined ? ca.trangThai : true;
   } else {
@@ -292,33 +269,45 @@ const handleSubmit = async () => {
   try {
     if (isEditing.value) {
       await updateCaLam(currentId.value, payload);
-      console.log('Gọi API CẬP NHẬT với payload:', payload, 'ID:', currentId.value);
-      // await caLamService.updateCaLam(currentId.value, payload);
       alert('Cập nhật thành công!');
     } else {
       await createCaLam(payload);
-      // await caLamService.createCaLam(payload);
       alert('Thêm mới thành công!');
     }
-    
+
     closeModal();
-    loadData(); // Tải lại danh sách
+    loadData();
   } catch (error) {
     console.error('Lỗi khi lưu ca làm việc:', error);
     alert('Có lỗi xảy ra, vui lòng thử lại.');
   }
 };
 
-const deleteCa = (id) => {
-  if(confirm("Bạn có chắc chắn muốn xóa ca làm việc này?")) {
-    console.log("Xóa ca ID:", id);
-    // Gọi API xóa...
-  }
-};
 
-const toggleTrangThai = (ca) => {
-  console.log(`Đổi trạng thái ca ${ca.id} thành: ${ca.trangThai}`);
-  // Gọi API cập nhật trạng thái...
+const toggleTrangThai = async (ca) => {
+  const trangThaiCu = !ca.trangThai;
+  const hanhDong = ca.trangThai ? 'kích hoạt' : 'ngưng kích hoạt';
+
+  const xacNhan = confirm(`Bạn có chắc chắn muốn ${hanhDong} ca làm việc "${ca.tenCa}" không?`);
+
+  if (xacNhan) {
+    try {
+      const payload = {
+        ...ca,
+        gioBatDau: ca.gioBatDau.length === 5 ? `${ca.gioBatDau}:00` : ca.gioBatDau,
+        gioKetThuc: ca.gioKetThuc.length === 5 ? `${ca.gioKetThuc}:00` : ca.gioKetThuc
+      };
+
+      await updateCaLam(ca.id, payload);
+      alert(`Đã ${hanhDong.toLowerCase()} ca làm việc thành công!`);
+    } catch (error) {
+      ca.trangThai = trangThaiCu;
+      console.error('Lỗi khi cập nhật trạng thái:', error);
+      alert('Không thể cập nhật trạng thái. Vui lòng thử lại sau.');
+    }
+  } else {
+    ca.trangThai = trangThaiCu;
+  }
 };
 
 onMounted(() => {
@@ -342,13 +331,26 @@ onMounted(() => {
   border: 1px solid #f3f4f6;
 }
 
-.mt-20 { margin-top: 20px; }
-.mt-10 { margin-top: 10px; }
-.text-center { text-align: center; }
-.py-4 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.mt-20 {
+  margin-top: 20px;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.py-4 {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
 
 /* Filter Header */
-.filter-header, .table-header-row {
+.filter-header,
+.table-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -357,7 +359,8 @@ onMounted(() => {
   margin-bottom: 15px;
 }
 
-.filter-header h3, .table-header-row h3 {
+.filter-header h3,
+.table-header-row h3 {
   font-size: 16px;
   font-weight: 600;
   color: #111827;
@@ -377,6 +380,7 @@ onMounted(() => {
   justify-content: center;
   transition: all 0.2s;
 }
+
 .btn-icon-bg:hover {
   background: #e5e7eb;
   color: #111827;
@@ -412,6 +416,7 @@ onMounted(() => {
   color: #1f2937;
   transition: border-color 0.2s;
 }
+
 .form-control:focus {
   outline: none;
   border-color: #10b981;
@@ -421,6 +426,7 @@ onMounted(() => {
 .search-input-wrapper {
   position: relative;
 }
+
 .search-icon {
   position: absolute;
   left: 12px;
@@ -428,7 +434,10 @@ onMounted(() => {
   transform: translateY(-50%);
   color: #9ca3af;
 }
-.pl-35 { padding-left: 35px; }
+
+.pl-35 {
+  padding-left: 35px;
+}
 
 /* Radio Buttons Custom */
 .radio-group {
@@ -437,6 +446,7 @@ onMounted(() => {
   height: 40px;
   align-items: center;
 }
+
 .radio-container {
   display: flex;
   align-items: center;
@@ -447,11 +457,13 @@ onMounted(() => {
   user-select: none;
   color: #374151;
 }
+
 .radio-container input {
   position: absolute;
   opacity: 0;
   cursor: pointer;
 }
+
 .checkmark {
   position: absolute;
   top: 50%;
@@ -463,17 +475,21 @@ onMounted(() => {
   border: 1px solid #d1d5db;
   border-radius: 50%;
 }
+
 .radio-container input:checked ~ .checkmark {
   border-color: #10b981;
 }
+
 .checkmark:after {
   content: "";
   position: absolute;
   display: none;
 }
+
 .radio-container input:checked ~ .checkmark:after {
   display: block;
 }
+
 .radio-container .checkmark:after {
   top: 3px;
   left: 3px;
@@ -488,6 +504,7 @@ onMounted(() => {
   display: flex;
   gap: 10px;
 }
+
 .btn-circle {
   width: 36px;
   height: 36px;
@@ -501,16 +518,31 @@ onMounted(() => {
   font-size: 14px;
   transition: all 0.2s;
 }
-.btn-success { background-color: #10b981; }
-.btn-success:hover { background-color: #059669; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
-.btn-light { background-color: #f3f4f6; color: #4b5563; }
-.btn-light:hover { background-color: #e5e7eb; }
+
+.btn-success {
+  background-color: #ff4d4f;
+}
+
+.btn-success:hover {
+  background-color: #ff4d4f;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.btn-light {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.btn-light:hover {
+  background-color: #e5e7eb;
+}
 
 /* Table Styling */
 table {
   width: 100%;
   border-collapse: collapse;
 }
+
 th {
   font-weight: 600;
   color: #374151;
@@ -519,13 +551,17 @@ th {
   border-bottom: 1px solid #e5e7eb;
   background-color: #f9fafb;
 }
+
 td {
   padding: 14px 12px;
   border-bottom: 1px solid #f3f4f6;
   font-size: 14px;
   vertical-align: middle;
 }
-tbody tr:hover { background-color: #f9fafb; }
+
+tbody tr:hover {
+  background-color: #f9fafb;
+}
 
 /* Shift Info Cell */
 .shift-info {
@@ -533,6 +569,7 @@ tbody tr:hover { background-color: #f9fafb; }
   align-items: center;
   gap: 12px;
 }
+
 .shift-icon {
   width: 36px;
   height: 36px;
@@ -544,12 +581,22 @@ tbody tr:hover { background-color: #f9fafb; }
   justify-content: center;
   font-size: 16px;
 }
+
 .shift-details {
   display: flex;
   flex-direction: column;
 }
-.shift-name { font-weight: 600; color: #111827; margin-bottom: 2px; }
-.shift-code { font-size: 12px; color: #6b7280; }
+
+.shift-name {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.shift-code {
+  font-size: 12px;
+  color: #6b7280;
+}
 
 /* Time Badges */
 .time-badge {
@@ -558,10 +605,12 @@ tbody tr:hover { background-color: #f9fafb; }
   font-weight: 600;
   font-size: 13px;
 }
+
 .time-badge.start {
   background-color: #d1fae5;
   color: #059669;
 }
+
 .time-badge.end {
   background-color: #fee2e2;
   color: #dc2626;
@@ -574,26 +623,50 @@ tbody tr:hover { background-color: #f9fafb; }
   width: 44px;
   height: 24px;
 }
-.switch input { opacity: 0; width: 0; height: 0; }
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
 .slider {
   position: absolute;
   cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: #cbd5e1;
   transition: .4s;
 }
+
 .slider:before {
   position: absolute;
   content: "";
-  height: 18px; width: 18px;
-  left: 3px; bottom: 3px;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
   background-color: white;
   transition: .4s;
 }
-input:checked + .slider { background-color: #10b981; }
-input:checked + .slider:before { transform: translateX(20px); }
-.slider.round { border-radius: 34px; }
-.slider.round:before { border-radius: 50%; }
+
+input:checked + .slider {
+  background-color: #10b981;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
 
 /* Action Icons in Table */
 .action-icon-btn {
@@ -605,13 +678,25 @@ input:checked + .slider:before { transform: translateX(20px); }
   padding: 4px;
   border-radius: 4px;
 }
-.action-icon-btn:hover { background: #f3f4f6; }
-.text-warning { color: #d97706; }
-.text-danger { color: #dc2626; }
+
+.action-icon-btn:hover {
+  background: #f3f4f6;
+}
+
+.text-warning {
+  color: #d97706;
+}
+
+.text-danger {
+  color: #dc2626;
+}
 
 .modal-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(17, 24, 39, 0.4);
   display: flex;
   align-items: center;
@@ -631,8 +716,15 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-header {
@@ -667,11 +759,26 @@ input:checked + .slider:before { transform: translateX(20px); }
   padding: 20px;
 }
 
-.mb-15 { margin-bottom: 15px; }
-.text-danger { color: #ef4444; }
-.row-flex { display: flex; align-items: flex-end; }
-.flex-1 { flex: 1; }
-.mr-10 { margin-right: 10px; }
+.mb-15 {
+  margin-bottom: 15px;
+}
+
+.text-danger {
+  color: #ef4444;
+}
+
+.row-flex {
+  display: flex;
+  align-items: flex-end;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.mr-10 {
+  margin-right: 10px;
+}
 
 .textarea {
   resize: vertical;
@@ -710,7 +817,8 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 .btn-save {
   padding: 8px 16px;
-  background: #10b981;
+  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
+  box-shadow: 0 10px 18px rgba(255, 77, 79, 0.16);
   border: none;
   border-radius: 6px;
   color: white;

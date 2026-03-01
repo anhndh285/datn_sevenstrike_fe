@@ -125,7 +125,7 @@
 
           <div v-else class="ss-cart-list">
             <div v-for="it in cartItems" :key="it.id" class="ss-cart-item">
-              <input class="ss-cart-check" type="checkbox" v-model="it.checked" />
+              <input class="ss-cart-check" type="checkbox" v-model="it.checked" :disabled="!hasPermission" />
 
               <div class="ss-cart-thumb thumb-wrap">
                 <img
@@ -171,7 +171,7 @@
                   class="ss-qty-btn"
                   type="button"
                   @click="decQty(it)"
-                  :disabled="Number(it.qty || 1) <= 1"
+                  :disabled="Number(it.qty || 1) <= 1 || !hasPermission"
                 >
                   -
                 </button>
@@ -181,6 +181,7 @@
                   type="text"
                   :value="String(it.qty || 1)"
                   :title="`Tối đa: ${getMaxQtyForItem(it)}`"
+                  :disabled="!hasPermission"
                   @input="onQtyInput(it, $event)"
                   @blur="onQtyBlur(it)"
                 />
@@ -189,7 +190,7 @@
                   class="ss-qty-btn"
                   type="button"
                   @click="incQty(it)"
-                  :disabled="Number(it.qty || 1) >= getMaxQtyForItem(it)"
+                  :disabled="Number(it.qty || 1) >= getMaxQtyForItem(it) || !hasPermission"
                   :title="
                     Number(it.qty || 1) >= getMaxQtyForItem(it)
                       ? 'Đã đạt tồn tối đa'
@@ -200,7 +201,7 @@
                 </button>
               </div>
 
-              <button class="ss-trash" type="button" title="Xóa" @click="removeItem(it.id)">
+              <button class="ss-trash" type="button" title="Xóa" @click="removeItem(it.id)" :disabled="!hasPermission">
                 <span class="material-icons-outlined">delete</span>
               </button>
             </div>
@@ -299,6 +300,7 @@
                         v-model.trim="guest.tenKhachHang"
                         class="form-control ss-input"
                         placeholder="Nhập tên khách..."
+                        :disabled="!hasPermission"
                       />
                     </div>
 
@@ -309,6 +311,7 @@
                         class="form-control ss-input"
                         placeholder="Nhập số điện thoại..."
                         @input="onGuestPhoneInput"
+                        :disabled="!hasPermission"
                       />
                     </div>
 
@@ -318,6 +321,7 @@
                         v-model.trim="guest.diaChiCuThe"
                         class="form-control ss-input"
                         placeholder="Số nhà, ngõ, đường..."
+                        :disabled="!hasPermission"
                       />
                     </div>
 
@@ -328,6 +332,7 @@
                         class="form-control ss-input"
                         list="ss-tinh-list"
                         placeholder="Chọn Tỉnh/Thành phố..."
+                        :disabled="!hasPermission"
                       />
                       <datalist id="ss-tinh-list">
                         <option v-for="x in tinhOptions" :key="x" :value="x" />
@@ -341,6 +346,7 @@
                         class="form-control ss-input"
                         list="ss-huyen-list"
                         placeholder="Chọn Huyện/Quận..."
+                        :disabled="!hasPermission"
                       />
                       <datalist id="ss-huyen-list">
                         <option v-for="x in huyenOptions" :key="x" :value="x" />
@@ -354,6 +360,7 @@
                         class="form-control ss-input"
                         list="ss-xa-list"
                         placeholder="Chọn Xã/Phường..."
+                        :disabled="!hasPermission"
                       />
                       <datalist id="ss-xa-list">
                         <option v-for="x in xaOptions" :key="x" :value="x" />
@@ -374,7 +381,7 @@
               <div class="ss-ship-toggle">
                 <span class="ss-toggle-label">{{ isCounter ? "Giao hàng" : "Tại quầy" }}</span>
                 <label class="ss-switch">
-                  <input type="checkbox" v-model="isCounter" />
+                  <input type="checkbox" v-model="isCounter" :disabled="!hasPermission" />
                   <span class="ss-slider"></span>
                 </label>
               </div>
@@ -390,6 +397,7 @@
                     class="form-control ss-input"
                     placeholder="Nhập mã (Enter để áp dụng)"
                     @keyup.enter="applyVoucherCode"
+                    :disabled="!hasPermission"
                   />
                 </div>
 
@@ -425,6 +433,7 @@
                     :value="phiVanChuyenText"
                     @input="onShipFeeInput"
                     placeholder="0"
+                    :disabled="!hasPermission"
                   />
                   <span class="ss-currency">đ</span>
                 </div>
@@ -492,12 +501,13 @@
                 v-model.trim="ctspFilter.keyword"
                 class="form-control ss-input"
                 placeholder="Tìm mã, tên, màu, kích cỡ..."
+                :disabled="!hasPermission"
               />
             </div>
 
             <div class="ss-field">
               <div class="ss-filter-label">Màu sắc</div>
-              <select v-model="ctspFilter.mauSac" class="form-select ss-input">
+              <select v-model="ctspFilter.mauSac" class="form-select ss-input" :disabled="!hasPermission">
                 <option value="">Tất cả màu</option>
                 <option v-for="m in ctspMauSacOptions" :key="m" :value="m">
                   {{ m }}
@@ -507,7 +517,7 @@
 
             <div class="ss-field">
               <div class="ss-filter-label">Kích cỡ</div>
-              <select v-model="ctspFilter.kichCo" class="form-select ss-input">
+              <select v-model="ctspFilter.kichCo" class="form-select ss-input" :disabled="!hasPermission">
                 <option value="">Tất cả kích cỡ</option>
                 <option v-for="k in ctspKichCoOptions" :key="k" :value="k">
                   {{ k }}
@@ -517,7 +527,7 @@
 
             <div class="ss-field">
               <div class="ss-filter-label">Sản phẩm</div>
-              <select v-model="ctspFilter.tenSanPham" class="form-select ss-input">
+              <select v-model="ctspFilter.tenSanPham" class="form-select ss-input" :disabled="!hasPermission">
                 <option value="">Tất cả sản phẩm</option>
                 <option v-for="p in ctspSanPhamOptions" :key="p" :value="p">
                   {{ p }}
@@ -525,7 +535,7 @@
               </select>
             </div>
 
-            <button class="btn ss-btn-outline ss-reset" type="button" @click="resetCtspFilter">
+            <button class="btn ss-btn-outline ss-reset" type="button" @click="resetCtspFilter" :disabled="!hasPermission">
               Đặt lại
             </button>
           </div>
@@ -596,7 +606,7 @@
                         class="form-control ss-input ss-pick-qty"
                         type="text"
                         :value="String(ctspPickQty[row.id] ?? 1)"
-                        :disabled="Number(row.__available || 0) <= 0"
+                        :disabled="Number(row.__available || 0) <= 0 || !hasPermission"
                         @input="onCtspPickQtyInput(row, $event)"
                         :title="`Tối đa có thể thêm: ${Number(row.__available || 0)}`"
                       />
@@ -605,7 +615,7 @@
                         class="btn ss-btn-outline ss-btn-mini"
                         type="button"
                         @click="pickCtsp(row, ctspPickQty[row.id] ?? 1)"
-                        :disabled="Number(row.__available || 0) <= 0"
+                        :disabled="Number(row.__available || 0) <= 0 || !hasPermission"
                         :title="Number(row.__available || 0) <= 0 ? 'Hết hàng' : 'Thêm vào đơn'"
                       >
                         Thêm
@@ -721,7 +731,7 @@
                     {{ khAddrCache[k.id] || renderKhDiaChi(k) || "—" }}
                   </td>
                   <td class="kh-col-act">
-                    <button class="btn ss-kh-pick" type="button" @click="pickKh(k)">Chọn</button>
+                    <button class="btn ss-kh-pick" type="button" @click="pickKh(k)" :disabled="!hasPermission">Chọn</button>
                   </td>
                 </tr>
 
@@ -758,6 +768,7 @@
               :class="{ active: selectedDiaChi && selectedDiaChi.id === dc.id }"
               type="button"
               @click="pickDiaChi(dc)"
+              :disabled="!hasPermission"
             >
               <div class="ss-dc-line">
                 <span class="ss-dc-name">{{
@@ -797,7 +808,7 @@
               <div class="ss-field">
                 <div class="ss-label-row">
                   <div class="ss-label">Tiền mặt</div>
-                  <button class="ss-link" type="button" @click="fillPayConLai('TIEN_MAT')">
+                  <button class="ss-link" type="button" @click="fillPayConLai('TIEN_MAT')" :disabled="!hasPermission">
                     Còn lại
                   </button>
                 </div>
@@ -807,13 +818,14 @@
                   class="form-control ss-input"
                   placeholder="Nhập tiền mặt..."
                   @input="onPayTienMatInput"
+                  :disabled="!hasPermission"
                 />
               </div>
 
               <div class="ss-field">
                 <div class="ss-label-row">
                   <div class="ss-label">Chuyển khoản</div>
-                  <button class="ss-link" type="button" @click="fillPayConLai('CHUYEN_KHOAN')">
+                  <button class="ss-link" type="button" @click="fillPayConLai('CHUYEN_KHOAN')" :disabled="!hasPermission">
                     Còn lại
                   </button>
                 </div>
@@ -823,6 +835,7 @@
                   class="form-control ss-input"
                   placeholder="Nhập chuyển khoản..."
                   @input="onPayChuyenKhoanInput"
+                  :disabled="!hasPermission"
                 />
               </div>
             </div>
@@ -834,6 +847,7 @@
                 type="text"
                 class="form-control ss-input"
                 placeholder="VD: CK123..."
+                :disabled="!hasPermission"
               />
             </div>
 
@@ -868,7 +882,7 @@
 
         <div class="ss-modal-actions ss-pay-actions">
           <button class="btn ss-btn-outline" type="button" @click="closePayModal">Đóng</button>
-          <button class="btn ss-btn-primary" type="button" @click="confirmPay">Xong</button>
+          <button class="btn ss-btn-primary" type="button" @click="confirmPay" :disabled="!hasPermission">Xong</button>
         </div>
       </div>
     </div>
@@ -924,7 +938,7 @@
           <button
             class="btn ss-btn-primary"
             type="button"
-            :disabled="submitting"
+            :disabled="submitting || !hasPermission"
             @click="confirmSubmitOrder"
           >
             {{ submitting ? "Đang xử lý..." : "Xác nhận" }}
@@ -951,6 +965,7 @@ import { useBanHangTienIch } from "./composables/useBanHangTienIch";
 import { useBanHangToast } from "./composables/useBanHangToast";
 import { useBanHangTonKho } from "./composables/useBanHangTonKho";
 import { useBanHangVoucherThanhToan } from "./composables/useBanHangVoucherThanhToan";
+import { useBanHangQuyenCaLam } from "./composables/useBanHangQuyenCaLam";
 
 defineOptions({ name: "SalesPage" });
 
@@ -961,6 +976,12 @@ const router = useRouter();
 ========================= */
 const { toast, showToast, hideToast } = useBanHangToast();
 const tienIch = useBanHangTienIch();
+
+/* =========================
+   QUYỀN CA LÀM (CHỈ XEM / THAO TÁC)
+========================= */
+const quyenCaLam = useBanHangQuyenCaLam();
+const hasPermission = quyenCaLam.hasPermission;
 
 /* =========================
    CORE STATE
@@ -1357,6 +1378,11 @@ function getNguoiBanDangNhap() {
    MOUNT / UNMOUNT
 ========================= */
 onMounted(async () => {
+  // sync lại permission khi vào trang
+  try {
+    quyenCaLam.reloadPermission?.();
+  } catch (e) {}
+
   tabsApi.khoiTaoAutoClearVaSyncStorage();
 
   nguoiBan.value = getNguoiBanDangNhap();
@@ -1430,13 +1456,13 @@ const formatMoney = tienIch.formatMoney;
 
 // tabs
 const tabItemCount = tabsApi.tabItemCount;
-const createOrderTab = tabsApi.createOrderTab;
+const createOrderTab = quyenCaLam.guard(tabsApi.createOrderTab);
 const switchTab = tabsApi.switchTab;
-const closeTab = tabsApi.closeTab;
+const closeTab = quyenCaLam.guard(tabsApi.closeTab);
 
 // sản phẩm
 const showCtspModal = sp.showCtspModal;
-const openCtspModal = sp.openCtspModal;
+const openCtspModal = quyenCaLam.guard(sp.openCtspModal);
 const closeCtspModal = sp.closeCtspModal;
 
 const ctspFilter = sp.ctspFilter;
@@ -1476,7 +1502,7 @@ const resetCtspFilter = sp.resetCtspFilter;
 // QR
 const showQrModal = qr.showQrModal;
 const qrError = qr.qrError;
-const openQrModal = qr.openQrModal;
+const openQrModal = quyenCaLam.guard(qr.openQrModal);
 const closeQrModal = qr.closeQrModal;
 const restartQr = qr.restartQr;
 
@@ -1509,16 +1535,16 @@ const renderDiaChi = kh.renderDiaChi;
 const renderKhDiaChi = kh.renderKhDiaChi;
 
 const onGuestPhoneInput = kh.onGuestPhoneInput;
-const chonKhachVangLai = kh.chonKhachVangLai;
+const chonKhachVangLai = quyenCaLam.guard(kh.chonKhachVangLai);
 
-const openKhModal = kh.openKhModal;
+const openKhModal = quyenCaLam.guard(kh.openKhModal);
 const closeKhModal = kh.closeKhModal;
 const reloadKh = kh.reloadKh;
-const pickKh = kh.pickKh;
+const pickKh = quyenCaLam.guard(kh.pickKh);
 
-const openDiaChiModal = kh.openDiaChiModal;
+const openDiaChiModal = quyenCaLam.guard(kh.openDiaChiModal);
 const closeDiaChiModal = kh.closeDiaChiModal;
-const pickDiaChi = kh.pickDiaChi;
+const pickDiaChi = quyenCaLam.guard(kh.pickDiaChi);
 
 // voucher + thanh toán
 const voucherCode = pay.voucherCode;
@@ -1548,26 +1574,26 @@ const payTotalNum = pay.payTotalNum;
 
 const payMaThamChieu = pay.payMaThamChieu;
 
-const openPayModal = pay.openPayModal;
+const openPayModal = quyenCaLam.guard(pay.openPayModal);
 function closePayModal() {
   pay.closePayModal(tienIch.blurActive);
 }
-function confirmPay() {
+const confirmPay = quyenCaLam.guard(() => {
   pay.confirmPay(tienIch.blurActive);
-}
+});
 const onPayTienMatInput = pay.onPayTienMatInput;
 const onPayChuyenKhoanInput = pay.onPayChuyenKhoanInput;
 const fillPayConLai = pay.fillPayConLai;
 
 // submit confirm modal
 const showSubmitConfirmModal = hd.showSubmitConfirmModal;
-function openSubmitConfirm() {
+const openSubmitConfirm = quyenCaLam.guard(() => {
   hd.openSubmitConfirm(canSubmit);
-}
+});
 const closeSubmitConfirm = hd.closeSubmitConfirm;
-async function confirmSubmitOrder() {
+const confirmSubmitOrder = quyenCaLam.guard(async () => {
   await hd.confirmSubmitOrder(() => hd.submitOrder(canSubmit, pay));
-}
+});
 </script>
 
 <style scoped>

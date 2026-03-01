@@ -264,7 +264,13 @@
           <button class="btn btn-primary w-100 mb-2" type="button" @click="inHoaDon">
             <i class="bi bi-printer me-1"></i> In hóa đơn
           </button>
-          <button class="btn btn-warning w-100" type="button" @click="moModalSua">
+
+          <!-- ✅ CHẶN NHÂN VIÊN CHƯA MỞ CA -->
+          <button
+            class="btn btn-warning w-100"
+            type="button"
+            @click="checkQuyenThaoTac(moModalSua)"
+          >
             <i class="bi bi-pencil me-1"></i> Chỉnh sửa đơn hàng
           </button>
         </div>
@@ -352,7 +358,11 @@
 
         <div class="modal-footer">
           <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Hủy</button>
-          <button class="btn btn-success" type="button" @click="updateHoaDon">Lưu</button>
+
+          <!-- ✅ CHẶN NHÂN VIÊN CHƯA MỞ CA -->
+          <button class="btn btn-success" type="button" @click="checkQuyenThaoTac(updateHoaDon)">
+            Lưu
+          </button>
         </div>
       </div>
     </div>
@@ -427,7 +437,8 @@
             </b>
           </div>
 
-          <button class="btn btn-primary" type="button" @click="xacNhanThanhToan">
+          <!-- ✅ CHẶN NHÂN VIÊN CHƯA MỞ CA -->
+          <button class="btn btn-primary" type="button" @click="checkQuyenThaoTac(xacNhanThanhToan)">
             Xác nhận thanh toán
           </button>
         </div>
@@ -480,10 +491,80 @@ import { ref, watch, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
 import { Modal } from "bootstrap";
+import Swal from "sweetalert2";
 
 const props = defineProps({
   id: { type: [String, Number], required: false },
 });
+
+/* =========================================================
+ * ✅ CHẶN THAO TÁC KHI NHÂN VIÊN CHƯA MỞ CA
+ * - ADMIN: luôn được thao tác
+ * - NHÂN VIÊN: bắt buộc ss_has_active_shift=true
+ * ========================================================= */
+const normalizeRole = (role) => {
+  const r = String(role || "").trim().toUpperCase();
+  if (r === "STAFF") return "NHAN_VIEN";
+  if (r === "NHANVIEN" || r === "NHÂN_VIÊN" || r === "NHÂN VIÊN") return "NHAN_VIEN";
+  return r;
+};
+
+const getUser = () => {
+  const raw =
+    localStorage.getItem("user") ||
+    sessionStorage.getItem("user") ||
+    localStorage.getItem("nguoiDung") ||
+    sessionStorage.getItem("nguoiDung");
+
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+};
+
+const getUserRole = () => {
+  const u = getUser();
+  const role =
+    u?.role ||
+    u?.vaiTro ||
+    u?.tenVaiTro ||
+    u?.tenQuyenHan ||
+    u?.quyenHan?.tenQuyenHan ||
+    u?.quyenHan;
+
+  return normalizeRole(role);
+};
+
+const laNhanVien = () => getUserRole() === "NHAN_VIEN";
+
+const coCaLamDangHoatDong = () => {
+  return sessionStorage.getItem("ss_has_active_shift") === "true";
+};
+
+const duocThaoTac = () => {
+  if (!laNhanVien()) return true;
+  return coCaLamDangHoatDong();
+};
+
+const checkQuyenThaoTac = async (callback) => {
+  if (!duocThaoTac()) {
+    await Swal.fire({
+      icon: "error",
+      title: "Chế độ Chỉ xem",
+      text: "Bạn cần Bắt đầu ca làm việc mới có thể Thêm hoặc Sửa dữ liệu!",
+      confirmButtonColor: "#6366f1",
+    });
+    return false;
+  }
+
+  if (typeof callback === "function") {
+    await callback();
+  }
+  return true;
+};
 
 const tab = ref("donhang");
 
@@ -576,9 +657,6 @@ const danhSachTrangThaiHopLe = computed(() => {
 
 /* =========================================================
  * ✅ LẤY NHÂN VIÊN ĐANG ĐĂNG NHẬP (CHỐT: KHÔNG ĐỂ REQUEST THIẾU HEADER)
- * - Parse được: 1 / "1" / "NV00001" / "NV00001 - admin"
- * - Quét token: axios Authorization -> localStorage -> sessionStorage
- * - Quét user object: localStorage + sessionStorage + quét toàn bộ key nếu cần
  * ========================================================= */
 
 const base64UrlDecode = (str) => {
@@ -871,7 +949,6 @@ const layThongTinDangNhap = () => {
     null;
 
   let id = toNumberId(idRaw);
-
   if (!id) id = toNumberId(maFromJwt);
 
   const obj = timUserObjTrongStorage();
@@ -934,7 +1011,7 @@ const taoConfigHeaderNhanVien = () => {
 };
 
 /* =========================
- * ✅ LỊCH SỬ + NGƯỜI THAO TÁC (NVxxxxx - ten_tai_khoan)
+ * ✅ LỊCH SỬ + NGƯỜI THAO TÁC
  * ========================= */
 
 const phuongThuc = ref("TM");
@@ -1276,7 +1353,6 @@ const updateHoaDon = async () => {
     const next = Number(form.value.trangThai);
     const current = Number(selectedHD.value?.trangThai ?? 1);
 
-    // ✅ tránh 400 nếu BE chặn “không thay đổi trạng thái”
     if (next === current) {
       alert("Trạng thái không thay đổi!");
       return;
@@ -1285,7 +1361,6 @@ const updateHoaDon = async () => {
     await axios.put(
       `${API_HD}/${id}/trang-thai`,
       {
-        // ✅ gửi chắc chắn là số
         trangThai: next,
         ghiChu: "Cập nhật trạng thái từ giao diện",
       },
@@ -1396,19 +1471,16 @@ const xacNhanThanhToan = async () => {
 };
 
 /* =========================
- * ✅ HIỂN THỊ TIMELINE THEO TRẠNG THÁI HIỆN TẠI
- * - Tới đâu hiện tới đó (không show tất cả)
+ * ✅ HIỂN THỊ TIMELINE
  * ========================= */
 const trangThaiHienThi = computed(() => {
   const current = Number(trangThaiHienTaiDungDeHienThi.value || 1);
 
   if (isTaiQuay.value) {
-    // tại quầy: chỉ show "Chờ xác nhận" và show thêm "Hoàn thành" khi đã tới 5
     if (current >= 5) return trangThaiList.filter((st) => st.value === 1 || st.value === 5);
     return trangThaiList.filter((st) => st.value === 1);
   }
 
-  // giao hàng: show từ 1 -> current
   return trangThaiList.filter((st) => st.value <= current);
 });
 

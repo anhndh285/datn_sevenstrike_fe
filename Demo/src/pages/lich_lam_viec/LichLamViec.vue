@@ -160,21 +160,30 @@
           </div>
 
           <div class="nav-right">
-            <button
-              class="btn-month"
-              :class="{ active: viewMode === 'week' }"
-              @click="viewMode = 'week'"
-            >
-              Tuần
-            </button>
-            <button
-              class="btn-month"
-              :class="{ active: viewMode === 'calendar' }"
-              @click="viewMode = 'calendar'"
-            >
-              Tháng
-            </button>
-          </div>
+  <div class="btn-toggle-group">
+    <button
+      class="btn-toggle"
+      :class="{ active: viewMode === 'day' }"
+      @click="viewMode = 'day'"
+    >
+      Ngày
+    </button>
+    <button
+      class="btn-toggle"
+      :class="{ active: viewMode === 'week' }"
+      @click="viewMode = 'week'"
+    >
+      Tuần
+    </button>
+    <button
+      class="btn-toggle"
+      :class="{ active: viewMode === 'calendar' }"
+      @click="viewMode = 'calendar'"
+    >
+      Tháng
+    </button>
+  </div>
+</div>
         </div>
 
         <div class="cal-grid-header">
@@ -274,6 +283,56 @@
             </div>
           </div>
         </div>
+
+        <div v-else-if="viewMode === 'day'" class="matrix-view day-matrix">
+  <div class="matrix-header">
+    <div class="matrix-cell-header shift-col">CA LÀM VIỆC</div>
+    <div class="matrix-cell-header day-col flex-1" :class="{'is-today': isTodayDate(currentDate)}">
+      <div class="day-name">{{ getDayName(currentDate) }}</div>
+      <div class="day-date">{{ formatDateFull(currentDate) }}</div>
+    </div>
+  </div>
+  
+  <div class="matrix-body">
+    <div v-for="ca in listCa" :key="ca.id" class="matrix-row">
+      <div class="matrix-cell shift-col">
+        <div class="shift-name">{{ ca.tenCa }}</div>
+        <div class="shift-time">{{ formatTime(ca.gioBatDau) }} - {{ formatTime(ca.gioKetThuc) }}</div>
+      </div>
+      
+      <div class="matrix-cell day-col flex-1" :class="{'is-today': isTodayDate(currentDate)}">
+         <div
+           v-if="hasPermission && getEventsForShiftAndDate(ca.id, currentDate).length === 0"
+           class="add-full-btn"
+           @click="openModalVoiNgayCa(currentDate, ca.id)"
+         >
+            + Bấm vào đây để thêm nhân viên vào ca này
+         </div>
+         <div v-else class="employee-cards row-dir">
+            <button v-if="hasPermission" class="btn-add-mini inline" @click="openModalVoiNgayCa(currentDate, ca.id)">
+               <i class="fa-solid fa-plus"></i>
+            </button>
+            <div
+              v-for="(nv, index) in getEventsForShiftAndDate(ca.id, currentDate)"
+              :key="nv.id"
+              class="employee-card large"
+              :class="['border-color-' + (index % 4)]"
+              @click="openModal(nv)"
+            >
+               <div class="avatar-circle">
+                 <img v-if="isImg(nv.nhanVien?.anhNhanVien)" :src="nv.nhanVien?.anhNhanVien" />
+                 <span v-else class="initial">{{ getAvatarLabel(nv.tenNhanVien || nv.nhanVien?.tenTaiKhoan) }}</span>
+               </div>
+               <div class="emp-info">
+                  <div class="emp-name">{{ nv.tenNhanVien || nv.nhanVien?.tenTaiKhoan }}</div>
+                  <div class="emp-id">{{ nv.nhanVien?.maNhanVien || nv.maNhanVien }}</div>
+               </div>
+            </div>
+         </div>
+      </div>
+    </div>
+  </div>
+</div>
       </div>
     </div>
 
@@ -421,7 +480,6 @@ import {
 import { getAllNhanVien } from "@/services/tai_khoan/nhan_vien/nhan_vienService";
 import { getAllCaLam } from "@/services/lich_lam_viec/ca_lamService";
 import {
-  pagingLichLamViec,
   createLich,
   checkLichLamViec,
 } from "@/services/lich_lam_viec/lich_lam_viecService";
@@ -433,7 +491,6 @@ const getUser = () => {
   try { return JSON.parse(raw); } catch { return null; }
 };
 
-// ✅ QUYỀN ĐƯỢC GIỮ NGUYÊN
 const hasPermission = computed(() => {
   const u = getUser();
   const role = u?.role || u?.quyen || u?.vaiTro || u?.tenVaiTro;
@@ -445,8 +502,7 @@ const hasPermission = computed(() => {
   return true; 
 });
 
-const listLichMaster = ref([]);
-const lichList = ref([]);
+// removed listLichMaster; not used anywhere
 const lichNhanVienList = ref([]);
 const listNhanVien = ref([]);
 const listCa = ref([]);
@@ -539,6 +595,77 @@ const isToday = (day) => {
     currentYear.value === now.getFullYear()
   );
 };
+const formatDateFull = (d) => {
+  const day = d.getDate();
+  const month = d.getMonth() + 1;
+  const year = d.getFullYear();
+  const dStr = day < 10 ? `0${day}` : day;
+  const mStr = month < 10 ? `0${month}` : month;
+  return `${dStr}/${mStr}/${year}`;
+};
+
+const isTodayDate = (d) => {
+  const now = new Date();
+  return d.getDate() === now.getDate() &&
+         d.getMonth() === now.getMonth() &&
+         d.getFullYear() === now.getFullYear();
+};
+
+const getDayName = (d) => {
+  const dayIndex = d.getDay();
+  return dayIndex === 0 ? "CN" : `T${dayIndex + 1}`;
+};
+
+const getEventsForShiftAndDate = (idCa, d) => {
+  if (!filterLichList.value) return [];
+  const year = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const mStr = m < 10 ? `0${m}` : m;
+  const dStr = day < 10 ? `0${day}` : day;
+  const dateString = `${year}-${mStr}-${dStr}`;
+
+  return filterLichList.value.filter((l) => {
+    const idCaItem = l.idCaLam || (l.caLam ? l.caLam.id : null);
+    if (idCaItem !== idCa) return false;
+
+    if (Array.isArray(l.ngayLam)) {
+      return (
+        l.ngayLam[0] === year && l.ngayLam[1] === m && l.ngayLam[2] === day
+      );
+    }
+    if (typeof l.ngayLam === "string") {
+      return l.ngayLam === dateString || l.ngayLam.startsWith(dateString);
+    }
+    return false;
+  });
+};
+
+// Hàm mở Modal kết hợp Ngày và Ca chỉ định
+const openModalVoiNgayCa = (dateObj, idCa) => {
+  isEditing.value = false;
+  currentId.value = null;
+  form.idLichLamViec = null;
+  form.idNhanVien = null;
+  selectedNhanViens.value = [];
+  form.idCaLam = idCa;
+  form.ghiChu = "";
+  searchNvModal.value = "";
+  
+  const ca = listCa.value.find((c) => c.id === idCa);
+  searchCaModal.value = ca
+    ? `${ca.tenCa} (${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)})`
+    : "";
+
+  const year = dateObj.getFullYear();
+  const m = dateObj.getMonth() + 1;
+  const day = dateObj.getDate();
+  const mStr = m < 10 ? `0${m}` : m;
+  const dStr = day < 10 ? `0${day}` : day;
+  form.ngayLam = `${year}-${mStr}-${dStr}`;
+  
+  showModal.value = true;
+};
 
 const weekDays = computed(() => {
   const days = [];
@@ -575,6 +702,13 @@ const changePeriod = (step) => {
   } else if (viewMode.value === "week") {
     const newDate = new Date(currentDate.value);
     newDate.setDate(newDate.getDate() + step * 7);
+    currentDate.value = newDate;
+    currentMonth.value = newDate.getMonth();
+    currentYear.value = newDate.getFullYear();
+  } else if (viewMode.value === "day") {
+    // Thêm đoạn này để chuyển qua lại các ngày
+    const newDate = new Date(currentDate.value);
+    newDate.setDate(newDate.getDate() + step);
     currentDate.value = newDate;
     currentMonth.value = newDate.getMonth();
     currentYear.value = newDate.getFullYear();
@@ -657,12 +791,6 @@ const selectNhanVien = (nv) => {
   showNvDropdown.value = false;
 };
 
-const selectNvModal = (nv) => {
-  form.idNhanVien = nv.id;
-  searchNvModal.value = nv.tenNhanVien;
-  showNvModalDropdown.value = false;
-};
-
 const selectCaModal = (ca) => {
   form.idCaLam = ca.id;
   searchCaModal.value = `${ca.tenCa} (${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)})`;
@@ -701,7 +829,6 @@ const convertArrayDateToString = (arrDate) => {
   return arrDate;
 };
 
-// ✅ ĐÃ FIX LỖI: Nhận thêm biến month và year để xử lý giao diện Tuần vắt chéo tháng
 const openModalVoiNgay = (day, month = null, year = null) => {
   isEditing.value = false;
   currentId.value = null;
@@ -848,15 +975,6 @@ const loadData = async () => {
   }
 };
 
-const loadLichMaster = async () => {
-  try {
-    const res = await pagingLichLamViec(0, 1000);
-    listLichMaster.value = res.content || [];
-  } catch (e) {
-    console.error(e);
-  }
-};
-
 const loadthemLich = async () => {
   const nv = await getAllNhanVien();
   const ca = await getAllCaLam();
@@ -890,7 +1008,7 @@ const deletePhanCong = async (id) => {
 
 onMounted(() => {
   loadData();
-  loadLichMaster();
+  // loadLichMaster removed - data not used
   loadthemLich();
 });
 </script>
@@ -1115,22 +1233,28 @@ td {
   color: white;
   border-color: #111827;
 }
-.btn-month {
+.btn-toggle-group {
+  display: flex;
   border: 1px solid #d1d5db;
-  color: #000;
-  background: white;
-  padding: 5px 10px;
   border-radius: 4px;
-  cursor: pointer;
+  overflow: hidden;
+}
+.btn-toggle {
+  padding: 5px 12px;
+  background: white;
+  border: none;
+  border-right: 1px solid #d1d5db;
   font-size: 13px;
+  color: #374151;
+  cursor: pointer;
 }
-.btn-month:hover {
-  background: #f3f4f6;
+.btn-toggle:last-child {
+  border-right: none;
 }
-.btn-month.active {
+.btn-toggle.active {
   background: #111827;
+  font-weight: 500;
   color: white;
-  border-color: #111827;
 }
 .cal-grid-header {
   display: grid;
@@ -1391,20 +1515,7 @@ td {
   font-weight: 500;
   font-size: 13px;
 }
-.cal-cell {
-  position: relative;
-  transition: background-color 0.2s;
-}
-.quick-add-wrapper {
-  margin-top: 8px;
-  display: flex;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s ease-in-out;
-}
-.cal-cell:hover .quick-add-wrapper {
-  opacity: 1;
-}
+
 .btn-quick-add {
   width: 32px;
   height: 32px;
@@ -1476,16 +1587,14 @@ td {
 }
 .circle-add {
   background-color: #ecfdf5;
-  color: #10b981;
-  border: 1px dashed #10b981;
+  color: #ff4d4f;
+  border: 1px dashed  #ff4d4f;
 }
 .add-new-btn:hover .circle-add {
-  background-color: #10b981;
+  background-color: #ff4d4f;
   color: white;
 }
-.quick-add-wrapper {
-  display: none;
-}
+
 .cal-cell {
   display: flex;
   flex-direction: column;
@@ -1503,6 +1612,187 @@ td {
   visibility: visible;
   transform: translateY(0);
 }
+/* === CSS MA TRẬN (NGÀY) === */
+.matrix-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-top: none;
+  overflow-x: auto;
+  background: white;
+}
+.matrix-header {
+  display: flex;
+  background: #fcfcfc;
+  border-bottom: 1px solid #e5e7eb;
+}
+.matrix-row {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+}
+.matrix-row:last-child {
+  border-bottom: none;
+}
+.matrix-cell-header {
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  color: #374151;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.matrix-cell {
+  padding: 8px;
+  border-right: 1px solid #e5e7eb;
+  position: relative;
+  min-height: 100px;
+}
+.matrix-cell-header:last-child,
+.matrix-cell:last-child {
+  border-right: none;
+}
+.shift-col {
+  width: 150px;
+  min-width: 150px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  background: #fff;
+}
+.matrix-cell-header.shift-col {
+  justify-content: center;
+  align-items: center;
+  background: #f9fafb;
+}
+.day-col {
+  flex: 1;
+  min-width: 130px;
+}
+.day-name {
+  font-size: 14px;
+  font-weight: bold;
+}
+.day-date {
+  font-size: 12px;
+  color: #6b7280;
+}
+.is-today {
+  background-color: #fdf8f6 !important; 
+}
+.shift-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #111827;
+  text-align: center;
+  margin-top: 10px;
+}
+.shift-time {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+  text-align: center;
+}
+.btn-add-mini {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #78350f;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 10px;
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.btn-add-mini:hover {
+  background: #92400e;
+}
+.employee-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+.employee-card {
+  border: 1px solid #e5e7eb;
+  border-left: 3px solid #ef4444; 
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: transform 0.1s;
+}
+.employee-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+.employee-card.large {
+  flex-direction: row;
+  padding: 10px 16px;
+  gap: 15px;
+  width: fit-content;
+}
+.employee-cards.row-dir {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 0;
+  padding-left: 0;
+}
+.btn-add-mini.inline {
+  position: static;
+  margin-right: 10px;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+}
+.avatar-circle.small {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+}
+.add-full-btn {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 80px;
+  border: 1px dashed transparent;
+  transition: all 0.2s;
+}
+.add-full-btn:hover {
+  color: #4b5563;
+  border-color: #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+.flex-1 {
+  flex: 1;
+}
+/* Các viền màu ngẫu nhiên cho Thẻ Nhân viên */
+.border-color-0 { border-left-color: #ef4444 !important; }
+.border-color-1 { border-left-color: #10b981 !important; }
+.border-color-2 { border-left-color: #3b82f6 !important; }
+.border-color-3 { border-left-color: #f59e0b !important; }
 @keyframes fadeIn {
   from {
     opacity: 0;

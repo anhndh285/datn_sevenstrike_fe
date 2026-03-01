@@ -12,7 +12,7 @@
             <i class="fa-regular fa-clock"></i>
             <span>MỞ CA LÀM VIỆC</span>
           </div>
-          <div class="ss-header-sub">Hệ thống - {{ formattedFullTime }}</div>
+          <div class="ss-header-sub">{{ formattedFullTime }}</div>
         </div>
 
         <div class="ss-body">
@@ -420,9 +420,13 @@ const handleBatDauCa = async () => {
 
     // ✅ GỬI TÍN HIỆU TẮT MODAL
     emit("ca-started");
-  } catch (error) {
-    errorMessage.value =
-      error.response?.data?.message || "Không thể bắt đầu ca vào lúc này.";
+  }catch (error) {
+  console.log("FULL ERROR:", error);
+
+  errorMessage.value =
+    error?.data?.message ||
+    error?.message ||
+    "Không thể bắt đầu ca vào lúc này.";
   } finally {
     isSubmitting.value = false;
   }
@@ -643,17 +647,14 @@ onUnmounted(() => {
 }
 .ho-summary-title {
   color: #ff4d4f;
-  font-weight: 700;
-  font-size: 0.85rem;
+  font-weight: 500;
 }
 .ho-summary-value {
   color: #ff4d4f;
-  font-size: 2rem;
-  font-weight: 800;
+  font-weight: 500;
 }
 .ho-summary-note {
   color: #ff4d4f;
-  font-size: 0.8rem;
 }
 .ho-input-label {
   font-size: 0.8rem;
@@ -803,7 +804,7 @@ onUnmounted(() => {
 }
 .ss-header-sub {
   font-size: 0.8rem;
-  color: #ffffff;
+  color: #a7f3d0;
   margin-top: 5px;
   margin-left: 30px;
 }
@@ -811,7 +812,7 @@ onUnmounted(() => {
   padding: 25px;
 }
 .ss-schedule-box {
-  background-color: #fee2e2;
+  background-color: #fdf0f0;
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 15px;
@@ -833,8 +834,8 @@ onUnmounted(() => {
   color: #111827;
 }
 .ss-shift-time {
-  background-color: #ffffff;
-  color: #000000;
+  background-color: #fadbd1;
+  color: #ff4d4f;
   padding: 4px 12px;
   border-radius: 20px;
   font-weight: 600;
@@ -878,7 +879,7 @@ onUnmounted(() => {
   width: 100%;
   padding: 12px 15px 12px 35px;
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 400;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   color: #111827;
@@ -887,7 +888,7 @@ onUnmounted(() => {
 .note-textarea:focus {
   outline: none;
   border-color: #ff4d4f;
-  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.1);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 .note-textarea {
   width: 100%;

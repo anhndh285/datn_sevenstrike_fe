@@ -56,14 +56,33 @@ import LichLamViecPage from "@/pages/lich_lam_viec/LichLamViec.vue";
 import GiaoCaPage from "@/pages/lich_lam_viec/GiaoCa.vue";
 import LichCaLamPage from "@/pages/lich_lam_viec/LichCaLam.vue";
 
+// ✅ CLIENT PAGES
+import ClientLayout from "@/views/client/ClientLayout.vue";
+import HomePage from "@/pages/client/HomePage.vue";
+import ProductsPage from "@/pages/client/ProductsPage.vue";
+import ProductDetailPage from "@/pages/client/ProductDetailPage.vue";
+import CartPage from "@/pages/client/CartPage.vue";
+import CheckoutPage from "@/pages/client/CheckoutPage.vue";
+import OrderSuccessPage from "@/pages/client/OrderSuccessPage.vue";
+import GuestOrderTrackingPage from "@/pages/client/GuestOrderTrackingPage.vue";
+import LoginPage from "@/pages/client/LoginPage.vue";
+import RegisterPage from "@/pages/client/RegisterPage.vue";
+import AccountLayout from "@/pages/client/account/AccountLayout.vue";
+import OrderHistoryPage from "@/pages/client/account/OrderHistoryPage.vue";
+import OrderTrackingPage from "@/pages/client/account/OrderTrackingPage.vue";
+import ProfilePage from "@/pages/client/account/ProfilePage.vue";
+import AddressPage from "@/pages/client/account/AddressPage.vue";
+import ChangePasswordPage from "@/pages/client/account/ChangePasswordPage.vue";
+import CouponsPage from "@/pages/client/account/CouponsPage.vue";
+import AboutPage from "@/pages/client/AboutPage.vue";
+import NewsPage from "@/pages/client/NewsPage.vue";
+import ContactPage from "@/pages/client/ContactPage.vue";
+
 // ======================= AUTH HELPERS =======================
 const normalizeRole = (role) => {
   const r = String(role || "").trim().toUpperCase();
-
-  // tương thích nếu ai đó còn lưu STAFF
   if (r === "STAFF") return "NHAN_VIEN";
   if (r === "NHANVIEN" || r === "NHÂN_VIÊN" || r === "NHÂN VIÊN") return "NHAN_VIEN";
-
   return r;
 };
 
@@ -85,8 +104,6 @@ const getUser = () => {
 
 const getUserRole = () => {
   const u = getUser();
-
-  // ưu tiên field dạng string trước, object (quyenHan) để sau
   const role =
     u?.role ||
     u?.vaiTro ||
@@ -98,7 +115,7 @@ const getUserRole = () => {
   return normalizeRole(role);
 };
 
-// ✅ Check đăng nhập: token (nếu có) HOẶC user
+// ✅ Check đăng nhập admin: token (nếu có) HOẶC user
 const isLoggedIn = () => {
   const tokenKeys = ["accessToken", "token", "jwt", "ss_token"];
   const hasToken = tokenKeys.some((k) => !!localStorage.getItem(k) || !!sessionStorage.getItem(k));
@@ -127,6 +144,11 @@ const hasPermission = (requiredRoles, userRole) => {
   return Array.isArray(requiredRoles) ? requiredRoles.includes(userRole) : requiredRoles === userRole;
 };
 
+// ✅ Check đăng nhập client
+const isClientLoggedIn = () => {
+  return !!localStorage.getItem("ss_customer");
+};
+
 // ======================= ROUTES =======================
 const routes = [
   { path: "/", redirect: "/dang-nhap" },
@@ -138,6 +160,49 @@ const routes = [
     meta: { public: true },
   },
 
+  // ✅ CLIENT (PUBLIC)
+  {
+    path: "/client",
+    component: ClientLayout,
+    meta: { public: true },
+    children: [
+      { path: "", name: "client-home", component: HomePage },
+      { path: "products", name: "client-products", component: ProductsPage },
+      {
+        path: "products/:id",
+        name: "client-product-detail",
+        component: ProductDetailPage,
+        props: true,
+      },
+      { path: "cart", name: "client-cart", component: CartPage },
+      { path: "checkout", name: "client-checkout", component: CheckoutPage },
+      { path: "success", name: "client-order-success", component: OrderSuccessPage },
+      { path: "tracking", name: "client-guest-tracking", component: GuestOrderTrackingPage },
+      { path: "about", name: "client-about", component: AboutPage },
+      { path: "news", name: "client-news", component: NewsPage },
+      { path: "contact", name: "client-contact", component: ContactPage },
+      { path: "login", name: "client-login", component: LoginPage },
+      { path: "register", name: "client-register", component: RegisterPage },
+
+      // ✅ CLIENT ACCOUNT (CẦN LOGIN)
+      {
+        path: "account",
+        component: AccountLayout,
+        meta: { requiresClientAuth: true },
+        redirect: "/client/account/orders",
+        children: [
+          { path: "orders", name: "client-orders", component: OrderHistoryPage },
+          { path: "orders/:id", name: "client-tracking", component: OrderTrackingPage },
+          { path: "profile", name: "client-profile", component: ProfilePage },
+          { path: "address", name: "client-address", component: AddressPage },
+          { path: "coupons", name: "client-coupons", component: CouponsPage },
+          { path: "password", name: "client-password", component: ChangePasswordPage },
+        ],
+      },
+    ],
+  },
+
+  // ✅ ADMIN
   {
     path: "/admin",
     component: AdminLayout,
@@ -145,7 +210,6 @@ const routes = [
     children: [
       { path: "", redirect: "/admin/trang-chu" },
 
-      // ✅ TRANG CHỦ: ADMIN + NHÂN VIÊN ĐỀU THẤY
       {
         path: "trang-chu",
         name: "admin-trang-chu",
@@ -153,7 +217,6 @@ const routes = [
         meta: { roles: ["ADMIN", "NHAN_VIEN"] },
       },
 
-      // ✅ TRANG THÔNG TIN CÁ NHÂN: ADMIN + NHÂN VIÊN ĐỀU THẤY
       {
         path: "thong-tin-ca-nhan",
         name: "admin-profile",
@@ -161,7 +224,6 @@ const routes = [
         meta: { roles: ["ADMIN", "NHAN_VIEN"] },
       },
 
-      // ✅ THỐNG KÊ: chỉ ADMIN
       {
         path: "dashboard",
         name: "admin-dashboard",
@@ -169,7 +231,6 @@ const routes = [
         meta: { roles: ["ADMIN"] },
       },
 
-      // ✅ POS / HÓA ĐƠN / KHÁCH HÀNG / LỊCH: ADMIN + NHÂN VIÊN
       {
         path: "pos",
         name: "admin-pos",
@@ -210,9 +271,7 @@ const routes = [
         meta: { roles: ["ADMIN", "NHAN_VIEN"] },
       },
 
-      // =========================================================
       // ✅ KHUYẾN MẠI (ADMIN)
-      // =========================================================
       {
         path: "giam-gia/phieu",
         name: "admin-voucher",
@@ -253,9 +312,7 @@ const routes = [
         meta: { roles: ["ADMIN"] },
       },
 
-      // =========================================================
       // ✅ SẢN PHẨM (ADMIN)
-      // =========================================================
       {
         path: "san-pham",
         name: "admin-san-pham",
@@ -303,9 +360,7 @@ const routes = [
         meta: { roles: ["ADMIN"] },
       },
 
-      // =========================================================
       // ✅ THUỘC TÍNH (ADMIN)
-      // =========================================================
       { path: "xuat-xu", name: "admin-xuat-xu", component: XuatXuPage, meta: { roles: ["ADMIN"] } },
       { path: "thuong-hieu", name: "admin-thuong-hieu", component: ThuongHieuPage, meta: { roles: ["ADMIN"] } },
       { path: "vi-tri-thi-dau", name: "admin-vi-tri-thi-dau", component: ViTriThiDauPage, meta: { roles: ["ADMIN"] } },
@@ -321,9 +376,7 @@ const routes = [
       { path: "khach-hang", redirect: "/admin/tai-khoan/khach-hang" },
       { path: "nhan-vien", redirect: "/admin/tai-khoan/nhan-vien" },
 
-      // =========================================================
       // ✅ TÀI KHOẢN
-      // =========================================================
       {
         path: "tai-khoan/khach-hang",
         name: "tai-khoan-khach-hang",
@@ -369,11 +422,16 @@ const router = createRouter({
 
 // ======================= GUARD =======================
 router.beforeEach((to, from, next) => {
+  // ✅ Guard cho client account
+  const requiresClientAuth = to.matched.some((r) => r.meta?.requiresClientAuth);
+  if (requiresClientAuth && !isClientLoggedIn()) {
+    return next({ name: "client-login", query: { redirect: to.fullPath } });
+  }
+
   const role = getUserRole();
 
-  // Public route
+  // ✅ Public route (bao gồm /client)
   if (to.meta?.public) {
-    // chỉ đá khỏi /dang-nhap khi đã login + role hợp lệ
     if (to.name === "dang-nhap" && isLoggedIn() && role) {
       return next("/admin/trang-chu");
     }
@@ -383,31 +441,22 @@ router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some((r) => r.meta?.requiresAuth);
   if (!requiresAuth) return next();
 
-  // chưa login -> về login
   if (!isLoggedIn()) {
     return next({ name: "dang-nhap", query: { redirect: to.fullPath } });
   }
 
-  // đã có token/user nhưng không đọc ra role -> coi như chưa login (tránh “từ chối” sai)
   if (!role) {
     clearAuth();
     return next({ name: "dang-nhap" });
   }
 
-  // lấy roles gần nhất trong matched (ưu tiên route con)
-  const requiredRoles = to.matched.reduce(
-    (acc, r) => (r.meta?.roles ?? r.meta?.role ?? acc),
-    null
-  );
+  const requiredRoles = to.matched.reduce((acc, r) => (r.meta?.roles ?? r.meta?.role ?? acc), null);
 
-  // =========================================================
-  // ✅ CHẶN VÀO TRANG GIAO CA NẾU CHƯA MỞ CA LÀM VIỆC
-  // =========================================================
+  // ✅ CHẶN VÀO TRANG GIAO CA NẾU CHƯA MỞ CA
   if (to.path.includes("/admin/giao-ca")) {
     if (role === "NHAN_VIEN") {
       const hasActiveShift = sessionStorage.getItem("ss_has_active_shift") === "true";
       if (!hasActiveShift) {
-        // Thông báo nhẹ góc màn hình
         Swal.fire({
           icon: "warning",
           title: "Chưa mở ca",
@@ -415,20 +464,16 @@ router.beforeEach((to, from, next) => {
           toast: true,
           position: "top-end",
           showConfirmButton: false,
-          timer: 3000
+          timer: 3000,
         });
-        return next(false); // Từ chối chuyển trang
+        return next(false);
       }
     }
   }
-  
-  // =========================================================
-  // ✅ LỚP BẢO VỆ 1: CHẶN VÀO CÁC TRANG THÊM/SỬA/CẬP NHẬT NẾU CHƯA MỞ CA
-  // =========================================================
-  const isActionRoute = to.path.includes("/new") || 
-                        to.path.includes("/them") || 
-                        to.path.includes("/edit") || 
-                        to.path.includes("/cap-nhat");
+
+  // ✅ CHẶN VÀO TRANG THÊM/SỬA/CẬP NHẬT NẾU CHƯA MỞ CA
+  const isActionRoute =
+    to.path.includes("/new") || to.path.includes("/them") || to.path.includes("/edit") || to.path.includes("/cap-nhat");
 
   if (isActionRoute && role === "NHAN_VIEN") {
     const hasActiveShift = sessionStorage.getItem("ss_has_active_shift") === "true";
@@ -438,10 +483,9 @@ router.beforeEach((to, from, next) => {
         title: "Chế độ Chỉ xem",
         text: "Bạn cần Bắt đầu ca làm việc mới có thể Thêm hoặc Sửa dữ liệu!",
       });
-      return next(false); // Chặn không cho vào trang form
+      return next(false);
     }
   }
-  // =========================================================
 
   if (!hasPermission(requiredRoles, role)) {
     Swal.fire({
@@ -452,8 +496,7 @@ router.beforeEach((to, from, next) => {
       showConfirmButton: false,
     });
 
-    // fallback an toàn
-    const fallback = role === "NHAN_VIEN" ? "/admin/trang-chu" : "/admin/trang-chu";
+    const fallback = "/admin/trang-chu";
     return next(from.fullPath && from.fullPath !== "/dang-nhap" ? from.fullPath : fallback);
   }
 
