@@ -132,16 +132,16 @@
                 <span class="time-badge end">{{ ca.gioKetThuc }}</span>
               </td>
               <td class="text-center">
-                <label class="switch">
-                  <input 
-  type="checkbox" 
-  :checked="ca.trangThai" 
-  :disabled="!hasPermission"
-  @change="toggleTrangThai(ca)"
->
-                  <span class="slider round"></span>
-                </label>
-              </td>
+  <label class="switch">
+    <input 
+      type="checkbox" 
+      :checked="ca.trangThai" 
+      :disabled="!hasPermission"
+      @click.stop.prevent="toggleTrangThai(ca)"
+    >
+    <span class="slider round"></span>
+  </label>
+</td>
               <td class="text-center action-col">
                 <button class="ss-icon-btn-view" type="button" @click="openModal(ca)">
                   <span class="material-icons-outlined">visibility</span>
@@ -227,7 +227,6 @@ const showModal = ref(false);
 const isEditing = ref(false);
 const currentId = ref(null);
 
-// ==== toast & confirm helpers (copied from tài khoản nhân viên) ====
 const pageToast = reactive({ show: false, type: 'info', msg: '' });
 let pageToastTimer = null;
 
@@ -278,12 +277,7 @@ const capNhatTrangThai = async (ca, newValue) => {
   const id = ca?.id;
   if (id == null) return;
 
-  const oldValue = !!ca.trangThai;
   const nextValue = !!newValue;
-  if (oldValue === nextValue) return;
-
-  // optimistic UI
-  ca.trangThai = nextValue;
 
   try {
     const payload = {
@@ -292,10 +286,13 @@ const capNhatTrangThai = async (ca, newValue) => {
       gioKetThuc: ca.gioKetThuc && ca.gioKetThuc.length === 5 ? `${ca.gioKetThuc}:00` : ca.gioKetThuc,
       trangThai: nextValue,
     };
+
     await updateCaLam(id, payload);
+    
+    ca.trangThai = nextValue; 
+    
     showPageToast('success', 'Đã cập nhật trạng thái');
   } catch (error) {
-    ca.trangThai = oldValue;
     console.error('Lỗi khi cập nhật trạng thái:', error);
     showPageToast('error', 'Không thể cập nhật trạng thái. Vui lòng thử lại.');
   }
@@ -323,7 +320,7 @@ const filters = reactive({
   keyword: '',
   gioBatDau: '',
   gioKetThuc: '',
-  trangThai: 'all' // all, active, inactive
+  trangThai: 'all'
 });
 
 const form = reactive({
@@ -336,7 +333,6 @@ const form = reactive({
 
 const danhSachCaLam = ref([]);
 
-// Methods
 const resetFilter = () => {
   filters.keyword = '';
   filters.gioBatDau = '';
@@ -403,7 +399,6 @@ const handleSubmit = async () => {
       await createCaLam(payload);
       alert('Thêm mới thành công!');
     }
-
     closeModal();
     loadData();
   } catch (error) {
@@ -414,6 +409,7 @@ const handleSubmit = async () => {
 
 
 const toggleTrangThai = (ca) => {
+  if (!hasPermission.value) return;
   const newValue = !ca.trangThai; 
   openConfirmTrangThai(ca, newValue);
 };
