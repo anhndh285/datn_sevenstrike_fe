@@ -21,7 +21,7 @@
             <div class="ss-schedule-info">
               <span class="ss-shift-name">{{
                 lichHomNay?.tenCa || "Chưa có lịch"
-              }}</span>
+                }}</span>
               <span class="ss-shift-time" v-if="lichHomNay">
                 {{ lichHomNay.gioBatDau }} - {{ lichHomNay.gioKetThuc }}
               </span>
@@ -30,43 +30,29 @@
 
           <div class="ss-user-row">
             <div class="ss-user-info">
-              <i
-                class="fa-solid fa-circle-user"
-                style="color: #9ca3af; font-size: 1.2rem"
-              ></i>
+              <i class="fa-solid fa-circle-user" style="color: #9ca3af; font-size: 1.2rem"></i>
               <strong>{{
                 currentUser?.tenNhanVien || currentUser?.hoTen || "Nhân viên"
-              }}</strong>
+                }}</strong>
             </div>
             <div class="ss-current-time">{{ formattedTimeOnly }}</div>
           </div>
 
           <div class="form-group">
             <div class="d-flex justify-between mb-2">
-              <label class="text-label"
-                >TIỀN MẶT ĐẦU CA <span class="text-danger">*</span></label
-              >
+              <label class="text-label">TIỀN MẶT ĐẦU CA <span class="text-danger">*</span></label>
             </div>
             <div class="input-money-wrapper new-input-style">
               <span class="currency-prefix">₫</span>
-              <input
-                type="text"
-                class="form-control money-input-new"
-                :value="formatNumber(tienBanDauInput)"
-                @input="onInputMoney($event, 'start')"
-                placeholder="0"
-              />
+              <input type="text" class="form-control money-input-new" :value="formatNumber(tienBanDauInput)"
+                @input="onInputMoney($event, 'start')" placeholder="0" />
             </div>
           </div>
 
           <div class="form-group mt-3">
             <label class="text-label mb-2">GHI CHÚ</label>
-            <textarea
-              v-model="ghiChuBanDau"
-              class="form-control note-textarea"
-              rows="2"
-              placeholder="Nhập ghi chú tại đây..."
-            ></textarea>
+            <textarea v-model="ghiChuBanDau" class="form-control note-textarea" rows="2"
+              placeholder="Nhập ghi chú tại đây..."></textarea>
           </div>
 
           <div v-if="errorMessage" class="error-box">
@@ -76,11 +62,7 @@
 
         <div class="ss-footer">
           <button class="btn-logout" @click="handleLogout">Đăng xuất</button>
-          <button
-            class="btn-confirm"
-            @click="handleBatDauCa"
-            :disabled="isSubmitting || !lichHomNay"
-          >
+          <button class="btn-confirm" @click="handleBatDauCa" :disabled="isSubmitting || !lichHomNay">
             <i v-if="isSubmitting" class="fa-solid fa-spinner fa-spin"></i>
             <i v-else class="fa-solid fa-circle-check"></i>
             XÁC NHẬN VÀO CA
@@ -112,7 +94,7 @@
             <span class="ho-role">NHÂN VIÊN TRỰC</span>
             <span class="ho-name">{{
               currentUser?.tenNhanVien || currentUser?.hoTen || "Nhân viên"
-            }}</span>
+              }}</span>
           </div>
         </div>
       </div>
@@ -123,16 +105,12 @@
 
           <div class="ho-row mt-3">
             <span class="ho-label-text">Tiền mặt đầu ca</span>
-            <span class="ho-val-text font-bold"
-              >{{ formatNumber(caHienTai.tienDauCaNhap) }} ₫</span
-            >
+            <span class="ho-val-text font-bold">{{ formatNumber(caHienTai.tienDauCaNhap) }} ₫</span>
           </div>
 
           <div class="ho-row">
             <span class="ho-label-text">Doanh thu Tiền mặt</span>
-            <span class="ho-val-text text-success font-bold"
-              >+{{ formatNumber(caHienTai.tongTienTrongCa) }} ₫</span
-            >
+            <span class="ho-val-text text-success font-bold">+{{ formatNumber(caHienTai.tongTienTrongCa) }} ₫</span>
           </div>
 
           <div class="ho-row">
@@ -163,89 +141,54 @@
           </h3>
 
           <div class="form-group mt-3">
-            <label class="ho-input-label"
-              >NHẬP TIỀN THỰC TẾ <span class="text-danger">*</span></label
-            >
+            <label class="ho-input-label">NHẬP TIỀN THỰC TẾ <span class="text-danger">*</span></label>
             <div class="ho-input-wrapper">
-              <input
-                type="text"
-                class="ho-input-money"
-                :value="formatNumber(tienThucTeInput)"
-                @input="onInputMoney($event, 'end')"
-                placeholder="0"
-              />
+              <input type="text" class="ho-input-money" :value="formatNumber(tienThucTeInput)"
+                @input="onInputMoney($event, 'end')" placeholder="0" />
               <span class="ho-currency-right">₫</span>
             </div>
           </div>
 
-          <div
-            class="ho-diff-box"
-            :class="
-              chenhLech >= 0
-                ? chenhLech === 0
-                  ? 'bg-gray'
-                  : 'bg-success-light'
-                : 'bg-danger-light'
-            "
-          >
+          <div class="ho-diff-box" :class="chenhLech >= 0
+              ? chenhLech === 0
+                ? 'bg-gray'
+                : 'bg-success-light'
+              : 'bg-danger-light'
+            ">
             <div class="diff-left">
-              <i
-                v-if="chenhLech < 0"
-                class="fa-solid fa-circle-exclamation text-danger"
-              ></i>
-              <i
-                v-else-if="chenhLech > 0"
-                class="fa-solid fa-circle-check text-success"
-              ></i>
+              <i v-if="chenhLech < 0" class="fa-solid fa-circle-exclamation text-danger"></i>
+              <i v-else-if="chenhLech > 0" class="fa-solid fa-circle-check text-success"></i>
               <i v-else class="fa-solid fa-check text-gray"></i>
-              <span
-                class="diff-text"
-                :class="
-                  chenhLech >= 0
-                    ? chenhLech === 0
-                      ? 'text-gray'
-                      : 'text-success'
-                    : 'text-danger'
-                "
-              >
-                {{
-                  chenhLech < 0
-                    ? "Thiếu hụt"
-                    : chenhLech > 0
-                      ? "Thừa tiền"
-                      : "Khớp"
-                }}
-              </span>
-            </div>
-            <span
-              class="diff-val"
-              :class="
-                chenhLech >= 0
+              <span class="diff-text" :class="chenhLech >= 0
                   ? chenhLech === 0
                     ? 'text-gray'
                     : 'text-success'
                   : 'text-danger'
-              "
-            >
+                ">
+                {{
+                  chenhLech < 0 ? "Thiếu hụt" : chenhLech > 0
+                    ? "Thừa tiền"
+                    : "Khớp"
+                }}
+              </span>
+            </div>
+            <span class="diff-val" :class="chenhLech >= 0
+                ? chenhLech === 0
+                  ? 'text-gray'
+                  : 'text-success'
+                : 'text-danger'
+              ">
               {{ chenhLech > 0 ? "+" : "" }}{{ formatNumber(chenhLech) }} ₫
             </span>
           </div>
 
           <div class="form-group mt-4">
             <label class="ho-input-label">GHI CHÚ</label>
-            <textarea
-              v-model="ghiChuInput"
-              class="ho-textarea"
-              rows="2"
-              placeholder="Nhập lý do chênh lệch tiền..."
-            ></textarea>
+            <textarea v-model="ghiChuInput" class="ho-textarea" rows="2"
+              placeholder="Nhập lý do chênh lệch tiền..."></textarea>
           </div>
 
-          <button
-            class="btn-submit-end"
-            @click="submitKetThucCa"
-            :disabled="isSubmitting"
-          >
+          <button class="btn-submit-end" @click="submitKetThucCa" :disabled="isSubmitting">
             {{ isSubmitting ? "ĐANG XỬ LÝ..." : "XÁC NHẬN ĐÓNG CA" }}
           </button>
           <div class="ho-footer-note">
@@ -420,13 +363,13 @@ const handleBatDauCa = async () => {
 
     // ✅ GỬI TÍN HIỆU TẮT MODAL
     emit("ca-started");
-  }catch (error) {
-  console.log("FULL ERROR:", error);
+  } catch (error) {
+    console.log("FULL ERROR:", error);
 
-  errorMessage.value =
-    error?.data?.message ||
-    error?.message ||
-    "Không thể bắt đầu ca vào lúc này.";
+    errorMessage.value =
+      error?.data?.message ||
+      error?.message ||
+      "Không thể bắt đầu ca vào lúc này.";
   } finally {
     isSubmitting.value = false;
   }
@@ -448,16 +391,13 @@ const submitKetThucCa = async () => {
     });
 
     triggerToast("Kết thúc ca làm việc thành công!");
-    caHienTai.value = null;
-    tienBanDauInput.value = 0;
-    tienThucTeInput.value = 0;
-    ghiChuInput.value = "";
-    await loadData();
+
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     handleLogout();
+
   } catch (error) {
     alert("Lỗi: " + (error.response?.data?.message || error.message));
-  } finally {
     isSubmitting.value = false;
   }
 };
@@ -495,30 +435,39 @@ onUnmounted(() => {
 .d-flex {
   display: flex;
 }
+
 .justify-between {
   justify-content: space-between;
 }
+
 .mb-2 {
   margin-bottom: 8px;
 }
+
 .mt-3 {
   margin-top: 16px;
 }
+
 .mt-4 {
   margin-top: 24px;
 }
+
 .font-bold {
   font-weight: 700;
 }
+
 .text-danger {
   color: #ef4444;
 }
+
 .text-success {
   color: #10b981;
 }
+
 .text-primary {
   color: #3b82f6;
 }
+
 .text-gray {
   color: #6b7280;
 }
@@ -530,6 +479,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 20px;
 }
+
 .ho-header {
   background: #ffffff;
   border-radius: 12px;
@@ -539,11 +489,13 @@ onUnmounted(() => {
   align-items: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
+
 .ho-header-left {
   display: flex;
   align-items: center;
   gap: 15px;
 }
+
 .ho-icon-box {
   background-color: #f7e7e6;
   color: #ff4d4f;
@@ -555,19 +507,23 @@ onUnmounted(() => {
   align-items: center;
   font-size: 1.2rem;
 }
+
 .ho-header-text h2 {
   margin: 0;
   font-size: 1.2rem;
   color: #111827;
 }
+
 .ho-sub-text {
   font-size: 0.85rem;
   color: #9ca3af;
 }
+
 .ho-header-right {
   display: flex;
   align-items: center;
 }
+
 .ho-badge {
   background-color: #f9fafb;
   border-radius: 8px;
@@ -577,27 +533,32 @@ onUnmounted(() => {
   align-items: flex-end;
   border: 1px solid #f3f4f6;
 }
+
 .ho-role {
   font-size: 0.7rem;
   font-weight: 700;
   color: #9ca3af;
   letter-spacing: 0.5px;
 }
+
 .ho-name {
   font-size: 0.95rem;
   color: #111827;
 }
+
 .ho-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
+
 .ho-card {
   background: #ffffff;
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
+
 .ho-title {
   margin-top: 0;
   margin-bottom: 20px;
@@ -607,22 +568,27 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
 }
+
 .text-success-icon {
   color: #ff4d4f;
   font-size: 1.2rem;
 }
+
 .ho-row {
   display: flex;
   justify-content: space-between;
   padding: 12px 0;
 }
+
 .ho-label-text {
   color: #6b7280;
   font-size: 0.95rem;
 }
+
 .ho-val-text {
   font-size: 1rem;
 }
+
 .ho-divider {
   text-align: center;
   color: #6b7280;
@@ -632,10 +598,12 @@ onUnmounted(() => {
   border-bottom: 1px dashed #e5e7eb;
   margin: 10px 0 20px 0;
 }
+
 .ho-divider i {
   color: #9ca3af;
   margin-right: 5px;
 }
+
 .ho-summary-box {
   background: #fef0f0;
   padding: 20px;
@@ -645,17 +613,21 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 5px;
 }
+
 .ho-summary-title {
   color: #ff4d4f;
   font-weight: 500;
 }
+
 .ho-summary-value {
   color: #ff4d4f;
   font-weight: 500;
 }
+
 .ho-summary-note {
   color: #ff4d4f;
 }
+
 .ho-input-label {
   font-size: 0.8rem;
   font-weight: 700;
@@ -663,12 +635,14 @@ onUnmounted(() => {
   margin-bottom: 8px;
   display: block;
 }
+
 .ho-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
   color: #9ca3af;
 }
+
 .ho-currency {
   position: absolute;
   left: 15px;
@@ -676,6 +650,7 @@ onUnmounted(() => {
   font-weight: 700;
   font-size: 1.2rem;
 }
+
 .ho-currency-right {
   position: absolute;
   right: 15px;
@@ -683,6 +658,7 @@ onUnmounted(() => {
   font-weight: 700;
   font-size: 1.2rem;
 }
+
 .ho-input-money {
   width: 100%;
   padding: 14px 40px 14px 40px;
@@ -694,10 +670,12 @@ onUnmounted(() => {
   text-align: right;
   color: #9ca3af;
 }
+
 .ho-input-money:focus {
   outline: none;
   border: 1px solid #ff4d4f;
 }
+
 .ho-diff-box {
   display: flex;
   justify-content: space-between;
@@ -707,24 +685,30 @@ onUnmounted(() => {
   margin-top: 15px;
   font-weight: 700;
 }
+
 .diff-left {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.95rem;
 }
+
 .diff-val {
   font-size: 1.05rem;
 }
+
 .bg-danger-light {
   background-color: #fef2f2;
 }
+
 .bg-success-light {
   background-color: #f0fdf4;
 }
+
 .bg-gray {
   background-color: #f3f4f6;
 }
+
 .ho-textarea {
   width: 100%;
   padding: 12px;
@@ -736,10 +720,12 @@ onUnmounted(() => {
   font-size: 0.95rem;
   color: #9ca3af;
 }
+
 .ho-textarea:focus {
   outline: none;
   border-color: #ff4d4f;
 }
+
 .btn-submit-end {
   width: 100%;
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
@@ -754,20 +740,24 @@ onUnmounted(() => {
   margin-top: 25px;
   transition: 0.2s;
 }
+
 .btn-submit-end:hover {
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
   box-shadow: 0 10px 18px rgba(255, 77, 80, 0.541);
 }
+
 .btn-submit-end:disabled {
   background: #9ca3af;
   cursor: not-allowed;
 }
+
 .ho-footer-note {
   text-align: center;
   font-size: 0.8rem;
   color: #9ca3af;
   margin-top: 12px;
 }
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -780,6 +770,7 @@ onUnmounted(() => {
   align-items: center;
   z-index: 1000;
 }
+
 .start-shift-modal {
   background: white;
   width: 500px;
@@ -787,6 +778,7 @@ onUnmounted(() => {
   overflow: hidden;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
+
 .ss-header {
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
   color: white;
@@ -794,6 +786,7 @@ onUnmounted(() => {
   text-align: left;
   position: relative;
 }
+
 .ss-header-title {
   display: flex;
   align-items: center;
@@ -802,37 +795,44 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.5px;
 }
+
 .ss-header-sub {
   font-size: 0.8rem;
   color: #a7f3d0;
   margin-top: 5px;
   margin-left: 30px;
 }
+
 .ss-body {
   padding: 25px;
 }
+
 .ss-schedule-box {
   background-color: #fdf0f0;
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 15px;
 }
+
 .ss-schedule-label {
   font-size: 0.75rem;
   font-weight: 700;
   color: #ff4d4f;
   margin-bottom: 6px;
 }
+
 .ss-schedule-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .ss-shift-name {
   font-weight: 700;
   font-size: 1.1rem;
   color: #111827;
 }
+
 .ss-shift-time {
   background-color: #fadbd1;
   color: #ff4d4f;
@@ -841,6 +841,7 @@ onUnmounted(() => {
   font-weight: 600;
   font-size: 0.85rem;
 }
+
 .ss-user-row {
   display: flex;
   justify-content: space-between;
@@ -849,24 +850,29 @@ onUnmounted(() => {
   border-bottom: 1px dashed #e5e7eb;
   margin-bottom: 20px;
 }
+
 .ss-user-info {
   display: flex;
   align-items: center;
   gap: 8px;
   color: #374151;
 }
+
 .ss-current-time {
   color: #6b7280;
   font-size: 0.9rem;
 }
+
 .text-label {
   font-size: 0.8rem;
   font-weight: 700;
   color: #9ca3af;
 }
+
 .new-input-style {
   position: relative;
 }
+
 .currency-prefix {
   position: absolute;
   left: 15px;
@@ -875,6 +881,7 @@ onUnmounted(() => {
   color: #9ca3af;
   font-weight: 600;
 }
+
 .money-input-new {
   width: 100%;
   padding: 12px 15px 12px 35px;
@@ -884,12 +891,14 @@ onUnmounted(() => {
   border-radius: 8px;
   color: #111827;
 }
+
 .money-input-new:focus,
 .note-textarea:focus {
   outline: none;
   border-color: #ff4d4f;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
+
 .note-textarea {
   width: 100%;
   padding: 12px;
@@ -898,6 +907,7 @@ onUnmounted(() => {
   font-family: inherit;
   resize: none;
 }
+
 .ss-footer {
   display: flex;
   padding: 20px 25px;
@@ -905,6 +915,7 @@ onUnmounted(() => {
   background: #fff;
   border-top: 1px solid #f3f4f6;
 }
+
 .btn-logout {
   flex: 1;
   background-color: #fee2e2;
@@ -916,9 +927,11 @@ onUnmounted(() => {
   cursor: pointer;
   transition: 0.2s;
 }
+
 .btn-logout:hover {
   background-color: #fca5a5;
 }
+
 .btn-confirm {
   flex: 2;
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
@@ -934,13 +947,16 @@ onUnmounted(() => {
   gap: 8px;
   transition: 0.2s;
 }
+
 .btn-confirm:hover {
   background-color: #047857;
 }
+
 .btn-confirm:disabled {
   background: #9ca3af;
   cursor: not-allowed;
 }
+
 .error-box {
   margin-top: 15px;
   padding: 10px;
@@ -953,6 +969,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
 }
+
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -966,6 +983,7 @@ onUnmounted(() => {
   justify-content: center;
   align-items: center;
 }
+
 .spinner {
   width: 40px;
   height: 40px;
@@ -994,6 +1012,7 @@ onUnmounted(() => {
   min-width: 300px;
   overflow: hidden;
 }
+
 .toast-icon {
   font-size: 24px;
   color: #10b981;
@@ -1002,29 +1021,35 @@ onUnmounted(() => {
   height: 100%;
   margin-top: 2px;
 }
+
 .toast-body {
   flex: 1;
 }
+
 .toast-title {
   margin: 0;
   font-size: 16px;
   font-weight: 700;
   color: #333;
 }
+
 .toast-msg {
   margin: 5px 0 0;
   font-size: 14px;
   color: #666;
 }
+
 .toast-close {
   cursor: pointer;
   font-size: 18px;
   color: #999;
   transition: 0.3s;
 }
+
 .toast-close:hover {
   color: #333;
 }
+
 .toast-progress {
   position: absolute;
   bottom: 0;
@@ -1034,28 +1059,34 @@ onUnmounted(() => {
   background: #10b981;
   animation: progress 3s linear forwards;
 }
+
 @keyframes slideInLeft {
   from {
     opacity: 0;
     transform: translateX(100%);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
   }
 }
+
 @keyframes progress {
   from {
     width: 100%;
   }
+
   to {
     width: 0%;
   }
 }
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }

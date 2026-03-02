@@ -12,12 +12,7 @@
       </div>
 
       <div class="ss-head-right">
-        <button
-          class="btn ss-btn-primary"
-          type="button"
-          @click="createOrderTab"
-          :disabled="submitting"
-        >
+        <button class="btn ss-btn-primary" type="button" @click="createOrderTab" :disabled="submitting">
           <span class="material-icons-outlined" style="font-size: 18px">add</span>
           Tạo đơn hàng
         </button>
@@ -34,7 +29,7 @@
     </div>
 
     <!-- ========================= EMPTY: CHƯA CÓ ĐƠN HÀNG ========================= -->
-    <div v-if="!hasOrders" class="ss-card ss-border ss-card-main">
+    <div v-if="!hasOrders" class="ss-card ss-border ss-card-main ss-empty-card">
       <div class="ss-empty-wrap">
         <div class="ss-empty-icon" aria-hidden="true">
           <svg width="54" height="54" viewBox="0 0 64 64">
@@ -92,12 +87,8 @@
           <div class="ss-section-title">Sản phẩm</div>
 
           <div class="ss-section-actions">
-            <button class="btn ss-btn-outline" type="button" @click="openQrModal">
-              QUÉT QR SẢN PHẨM
-            </button>
-            <button class="btn ss-btn-primary" type="button" @click="openCtspModal">
-              THÊM SẢN PHẨM
-            </button>
+            <button class="btn ss-btn-outline" type="button" @click="openQrModal">QUÉT QR SẢN PHẨM</button>
+            <button class="btn ss-btn-primary" type="button" @click="openCtspModal">THÊM SẢN PHẨM</button>
           </div>
         </div>
 
@@ -158,12 +149,8 @@
               </div>
 
               <div class="ss-cart-price">
-                <div v-if="showGiaGoc(it)" class="ss-price-old">
-                  {{ formatMoney(getGiaGoc(it)) }}
-                </div>
-                <div class="ss-price-now">
-                  {{ formatMoney(getGiaThucTe(it)) }}
-                </div>
+                <div v-if="showGiaGoc(it)" class="ss-price-old">{{ formatMoney(getGiaGoc(it)) }}</div>
+                <div class="ss-price-now">{{ formatMoney(getGiaThucTe(it)) }}</div>
               </div>
 
               <div class="ss-cart-qty">
@@ -192,9 +179,7 @@
                   @click="incQty(it)"
                   :disabled="Number(it.qty || 1) >= getMaxQtyForItem(it) || !hasPermission"
                   :title="
-                    Number(it.qty || 1) >= getMaxQtyForItem(it)
-                      ? 'Đã đạt tồn tối đa'
-                      : 'Tăng số lượng'
+                    Number(it.qty || 1) >= getMaxQtyForItem(it) ? 'Đã đạt tồn tối đa' : 'Tăng số lượng'
                   "
                 >
                   +
@@ -208,9 +193,7 @@
 
             <div class="ss-cart-total">
               <div class="ss-cart-total-label">Tổng tiền</div>
-              <div class="ss-cart-total-val">
-                {{ formatMoney(tongTienHang) }}
-              </div>
+              <div class="ss-cart-total-val">{{ formatMoney(tongTienHang) }}</div>
             </div>
           </div>
         </div>
@@ -223,9 +206,7 @@
               <div class="ss-panel-title">Thông tin khách hàng</div>
 
               <div class="ss-panel-actions">
-                <button class="btn ss-btn-outline" type="button" @click="openKhModal">
-                  Chọn khách hàng
-                </button>
+                <button class="btn ss-btn-outline" type="button" @click="openKhModal">Chọn khách hàng</button>
 
                 <button
                   class="btn ss-btn-outline"
@@ -254,9 +235,7 @@
               <template v-if="!isCounter">
                 <div class="ss-kv">
                   <div class="ss-k">Tên khách hàng</div>
-                  <div class="ss-v">
-                    {{ selectedKh ? getKhName(selectedKh) : "Khách lẻ" }}
-                  </div>
+                  <div class="ss-v">{{ selectedKh ? getKhName(selectedKh) : "Khách lẻ" }}</div>
                 </div>
                 <div class="ss-hint">Tại quầy: chỉ cần chọn sản phẩm và thanh toán.</div>
               </template>
@@ -291,21 +270,16 @@
 
                 <!-- KHÁCH VÃNG LAI -->
                 <template v-else>
-                  <div class="ss-guest-hint">Khách vãng lai (không cần tạo tài khoản)</div>
+                  <div class="ss-guest-title">
+                    Tên khách hàng: <span class="ss-guest-name">Khách lẻ</span>
+                  </div>
 
-                  <div class="ss-guest-grid">
+                  <!-- 1 hàng: SĐT + Địa chỉ cụ thể -->
+                  <div class="ss-guest-row2">
                     <div class="ss-field">
-                      <div class="ss-filter-label">Tên khách hàng</div>
-                      <input
-                        v-model.trim="guest.tenKhachHang"
-                        class="form-control ss-input"
-                        placeholder="Nhập tên khách..."
-                        :disabled="!hasPermission"
-                      />
-                    </div>
-
-                    <div class="ss-field">
-                      <div class="ss-filter-label">Số điện thoại</div>
+                      <div class="ss-filter-label">
+                        Số điện thoại <span class="ss-req">*</span>
+                      </div>
                       <input
                         v-model="guest.soDienThoai"
                         class="form-control ss-input"
@@ -315,8 +289,10 @@
                       />
                     </div>
 
-                    <div class="ss-field ss-guest-full">
-                      <div class="ss-filter-label">Địa chỉ cụ thể</div>
+                    <div class="ss-field">
+                      <div class="ss-filter-label">
+                        Địa chỉ cụ thể <span class="ss-req">*</span>
+                      </div>
                       <input
                         v-model.trim="guest.diaChiCuThe"
                         class="form-control ss-input"
@@ -324,50 +300,52 @@
                         :disabled="!hasPermission"
                       />
                     </div>
+                  </div>
 
+                  <!-- 1 hàng: Tỉnh - Quận - Xã -->
+                  <div class="ss-guest-row3">
                     <div class="ss-field">
                       <div class="ss-filter-label">Tỉnh/Thành phố</div>
-                      <input
-                        v-model.trim="guest.tinhThanh"
-                        class="form-control ss-input"
-                        list="ss-tinh-list"
+                      <v-select
+                        v-model="guestTinh"
+                        :options="guestTinhOptions"
+                        label="name"
                         placeholder="Chọn Tỉnh/Thành phố..."
+                        :clearable="true"
                         :disabled="!hasPermission"
                       />
-                      <datalist id="ss-tinh-list">
-                        <option v-for="x in tinhOptions" :key="x" :value="x" />
-                      </datalist>
                     </div>
 
                     <div class="ss-field">
-                      <div class="ss-filter-label">Huyện/Quận</div>
-                      <input
-                        v-model.trim="guest.huyenQuan"
-                        class="form-control ss-input"
-                        list="ss-huyen-list"
-                        placeholder="Chọn Huyện/Quận..."
-                        :disabled="!hasPermission"
+                      <div class="ss-filter-label">Quận/Huyện</div>
+                      <v-select
+                        v-model="guestHuyen"
+                        :options="guestHuyenOptions"
+                        label="name"
+                        placeholder="Chọn Quận/Huyện..."
+                        :clearable="true"
+                        :disabled="!hasPermission || !guestTinh"
                       />
-                      <datalist id="ss-huyen-list">
-                        <option v-for="x in huyenOptions" :key="x" :value="x" />
-                      </datalist>
                     </div>
 
                     <div class="ss-field">
                       <div class="ss-filter-label">Xã/Phường</div>
-                      <input
-                        v-model.trim="guest.xaPhuong"
-                        class="form-control ss-input"
-                        list="ss-xa-list"
+                      <v-select
+                        v-model="guestXa"
+                        :options="guestXaOptions"
+                        label="name"
                         placeholder="Chọn Xã/Phường..."
-                        :disabled="!hasPermission"
+                        :clearable="true"
+                        :disabled="!hasPermission || !guestHuyen"
                       />
-                      <datalist id="ss-xa-list">
-                        <option v-for="x in xaOptions" :key="x" :value="x" />
-                      </datalist>
                     </div>
                   </div>
                 </template>
+
+                <!-- Logo GHN -->
+                <div class="ss-ghn-big">
+                  <img :src="ghnLogoUrl" alt="GHN Express" />
+                </div>
               </template>
             </div>
           </div>
@@ -388,7 +366,9 @@
             </div>
 
             <div class="ss-panel-body">
-              <!-- Voucher input -->
+              <!-- =========================
+                   ✅ KHÔI PHỤC UI VOUCHER TỐI ƯU (Y HỆT FILE CŨ)
+                   ========================= -->
               <div class="ss-voucher-row">
                 <div class="ss-field grow">
                   <div class="ss-filter-label">Mã phiếu giảm giá</div>
@@ -417,13 +397,14 @@
                   <span v-if="voucherManual" class="ss-voucher-tag">Đã nhập mã</span>
                 </div>
               </div>
+              <!-- ========================= END VOUCHER ========================= -->
 
               <div class="ss-pay-kv">
                 <div class="ss-pay-k">Tiền hàng</div>
                 <div class="ss-pay-v">{{ formatMoney(tongTienHang) }}</div>
               </div>
 
-              <!-- ✅ Phí vận chuyển: chỉ hiện khi GIAO HÀNG -->
+              <!-- Phí vận chuyển: chỉ hiện khi giao hàng -->
               <div v-if="isCounter" class="ss-pay-kv">
                 <div class="ss-pay-k">Phí vận chuyển</div>
                 <div class="ss-pay-v ss-pay-inline">
@@ -449,16 +430,10 @@
                 <div class="ss-pay-v">{{ formatMoney(tongPhaiTra) }}</div>
               </div>
 
-              <!-- ✅ Thanh toán (tại quầy + giao hàng) -->
               <div class="ss-pay-kv">
                 <div class="ss-pay-k ss-pay-k-strong">
                   Khách thanh toán
-                  <button
-                    class="ss-icon-btn ss-icon-inline"
-                    type="button"
-                    title="Nhập thanh toán"
-                    @click="openPayModal"
-                  >
+                  <button class="ss-icon-btn ss-icon-inline" type="button" title="Nhập thanh toán" @click="openPayModal">
                     <span class="material-icons-outlined">payments</span>
                   </button>
                 </div>
@@ -471,12 +446,7 @@
                 <div class="ss-pay-v">{{ formatMoney(tienThieu) }}</div>
               </div>
 
-              <button
-                class="btn ss-btn-primary ss-confirm"
-                type="button"
-                :disabled="!canSubmit"
-                @click="openSubmitConfirm"
-              >
+              <button class="btn ss-btn-primary ss-confirm" type="button" :disabled="!canSubmit" @click="openSubmitConfirm">
                 XÁC NHẬN ĐẶT HÀNG
               </button>
             </div>
@@ -509,9 +479,7 @@
               <div class="ss-filter-label">Màu sắc</div>
               <select v-model="ctspFilter.mauSac" class="form-select ss-input" :disabled="!hasPermission">
                 <option value="">Tất cả màu</option>
-                <option v-for="m in ctspMauSacOptions" :key="m" :value="m">
-                  {{ m }}
-                </option>
+                <option v-for="m in ctspMauSacOptions" :key="m" :value="m">{{ m }}</option>
               </select>
             </div>
 
@@ -519,9 +487,7 @@
               <div class="ss-filter-label">Kích cỡ</div>
               <select v-model="ctspFilter.kichCo" class="form-select ss-input" :disabled="!hasPermission">
                 <option value="">Tất cả kích cỡ</option>
-                <option v-for="k in ctspKichCoOptions" :key="k" :value="k">
-                  {{ k }}
-                </option>
+                <option v-for="k in ctspKichCoOptions" :key="k" :value="k">{{ k }}</option>
               </select>
             </div>
 
@@ -529,9 +495,7 @@
               <div class="ss-filter-label">Sản phẩm</div>
               <select v-model="ctspFilter.tenSanPham" class="form-select ss-input" :disabled="!hasPermission">
                 <option value="">Tất cả sản phẩm</option>
-                <option v-for="p in ctspSanPhamOptions" :key="p" :value="p">
-                  {{ p }}
-                </option>
+                <option v-for="p in ctspSanPhamOptions" :key="p" :value="p">{{ p }}</option>
               </select>
             </div>
 
@@ -558,9 +522,7 @@
 
               <tbody>
                 <tr v-for="(row, idx) in pagedCtsp" :key="row.id">
-                  <td class="col-stt">
-                    {{ (ctspPage - 1) * ctspPageSize + idx + 1 }}
-                  </td>
+                  <td class="col-stt">{{ (ctspPage - 1) * ctspPageSize + idx + 1 }}</td>
                   <td class="col-code">{{ row.maCtsp }}</td>
                   <td class="col-img">
                     <div class="ss-thumb thumb-wrap">
@@ -586,18 +548,13 @@
                   <td>{{ row.mauSac }}</td>
                   <td>{{ row.kichCo }}</td>
 
-                  <!-- đúng: hiển thị tồn còn lại theo phiên (local) + tooltip tồn DB -->
                   <td class="col-qty" :title="`Tồn kho DB: ${Number(row.soLuong || 0)}`">
                     {{ Number(row.__available || 0) }}
                   </td>
 
                   <td class="col-price">
-                    <div v-if="showGiaGoc(row)" class="ss-price-old">
-                      {{ formatMoney(getGiaGoc(row)) }}
-                    </div>
-                    <div class="ss-price-now">
-                      {{ formatMoney(getGiaThucTe(row)) }}
-                    </div>
+                    <div v-if="showGiaGoc(row)" class="ss-price-old">{{ formatMoney(getGiaGoc(row)) }}</div>
+                    <div class="ss-price-now">{{ formatMoney(getGiaThucTe(row)) }}</div>
                   </td>
 
                   <td class="col-action">
@@ -632,17 +589,9 @@
           </div>
 
           <div class="ss-pagi">
-            <div class="ss-pageinfo">
-              Trang {{ ctspPage }} / {{ ctspTotalPages }} ·
-              {{ filteredCtsp.length }} biến thể
-            </div>
+            <div class="ss-pageinfo">Trang {{ ctspPage }} / {{ ctspTotalPages }} · {{ filteredCtsp.length }} biến thể</div>
             <div class="ss-pagebtns">
-              <button
-                class="btn ss-btn-outline ss-btn-mini"
-                type="button"
-                :disabled="ctspPage <= 1"
-                @click="ctspPage--"
-              >
+              <button class="btn ss-btn-outline ss-btn-mini" type="button" :disabled="ctspPage <= 1" @click="ctspPage--">
                 Trước
               </button>
               <button
@@ -658,9 +607,7 @@
         </div>
 
         <div class="ss-modal-actions">
-          <button class="btn ss-btn-outline" type="button" @click="closeCtspModal">
-            Đóng
-          </button>
+          <button class="btn ss-btn-outline" type="button" @click="closeCtspModal">Đóng</button>
         </div>
       </div>
     </div>
@@ -727,9 +674,7 @@
                   <td class="kh-col-stt">{{ idx + 1 }}</td>
                   <td class="kh-col-name">{{ getKhName(k) }}</td>
                   <td class="kh-col-phone">{{ getKhPhone(k) }}</td>
-                  <td class="kh-col-addr">
-                    {{ khAddrCache[k.id] || renderKhDiaChi(k) || "—" }}
-                  </td>
+                  <td class="kh-col-addr">{{ khAddrCache[k.id] || renderKhDiaChi(k) || "—" }}</td>
                   <td class="kh-col-act">
                     <button class="btn ss-kh-pick" type="button" @click="pickKh(k)" :disabled="!hasPermission">Chọn</button>
                   </td>
@@ -771,9 +716,7 @@
               :disabled="!hasPermission"
             >
               <div class="ss-dc-line">
-                <span class="ss-dc-name">{{
-                  dc.hoTenNguoiNhan || getKhName(selectedKh) || "Khách"
-                }}</span>
+                <span class="ss-dc-name">{{ dc.hoTenNguoiNhan || getKhName(selectedKh) || "Khách" }}</span>
                 <span v-if="dc.macDinh" class="ss-badge">Mặc định</span>
               </div>
               <div class="ss-dc-text">{{ renderDiaChi(dc) }}</div>
@@ -870,12 +813,8 @@
               <div class="ss-pay-note-line" v-if="payTienMatNum > 0 && payChuyenKhoanNum > 0">
                 Hình thức: Kết hợp (tiền mặt + chuyển khoản)
               </div>
-              <div class="ss-pay-note-line" v-else-if="payChuyenKhoanNum > 0">
-                Hình thức: Chuyển khoản
-              </div>
-              <div class="ss-pay-note-line" v-else-if="payTienMatNum > 0">
-                Hình thức: Tiền mặt
-              </div>
+              <div class="ss-pay-note-line" v-else-if="payChuyenKhoanNum > 0">Hình thức: Chuyển khoản</div>
+              <div class="ss-pay-note-line" v-else-if="payTienMatNum > 0">Hình thức: Tiền mặt</div>
             </div>
           </div>
         </div>
@@ -935,12 +874,7 @@
 
         <div class="ss-modal-actions">
           <button class="btn ss-btn-outline" type="button" @click="closeSubmitConfirm">Hủy</button>
-          <button
-            class="btn ss-btn-primary"
-            type="button"
-            :disabled="submitting || !hasPermission"
-            @click="confirmSubmitOrder"
-          >
+          <button class="btn ss-btn-primary" type="button" :disabled="submitting || !hasPermission" @click="confirmSubmitOrder">
             {{ submitting ? "Đang xử lý..." : "Xác nhận" }}
           </button>
         </div>
@@ -955,6 +889,9 @@ import { useRouter } from "vue-router";
 
 import SalesService from "@/services/sales/salesService.js";
 import apiClient from "@/services/apiClient";
+import vnAddressService from "@/services/vnAddressService";
+
+import ghnLogoUrl from "@/assets/images/logo/Logo_GHN.webp";
 
 import { useBanHangHoaDonSubmit } from "./composables/useBanHangHoaDonSubmit";
 import { useBanHangKhachHang } from "./composables/useBanHangKhachHang";
@@ -996,7 +933,7 @@ const cartItems = ref([]);
 const tonKho = useBanHangTonKho({ safeParse: tienIch.safeParse });
 
 /* =========================
-   PLACEHOLDER callbacks (tránh vòng phụ thuộc)
+   PLACEHOLDER callbacks
 ========================= */
 let scheduleAutoVoucher = () => {};
 let scheduleSyncHoaDon = () => {};
@@ -1017,6 +954,143 @@ const kh = useBanHangKhachHang({
   blurActive: tienIch.blurActive,
 });
 
+function ensureGuestDefaultName() {
+  try {
+    kh.guest.tenKhachHang = "Khách lẻ";
+  } catch (e) {}
+}
+
+/* =========================
+   ĐỊA CHỈ (KHÁCH VÃNG LAI) - VSELECT
+========================= */
+const guestTinhOptions = ref([]);
+const guestHuyenOptions = ref([]);
+const guestXaOptions = ref([]);
+
+const guestTinh = ref(null);
+const guestHuyen = ref(null);
+const guestXa = ref(null);
+
+function normName(x) {
+  return String(x ?? "").trim().toLowerCase();
+}
+function findByName(options, name) {
+  const key = normName(name);
+  if (!key) return null;
+  const arr = Array.isArray(options) ? options : [];
+  return arr.find((o) => normName(o?.name) === key) || null;
+}
+
+async function loadTinhOptionsIfNeed() {
+  if (guestTinhOptions.value.length) return;
+  try {
+    guestTinhOptions.value = await vnAddressService.getProvinces();
+  } catch (e) {
+    guestTinhOptions.value = [];
+  }
+}
+
+async function syncGuestAddrFromStrings() {
+  try {
+    if (!isCounter.value) return;
+    if (kh.selectedKh.value) return;
+
+    await loadTinhOptionsIfNeed();
+
+    const tinhName = (kh.guest.tinhThanh || "").trim();
+    const huyenName = (kh.guest.huyenQuan || "").trim();
+    const xaName = (kh.guest.xaPhuong || "").trim();
+
+    const t = findByName(guestTinhOptions.value, tinhName);
+    guestTinh.value = t || null;
+
+    guestHuyenOptions.value = [];
+    guestXaOptions.value = [];
+    guestHuyen.value = null;
+    guestXa.value = null;
+
+    if (t?.code) {
+      try {
+        guestHuyenOptions.value = await vnAddressService.getDistricts(t.code);
+      } catch {
+        guestHuyenOptions.value = [];
+      }
+
+      const h = findByName(guestHuyenOptions.value, huyenName);
+      guestHuyen.value = h || null;
+
+      if (h?.code) {
+        try {
+          guestXaOptions.value = await vnAddressService.getWards(h.code);
+        } catch {
+          guestXaOptions.value = [];
+        }
+        const x = findByName(guestXaOptions.value, xaName);
+        guestXa.value = x || null;
+      }
+    }
+  } catch (e) {}
+}
+
+watch(guestTinh, async (nv) => {
+  if (!isCounter.value) return;
+  if (kh.selectedKh.value) return;
+
+  kh.guest.tinhThanh = nv?.name || "";
+  kh.guest.huyenQuan = "";
+  kh.guest.xaPhuong = "";
+
+  guestHuyen.value = null;
+  guestXa.value = null;
+  guestXaOptions.value = [];
+
+  if (!nv?.code) {
+    guestHuyenOptions.value = [];
+    persistActiveTab();
+    return;
+  }
+
+  try {
+    guestHuyenOptions.value = await vnAddressService.getDistricts(nv.code);
+  } catch {
+    guestHuyenOptions.value = [];
+  }
+
+  persistActiveTab();
+});
+
+watch(guestHuyen, async (nv) => {
+  if (!isCounter.value) return;
+  if (kh.selectedKh.value) return;
+
+  kh.guest.huyenQuan = nv?.name || "";
+  kh.guest.xaPhuong = "";
+
+  guestXa.value = null;
+
+  if (!nv?.code) {
+    guestXaOptions.value = [];
+    persistActiveTab();
+    return;
+  }
+
+  try {
+    guestXaOptions.value = await vnAddressService.getWards(nv.code);
+  } catch {
+    guestXaOptions.value = [];
+  }
+
+  persistActiveTab();
+});
+
+watch(guestXa, (nv) => {
+  if (!isCounter.value) return;
+  if (kh.selectedKh.value) return;
+
+  kh.guest.xaPhuong = nv?.name || "";
+  persistActiveTab();
+});
+
 /* =========================
    SẢN PHẨM / GIỎ HÀNG
 ========================= */
@@ -1025,14 +1099,12 @@ const sp = useBanHangSanPham({
   apiClient,
   cartItems,
 
-  // tồn local
   getAvailableQtyByCtspId: tonKho.getAvailableQtyByCtspId,
   getBaseQtyByCtspId: tonKho.getBaseQtyByCtspId,
   capNhatTonLocal: tonKho.capNhatTonLocal,
   dongBoTonKhoTuApi: tonKho.dongBoTonKhoTuApi,
   persistCtspBaseQtyMap: tonKho.persistCtspBaseQtyMap,
 
-  // helpers + toast
   showToast,
   clampInt: tienIch.clampInt,
   safeParse: tienIch.safeParse,
@@ -1040,7 +1112,6 @@ const sp = useBanHangSanPham({
   normalizePercent: tienIch.normalizePercent,
   toNumberSafe: tienIch.toNumberSafe,
 
-  // callbacks
   scheduleAutoVoucher: () => scheduleAutoVoucher(),
   scheduleSyncHoaDon: () => scheduleSyncHoaDon(),
   blurActive: tienIch.blurActive,
@@ -1068,20 +1139,17 @@ const pay = useBanHangVoucherThanhToan({
   selectedKh: kh.selectedKh,
   tongTienHang,
 
-  // helpers
   todayYmd: tienIch.todayYmd,
   toYmd: tienIch.toYmd,
   formatMoney: tienIch.formatMoney,
   parseMoneyText: tienIch.parseMoneyText,
   formatNumberText: tienIch.formatNumberText,
 
-  // callbacks
   showToast,
   persistActiveTab: () => persistActiveTab(),
   scheduleSyncHoaDon: () => scheduleSyncHoaDon(),
 });
 
-// gán scheduleAutoVoucher thật
 scheduleAutoVoucher = pay.scheduleAutoVoucher;
 
 /* =========================
@@ -1097,7 +1165,6 @@ function dongTatCaModal() {
 }
 
 const tabsApi = useBanHangTabs({
-  // state
   isCounter,
   cartItems,
 
@@ -1122,19 +1189,16 @@ const tabsApi = useBanHangTabs({
   phiVanChuyen: pay.phiVanChuyen,
   phiVanChuyenText: pay.phiVanChuyenText,
 
-  // deps
   apiClient,
   showToast,
   capNhatTonLocal: tonKho.capNhatTonLocal,
 
-  // callbacks
   scheduleAutoVoucher: () => scheduleAutoVoucher(),
   scheduleSyncHoaDon: () => scheduleSyncHoaDon(),
   ensureBaseQtyIfCartHasItems: sp.ensureBaseQtyIfCartHasItems,
   capNhatDotGiamGiaChoGioHang: sp.capNhatDotGiamGiaChoGioHang,
   loadDiaChiAndPickDefault: kh.loadDiaChiAndPickDefault,
 
-  // clear helpers
   xoaTonKhoLocal: tonKho.xoaTonKhoLocal,
   dongTatCaModal,
   blurActive: tienIch.blurActive,
@@ -1173,13 +1237,11 @@ const hd = useBanHangHoaDonSubmit({
   tongTienHang,
   tongPhaiTra: pay.tongPhaiTra,
 
-  // sản phẩm
   ctspList: sp.ctspList,
   loadCtspForPos: sp.loadCtspForPos,
   ensureBaseQtyIfCartHasItems: sp.ensureBaseQtyIfCartHasItems,
   capNhatDotGiamGiaChoGioHang: sp.capNhatDotGiamGiaChoGioHang,
 
-  // callbacks
   scheduleAutoVoucher: () => scheduleAutoVoucher(),
   persistActiveTab: () => persistActiveTab(),
   persistTabs: () => persistTabs(),
@@ -1187,7 +1249,6 @@ const hd = useBanHangHoaDonSubmit({
 
   showToast,
 
-  // helper dùng trong payload
   getKhName: kh.getKhName,
   getKhPhone: kh.getKhPhone,
   getKhEmail: kh.getKhEmail,
@@ -1197,9 +1258,7 @@ const hd = useBanHangHoaDonSubmit({
   getMaxQtyForItem: sp.getMaxQtyForItem,
 });
 
-// gán scheduleSyncHoaDon thật
 scheduleSyncHoaDon = hd.scheduleSyncHoaDon;
-
 const submitting = hd.submitting;
 
 /* =========================
@@ -1223,13 +1282,12 @@ const nguoiBanTen = computed(() => {
 
 const hasOrders = computed(() => Array.isArray(tabs.value) && tabs.value.length > 0);
 
-/* ✅ FIX: Giao hàng cũng bắt buộc nhập thanh toán */
+/* ✅ validate: giao hàng (khách lẻ) chỉ bắt buộc SĐT + địa chỉ cụ thể */
 const canSubmit = computed(() => {
   if (!hasOrders.value) return false;
   if (cartItems.value.length === 0) return false;
   if (submitting.value) return false;
 
-  // validate qty
   for (const it of cartItems.value) {
     const qty = Number(it?.qty || 0);
     if (!Number.isFinite(qty) || qty < 1) return false;
@@ -1237,23 +1295,17 @@ const canSubmit = computed(() => {
     if (qty > max) return false;
   }
 
-  // validate giao hàng (địa chỉ/SDT)
   if (isCounter.value) {
     if (kh.selectedKh.value) {
       if (!kh.selectedDiaChi.value) return false;
     } else {
       const sdt = String(kh.guest.soDienThoai || "").replace(/\D/g, "");
       const dc = (kh.guest.diaChiCuThe || "").trim();
-      const tinh = (kh.guest.tinhThanh || "").trim();
-      const huyen = (kh.guest.huyenQuan || "").trim();
-      const xa = (kh.guest.xaPhuong || "").trim();
-
       if (!/^\d{9,11}$/.test(sdt)) return false;
-      if (!dc || !tinh || !huyen || !xa) return false;
+      if (!dc) return false;
     }
   }
 
-  // ✅ validate thanh toán (áp dụng cho cả 2 loại)
   const payNum = Number(pay.khachThanhToan.value || 0);
   const total = Number(pay.tongPhaiTra.value || 0);
   if (!Number.isFinite(payNum) || payNum <= 0) return false;
@@ -1278,9 +1330,6 @@ const anyModalOpen = computed(() => {
   );
 });
 
-/* =========================
-   BODY LOCK MODAL
-========================= */
 watch(anyModalOpen, (val) => {
   try {
     document.body.style.overflow = val ? "hidden" : "";
@@ -1288,7 +1337,7 @@ watch(anyModalOpen, (val) => {
 });
 
 /* =========================
-   WATCH (giữ hành vi như file cũ)
+   WATCH (khôi phục đúng hành vi file cũ + không làm mất voucher)
 ========================= */
 watch(tongTienHang, () => {
   scheduleAutoVoucher();
@@ -1303,12 +1352,18 @@ watch(
   { deep: true },
 );
 
-watch(kh.selectedKh, () => {
+watch(kh.selectedKh, async () => {
   scheduleAutoVoucher();
   persistActiveTab();
+
+  if (!kh.selectedKh.value) {
+    ensureGuestDefaultName();
+    await syncGuestAddrFromStrings();
+  }
 });
 
 watch(kh.selectedDiaChi, () => {
+  scheduleAutoVoucher();
   persistActiveTab();
 });
 
@@ -1320,10 +1375,15 @@ watch(pay.payMethod, () => {
   persistActiveTab();
 });
 
-// OFF=tại quầy | ON=giao hàng
+watch(activeTab, async () => {
+  if (isCounter.value && !kh.selectedKh.value) {
+    ensureGuestDefaultName();
+    await syncGuestAddrFromStrings();
+  }
+});
+
 watch(isCounter, async (val) => {
   if (val) {
-    // ✅ giao hàng: vẫn cần thanh toán => KHÔNG reset các biến thanh toán nữa
     const khId = kh.selectedKh.value?.id;
     if (khId) {
       if (!Array.isArray(kh.diaChiList.value) || kh.diaChiList.value.length === 0) {
@@ -1333,9 +1393,11 @@ watch(isCounter, async (val) => {
         if (!def && kh.diaChiList.value.length > 0) def = kh.diaChiList.value[0];
         kh.selectedDiaChi.value = def || null;
       }
+    } else {
+      ensureGuestDefaultName();
+      await syncGuestAddrFromStrings();
     }
   } else {
-    // sang tại quầy: bỏ địa chỉ + ship
     kh.selectedDiaChi.value = null;
     kh.diaChiList.value = [];
     pay.phiVanChuyen.value = 0;
@@ -1378,7 +1440,6 @@ function getNguoiBanDangNhap() {
    MOUNT / UNMOUNT
 ========================= */
 onMounted(async () => {
-  // sync lại permission khi vào trang
   try {
     quyenCaLam.reloadPermission?.();
   } catch (e) {}
@@ -1387,11 +1448,12 @@ onMounted(async () => {
 
   nguoiBan.value = getNguoiBanDangNhap();
 
-  // restore tồn local
   tonKho.restoreCtspBaseQtyMap();
-
-  // restore tabs
   tabsApi.khoiPhucTabsTuLocal();
+
+  ensureGuestDefaultName();
+  await loadTinhOptionsIfNeed();
+  await syncGuestAddrFromStrings();
 
   await sp.ensureBaseQtyIfCartHasItems();
   await sp.capNhatDotGiamGiaChoGioHang();
@@ -1418,19 +1480,20 @@ function getVoucherLabel(v) {
   const code = v.maPhieuGiamGia || v.ma || v.code || "";
   const giaTriRaw = Number(v.giaTriGiamGia ?? v.giaTriGiam ?? 0);
 
-  // ✅ dùng đúng rule giống composable:
-  // false/0 => % ; true/1 => tiền
-  const isPercent = typeof pay?.isVoucherPercent === "function" ? pay.isVoucherPercent(v) : (() => {
-    const raw = v?.loaiPhieuGiamGia;
-    if (raw === false || raw === 0 || raw === "0") return true;
-    if (raw === true || raw === 1 || raw === "1") return false;
-    const s = String(raw ?? "").trim().toLowerCase();
-    if (s === "false" || s === "0") return true;
-    if (s === "true" || s === "1") return false;
-    const n = Number(giaTriRaw || 0);
-    if (Number.isFinite(n) && n > 100) return false;
-    return true;
-  })();
+  const isPercent =
+    typeof pay?.isVoucherPercent === "function"
+      ? pay.isVoucherPercent(v)
+      : (() => {
+          const raw = v?.loaiPhieuGiamGia;
+          if (raw === false || raw === 0 || raw === "0") return true;
+          if (raw === true || raw === 1 || raw === "1") return false;
+          const s = String(raw ?? "").trim().toLowerCase();
+          if (s === "false" || s === "0") return true;
+          if (s === "true" || s === "1") return false;
+          const n = Number(giaTriRaw || 0);
+          if (Number.isFinite(n) && n > 100) return false;
+          return true;
+        })();
 
   const normalizePct = (x) => {
     let n = Number(x ?? 0);
@@ -1449,18 +1512,15 @@ function getVoucherLabel(v) {
 }
 
 /* =========================
-   ALIAS ĐÚNG TÊN TEMPLATE (để khỏi sửa template)
+   ALIAS
 ========================= */
-// money
 const formatMoney = tienIch.formatMoney;
 
-// tabs
 const tabItemCount = tabsApi.tabItemCount;
 const createOrderTab = quyenCaLam.guard(tabsApi.createOrderTab);
 const switchTab = tabsApi.switchTab;
 const closeTab = quyenCaLam.guard(tabsApi.closeTab);
 
-// sản phẩm
 const showCtspModal = sp.showCtspModal;
 const openCtspModal = quyenCaLam.guard(sp.openCtspModal);
 const closeCtspModal = sp.closeCtspModal;
@@ -1499,29 +1559,21 @@ const onCtspPickQtyInput = sp.onCtspPickQtyInput;
 const pickCtsp = sp.pickCtsp;
 const resetCtspFilter = sp.resetCtspFilter;
 
-// QR
 const showQrModal = qr.showQrModal;
 const qrError = qr.qrError;
 const openQrModal = quyenCaLam.guard(qr.openQrModal);
 const closeQrModal = qr.closeQrModal;
 const restartQr = qr.restartQr;
 
-// khách hàng
 const showKhModal = kh.showKhModal;
-const khLoading = kh.khLoading;
 const khErr = kh.khErr;
-const khList = kh.khList;
 const khFilter = kh.khFilter;
 const filteredKh = kh.filteredKh;
 
 const selectedKh = kh.selectedKh;
 const guest = kh.guest;
-const tinhOptions = kh.tinhOptions;
-const huyenOptions = kh.huyenOptions;
-const xaOptions = kh.xaOptions;
 
 const showDiaChiModal = kh.showDiaChiModal;
-const dcLoading = kh.dcLoading;
 const dcErr = kh.dcErr;
 const diaChiList = kh.diaChiList;
 const selectedDiaChi = kh.selectedDiaChi;
@@ -1546,7 +1598,6 @@ const openDiaChiModal = quyenCaLam.guard(kh.openDiaChiModal);
 const closeDiaChiModal = kh.closeDiaChiModal;
 const pickDiaChi = quyenCaLam.guard(kh.pickDiaChi);
 
-// voucher + thanh toán
 const voucherCode = pay.voucherCode;
 const voucherManual = pay.voucherManual;
 const effectiveVoucher = pay.effectiveVoucher;
@@ -1585,7 +1636,6 @@ const onPayTienMatInput = pay.onPayTienMatInput;
 const onPayChuyenKhoanInput = pay.onPayChuyenKhoanInput;
 const fillPayConLai = pay.fillPayConLai;
 
-// submit confirm modal
 const showSubmitConfirmModal = hd.showSubmitConfirmModal;
 const openSubmitConfirm = quyenCaLam.guard(() => {
   hd.openSubmitConfirm(canSubmit);
@@ -1608,6 +1658,30 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   font-weight: 400 !important;
 }
 
+/* ✅ tất cả input chữ nhật (không bo góc) */
+.ss-pos :deep(.form-control),
+.ss-pos :deep(.form-select),
+.ss-pos :deep(.ss-input),
+.ss-pos :deep(.ss-qty-input),
+.ss-pos :deep(.ss-pick-qty),
+.ss-pos :deep(.ss-kh-search) {
+  border-radius: 0 !important;
+}
+
+/* ✅ vue-select chữ nhật */
+.ss-pos :deep(.vs__dropdown-toggle) {
+  min-height: 40px !important;
+  border-radius: 0 !important;
+  border: 1px solid rgba(17, 24, 39, 0.14) !important;
+  padding: 0 10px !important;
+  background: #fff !important;
+}
+.ss-pos :deep(.vs__dropdown-menu) {
+  border-radius: 0 !important;
+  border: 1px solid rgba(17, 24, 39, 0.12) !important;
+  box-shadow: 0 18px 50px rgba(17, 24, 39, 0.1) !important;
+}
+
 /* ======= Badge giảm giá (đồng bộ) ======= */
 .thumb-wrap {
   position: relative;
@@ -1615,7 +1689,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   vertical-align: middle;
   overflow: visible;
 }
-
 .discount-badge {
   position: absolute;
   top: -4px;
@@ -1633,7 +1706,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   line-height: 1.3;
   z-index: 2;
 }
-
 .discount-badge.sm {
   font-size: 8px;
   padding: 1px 3px;
@@ -1647,18 +1719,15 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   justify-content: space-between;
   margin-bottom: 10px;
 }
-
 .ss-head-left {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-
 .ss-title {
   font-size: 20px;
   font-weight: 500;
 }
-
 .ss-subtitle {
   font-size: 12px;
   color: rgba(17, 24, 39, 0.62);
@@ -1782,7 +1851,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   gap: 8px;
   font-weight: 400;
 }
-
 .ss-btn-outline {
   background: #fff;
   border: 1px solid rgba(153, 27, 27, 0.28);
@@ -1792,55 +1860,12 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   font-size: 13px;
   font-weight: 400;
 }
-
 .ss-btn-mini {
   padding: 7px 10px;
   border-radius: 10px;
 }
-
 .ss-card-main {
   padding: 14px;
-}
-
-/* EMPTY */
-.ss-empty-wrap {
-  min-height: 320px;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  gap: 10px;
-}
-.ss-empty-cart {
-  min-height: 260px;
-}
-.ss-empty-icon {
-  opacity: 0.95;
-}
-.ss-empty-text {
-  font-size: 14px;
-  color: rgba(17, 24, 39, 0.62);
-  font-weight: 500;
-}
-.ss-empty-eng {
-  font-weight: 400;
-  color: rgba(17, 24, 39, 0.55);
-}
-
-/* Section head */
-.ss-section-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-.ss-section-title {
-  font-size: 14px;
-  font-weight: 500;
-}
-.ss-section-actions {
-  display: flex;
-  gap: 10px;
 }
 
 /* Cart */
@@ -1850,7 +1875,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   margin-bottom: 12px;
   min-height: 92px;
 }
-
 .ss-cart-list {
   display: flex;
   flex-direction: column;
@@ -1891,12 +1915,10 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   background: rgba(153, 27, 27, 0.06);
   border-radius: 12px;
 }
-
 .ss-cart-thumb.thumb-wrap,
 .ss-thumb.thumb-wrap {
   overflow: visible;
 }
-
 .ss-cart-name {
   font-size: 13px;
   color: rgba(17, 24, 39, 0.82);
@@ -1908,9 +1930,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 2px;
-}
-.ss-cart-code {
-  color: rgba(17, 24, 39, 0.72);
 }
 .ss-dot {
   opacity: 0.5;
@@ -1929,7 +1948,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   font-size: 13px;
   color: rgba(17, 24, 39, 0.82);
 }
-
 .ss-cart-qty {
   display: inline-flex;
   align-items: center;
@@ -1952,14 +1970,12 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
 .ss-qty-input {
   width: 56px;
   height: 32px;
-  border-radius: 12px;
   border: 1px solid rgba(17, 24, 39, 0.14);
   text-align: center;
   font-size: 13px;
   color: rgba(17, 24, 39, 0.82);
   outline: none;
 }
-
 .ss-trash {
   width: 36px;
   height: 36px;
@@ -1996,13 +2012,11 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   grid-template-columns: 1.2fr 1fr;
   gap: 12px;
 }
-
 .ss-panel {
   border-radius: 14px;
   padding: 12px;
   background: #fff;
 }
-
 .ss-panel-head {
   display: flex;
   align-items: center;
@@ -2023,7 +2037,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   flex-direction: column;
   gap: 10px;
 }
-
 .ss-kv {
   display: grid;
   grid-template-columns: 140px 1fr;
@@ -2041,20 +2054,44 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   color: rgba(17, 24, 39, 0.55);
 }
 
-/* Guest */
-.ss-guest-hint {
+/* Guest layout */
+.ss-guest-title {
   font-size: 13px;
   color: rgba(17, 24, 39, 0.72);
-  font-weight: 500;
   margin-bottom: 2px;
 }
-.ss-guest-grid {
+.ss-guest-name {
+  color: rgba(17, 24, 39, 0.88);
+  font-weight: 500;
+}
+.ss-req {
+  color: rgba(239, 68, 68, 0.95);
+  font-weight: 600;
+  margin-left: 2px;
+}
+.ss-guest-row2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
-.ss-guest-full {
-  grid-column: 1 / -1;
+.ss-guest-row3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+/* GHN logo */
+.ss-ghn-big {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 6px;
+}
+.ss-ghn-big img {
+  width: min(520px, 92%);
+  height: auto;
+  object-fit: contain;
 }
 
 /* Payment */
@@ -2120,7 +2157,7 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   border-radius: 14px;
 }
 
-/* Voucher input row */
+/* Voucher */
 .ss-voucher-row {
   display: grid;
   grid-template-columns: 1fr 160px;
@@ -2130,8 +2167,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
 .ss-voucher-val {
   max-width: 180px;
 }
-
-/* Voucher auto hint */
 .ss-voucher-auto {
   background: rgba(34, 197, 94, 0.12);
   border: 1px solid rgba(34, 197, 94, 0.22);
@@ -2213,7 +2248,7 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   transform: translateX(18px);
 }
 
-/* ======= Modal ======= */
+/* Modal base */
 .ss-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -2299,7 +2334,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
 }
 .ss-input {
   font-size: 13px;
-  border-radius: 12px;
 }
 .ss-reset {
   height: 42px;
@@ -2362,7 +2396,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   width: 70px;
   height: 32px;
   text-align: center;
-  border-radius: 10px;
   font-size: 12px;
 }
 
@@ -2521,7 +2554,7 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   padding-top: 2px;
 }
 
-/* ===== Modal Chọn khách hàng ===== */
+/* Modal KH */
 .ss-modal-kh {
   max-width: 900px;
 }
@@ -2537,7 +2570,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
 .ss-kh-search {
   flex: 1;
   height: 36px;
-  border-radius: 4px;
   font-size: 13px;
 }
 .ss-kh-reload {
@@ -2621,14 +2653,78 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   .ss-filter {
     grid-template-columns: 1fr 1fr;
   }
-  .ss-guest-grid {
-    grid-template-columns: 1fr;
-  }
   .ss-voucher-row {
     grid-template-columns: 1fr;
   }
   .ss-paygrid {
     grid-template-columns: 1fr;
   }
+  .ss-guest-row2 {
+    grid-template-columns: 1fr;
+  }
+  .ss-guest-row3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* EMPTY: CHƯA CÓ ĐƠN HÀNG -> cho to ra như cũ */
+.ss-empty-card {
+  min-height: 360px; 
+  display: grid;
+  place-items: center;
+}
+
+.ss-empty-card .ss-empty-wrap {
+  min-height: auto; 
+}
+
+/* ✅ FIX: Header "Sản phẩm" (title trái - nút phải, không bị tụt dòng) */
+.ss-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.ss-section-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ss-section-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* ✅ FIX: Empty state trong giỏ hàng (Không có dữ liệu) căn giữa đẹp */
+.ss-empty-wrap {
+  width: 100%;
+  min-height: 260px; /* đúng “không có dữ liệu” trong giỏ */
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.ss-empty-cart {
+  min-height: 260px;
+}
+
+.ss-empty-icon {
+  opacity: 0.95;
+}
+
+.ss-empty-text {
+  font-size: 14px;
+  color: rgba(17, 24, 39, 0.62);
+  font-weight: 500;
+}
+
+.ss-empty-eng {
+  font-weight: 400;
+  color: rgba(17, 24, 39, 0.55);
 }
 </style>

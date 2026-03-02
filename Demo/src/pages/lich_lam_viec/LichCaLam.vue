@@ -1,5 +1,38 @@
 <template>
   <div class="lich-page">
+    <!-- toast status messages (same style used in taikhoan_nhanvien) -->
+    <div v-if="pageToast.show" class="ss-page-toast" :class="pageToast.type">
+      <span class="material-icons-outlined ss-page-toast-ic">
+        {{ pageToast.type === "success" ? "check_circle" : pageToast.type === "error" ? "error" : "info" }}
+      </span>
+      <div class="ss-page-toast-msg">{{ pageToast.msg }}</div>
+      <button class="ss-page-toast-x" type="button" @click="hidePageToast">×</button>
+    </div>
+
+    <div v-if="confirmTrangThai.show" class="ss-confirm-toast">
+      <span class="material-icons-outlined ss-confirm-ic">help_outline</span>
+      <div class="ss-confirm-msg">{{ confirmTrangThai.msg }}</div>
+
+      <div class="ss-confirm-actions">
+        <button
+          class="ss-confirm-btn ss-confirm-cancel"
+          type="button"
+          @click="cancelConfirmTrangThai"
+          :disabled="confirmTrangThai.loading"
+        >
+          Hủy
+        </button>
+        <button
+          class="ss-confirm-btn ss-confirm-ok"
+          type="button"
+          @click="okConfirmTrangThai"
+          :disabled="confirmTrangThai.loading"
+        >
+          {{ confirmTrangThai.loading ? "Đang cập nhật..." : "Xác nhận" }}
+        </button>
+      </div>
+    </div>
+
     <div class="card-box">
       <div class="filter-header">
         <h3>Bộ lọc tìm kiếm</h3>
@@ -99,12 +132,16 @@
                 <span class="time-badge end">{{ ca.gioKetThuc }}</span>
               </td>
               <td class="text-center">
-                <label class="switch">
-                  <input type="checkbox" v-model="ca.trangThai" :disabled="!hasPermission"
-                    @change="toggleTrangThai(ca)">
-                  <span class="slider round"></span>
-                </label>
-              </td>
+  <label class="switch">
+    <input 
+      type="checkbox" 
+      :checked="ca.trangThai" 
+      :disabled="!hasPermission"
+      @click.stop.prevent="toggleTrangThai(ca)"
+    >
+    <span class="slider round"></span>
+  </label>
+</td>
               <td class="text-center action-col">
                 <button class="ss-icon-btn-view" type="button" @click="openModal(ca)">
                   <span class="material-icons-outlined">visibility</span>
@@ -189,12 +226,101 @@ const hasPermission = computed(() => {
 const showModal = ref(false);
 const isEditing = ref(false);
 const currentId = ref(null);
+
+const pageToast = reactive({ show: false, type: 'info', msg: '' });
+let pageToastTimer = null;
+
+const showPageToast = (type, msg) => {
+  pageToast.show = true;
+  pageToast.type = type || 'info';
+  pageToast.msg = msg || '';
+
+  if (pageToastTimer) clearTimeout(pageToastTimer);
+  pageToastTimer = setTimeout(() => {
+    pageToast.show = false;
+  }, 2600);
+};
+
+const hidePageToast = () => {
+  pageToast.show = false;
+};
+
+const confirmTrangThai = reactive({
+  show: false,
+  loading: false,
+  msg: '',
+  item: null,
+  newValue: false,
+});
+
+const openConfirmTrangThai = (ca, newValue) => {
+  const ten = (ca?.tenCa ?? '').toString().trim() || 'ca';
+  const nextText = newValue ? 'Hoạt động' : 'Ngưng hoạt động';
+
+  confirmTrangThai.show = true;
+  confirmTrangThai.loading = false;
+  confirmTrangThai.item = ca;
+  confirmTrangThai.newValue = !!newValue;
+  confirmTrangThai.msg = `Bạn có muốn chuyển trạng thái của "${ten}" sang "${nextText}" không?`;
+};
+
+const cancelConfirmTrangThai = () => {
+  if (confirmTrangThai.loading) return;
+  confirmTrangThai.show = false;
+  confirmTrangThai.loading = false;
+  confirmTrangThai.msg = '';
+  confirmTrangThai.item = null;
+  confirmTrangThai.newValue = false;
+};
+
+const capNhatTrangThai = async (ca, newValue) => {
+  const id = ca?.id;
+  if (id == null) return;
+
+  const nextValue = !!newValue;
+
+  try {
+    const payload = {
+      ...ca,
+      gioBatDau: ca.gioBatDau && ca.gioBatDau.length === 5 ? `${ca.gioBatDau}:00` : ca.gioBatDau,
+      gioKetThuc: ca.gioKetThuc && ca.gioKetThuc.length === 5 ? `${ca.gioKetThuc}:00` : ca.gioKetThuc,
+      trangThai: nextValue,
+    };
+
+    await updateCaLam(id, payload);
+    
+    ca.trangThai = nextValue; 
+    
+    showPageToast('success', 'Đã cập nhật trạng thái');
+  } catch (error) {
+    console.error('Lỗi khi cập nhật trạng thái:', error);
+    showPageToast('error', 'Không thể cập nhật trạng thái. Vui lòng thử lại.');
+  }
+};
+
+const okConfirmTrangThai = async () => {
+  const ca = confirmTrangThai.item;
+  if (!ca || ca.id == null) {
+    cancelConfirmTrangThai();
+    return;
+  }
+  if (confirmTrangThai.loading) return;
+
+  confirmTrangThai.loading = true;
+  try {
+    await capNhatTrangThai(ca, confirmTrangThai.newValue);
+  } finally {
+    confirmTrangThai.loading = false;
+    cancelConfirmTrangThai();
+  }
+};
+
 // State bộ lọc
 const filters = reactive({
   keyword: '',
   gioBatDau: '',
   gioKetThuc: '',
-  trangThai: 'all' // all, active, inactive
+  trangThai: 'all'
 });
 
 const form = reactive({
@@ -207,7 +333,6 @@ const form = reactive({
 
 const danhSachCaLam = ref([]);
 
-// Methods
 const resetFilter = () => {
   filters.keyword = '';
   filters.gioBatDau = '';
@@ -274,7 +399,6 @@ const handleSubmit = async () => {
       await createCaLam(payload);
       alert('Thêm mới thành công!');
     }
-
     closeModal();
     loadData();
   } catch (error) {
@@ -284,30 +408,10 @@ const handleSubmit = async () => {
 };
 
 
-const toggleTrangThai = async (ca) => {
-  const trangThaiCu = !ca.trangThai;
-  const hanhDong = ca.trangThai ? 'kích hoạt' : 'ngưng kích hoạt';
-
-  const xacNhan = confirm(`Bạn có chắc chắn muốn ${hanhDong} ca làm việc "${ca.tenCa}" không?`);
-
-  if (xacNhan) {
-    try {
-      const payload = {
-        ...ca,
-        gioBatDau: ca.gioBatDau.length === 5 ? `${ca.gioBatDau}:00` : ca.gioBatDau,
-        gioKetThuc: ca.gioKetThuc.length === 5 ? `${ca.gioKetThuc}:00` : ca.gioKetThuc
-      };
-
-      await updateCaLam(ca.id, payload);
-      alert(`Đã ${hanhDong.toLowerCase()} ca làm việc thành công!`);
-    } catch (error) {
-      ca.trangThai = trangThaiCu;
-      console.error('Lỗi khi cập nhật trạng thái:', error);
-      alert('Không thể cập nhật trạng thái. Vui lòng thử lại sau.');
-    }
-  } else {
-    ca.trangThai = trangThaiCu;
-  }
+const toggleTrangThai = (ca) => {
+  if (!hasPermission.value) return;
+  const newValue = !ca.trangThai; 
+  openConfirmTrangThai(ca, newValue);
 };
 
 onMounted(() => {
@@ -386,7 +490,6 @@ onMounted(() => {
   color: #111827;
 }
 
-/* Filter Body Grid */
 .filter-body {
   display: flex;
   flex-wrap: wrap;
@@ -419,7 +522,7 @@ onMounted(() => {
 
 .form-control:focus {
   outline: none;
-  border-color: #10b981;
+  border-color: #ff4d4f;
 }
 
 /* Custom Inputs */
@@ -653,7 +756,7 @@ tbody tr:hover {
 }
 
 input:checked + .slider {
-  background-color: #10b981;
+  background-color: #ff4d4f;
 }
 
 input:checked + .slider:before {
@@ -827,7 +930,7 @@ input:checked + .slider:before {
 }
 
 .btn-save:hover {
-  background: #059669;
+  background: #ff4d4f;
 }
 
 .ss-icon-btn-view,
@@ -852,4 +955,113 @@ input:checked + .slider:before {
   background: #fef2f2;
   border-color: #fecaca;
 }
+/* =======================
+   ✅ TOAST (TRANG)
+   ======================= */
+.ss-page-toast {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 2500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 280px;
+  max-width: 460px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  box-shadow: 0 18px 45px rgba(17, 24, 39, 0.14);
+}
+.ss-page-toast.success { border-color: rgba(34, 197, 94, 0.25); }
+.ss-page-toast.error { border-color: rgba(239, 68, 68, 0.25); }
+.ss-page-toast.info { border-color: rgba(59, 130, 246, 0.25); }
+.ss-page-toast-ic { font-size: 18px; color: rgba(17, 24, 39, 0.55); }
+.ss-page-toast.success .ss-page-toast-ic { color: rgba(34, 197, 94, 0.95); }
+.ss-page-toast.error .ss-page-toast-ic { color: rgba(239, 68, 68, 0.95); }
+.ss-page-toast.info .ss-page-toast-ic { color: rgba(59, 130, 246, 0.95); }
+.ss-page-toast-msg {
+  color: rgba(17, 24, 39, 0.86);
+  font-size: 13px;
+  line-height: 1.35;
+  flex: 1;
+}
+.ss-page-toast-x {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  color: rgba(17, 24, 39, 0.45);
+}
+.ss-page-toast-x:hover { color: rgba(17, 24, 39, 0.7); }
+
+/* =======================
+   ✅ TOAST XÁC NHẬN
+   ======================= */
+.ss-confirm-toast {
+  position: fixed;
+  top: 64px;
+  right: 14px;
+  z-index: 2501;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: min(520px, calc(100vw - 28px));
+  padding: 12px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(255, 77, 79, 0.25);
+  box-shadow: 0 18px 55px rgba(17, 24, 39, 0.18);
+}
+
+.ss-confirm-ic {
+  font-size: 20px;
+  color: rgba(255, 77, 79, 0.95);
+  margin-top: 1px;
+}
+
+.ss-confirm-msg {
+  flex: 1;
+  color: rgba(17, 24, 39, 0.86);
+  font-size: 13.5px;
+  line-height: 1.35;
+  padding-right: 8px;
+}
+
+.ss-confirm-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.ss-confirm-btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: 0.15s ease;
+}
+.ss-confirm-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.ss-confirm-cancel {
+  background: #f3f4f6;
+  border-color: rgba(17, 24, 39, 0.12);
+  color: rgba(17, 24, 39, 0.82);
+}
+.ss-confirm-cancel:hover { background: #eef0f3; }
+
+.ss-confirm-ok {
+  background: #ff4d4f;
+  border-color: rgba(255, 77, 79, 0.35);
+  color: #fff;
+  box-shadow: 0 10px 18px rgba(255, 77, 79, 0.16);
+}
+.ss-confirm-ok:hover { filter: brightness(0.98); }
+
 </style>
