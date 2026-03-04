@@ -1,4 +1,3 @@
-// File: src/pages/sales/composables/useBanHangSanPham.js
 import { computed, reactive, ref } from "vue";
 
 export function useBanHangSanPham(deps) {
@@ -55,34 +54,67 @@ export function useBanHangSanPham(deps) {
       });
   });
 
-  const ctspTotalPages = computed(() =>
-    Math.max(1, Math.ceil(filteredCtsp.value.length / ctspPageSize.value)),
-  );
+  const ctspTotalPages = computed(() => Math.max(1, Math.ceil(filteredCtsp.value.length / ctspPageSize.value)));
 
   const pagedCtsp = computed(() => {
     const start = (ctspPage.value - 1) * ctspPageSize.value;
     return filteredCtsp.value.slice(start, start + ctspPageSize.value);
   });
 
-  const ctspMauSacOptions = computed(() =>
-    [...new Set(ctspList.value.map((x) => x.mauSac).filter(Boolean))].sort(),
-  );
-
-  const ctspKichCoOptions = computed(() =>
-    [...new Set(ctspList.value.map((x) => x.kichCo).filter(Boolean))].sort(),
-  );
-
-  const ctspSanPhamOptions = computed(() =>
-    [...new Set(ctspList.value.map((x) => x.tenSanPham).filter(Boolean))].sort(),
-  );
+  const ctspMauSacOptions = computed(() => [...new Set(ctspList.value.map((x) => x.mauSac).filter(Boolean))].sort());
+  const ctspKichCoOptions = computed(() => [...new Set(ctspList.value.map((x) => x.kichCo).filter(Boolean))].sort());
+  const ctspSanPhamOptions = computed(() => [...new Set(ctspList.value.map((x) => x.tenSanPham).filter(Boolean))].sort());
 
   function onImgErr(e) {
     if (e?.target) e.target.style.display = "none";
   }
 
+  // ======= KHÓA GIÁ THEO DÒNG (ĐỂ GIÁ KHÔNG BỊ ĐỔI SAU KHI ADMIN SỬA CTSP) =======
+  function isGiaDaKhoa(it) {
+    return it?.__khoaGia === true || it?.khoaGia === true;
+  }
+
+  function khoaGiaChoItemNeuCan(it) {
+    if (!it || it.id == null) return;
+
+    if (!it.__giaBanChot) {
+      const gb = Math.round(toNumberSafe(it.giaBan ?? 0));
+      if (gb > 0) it.__giaBanChot = gb;
+    }
+    if (!it.__giaGocChot) {
+      const gg = Math.round(toNumberSafe(it.giaGoc ?? 0));
+      if (gg > 0) it.__giaGocChot = gg;
+    }
+    if (it.__phanTramGiamChot == null) {
+      it.__phanTramGiamChot = normalizePercent(it.phanTramGiam ?? it.phanTramKhuyenMai ?? 0);
+    }
+
+    if (it.__idDotGiamGiaChot == null) it.__idDotGiamGiaChot = it.idDotGiamGia ?? null;
+    if (it.__maDotGiamGiaChot == null) it.__maDotGiamGiaChot = it.maDotGiamGia ?? null;
+    if (it.__tenDotGiamGiaChot == null) it.__tenDotGiamGiaChot = it.tenDotGiamGia ?? null;
+
+    it.__khoaGia = true;
+  }
+
+  function khoaGiaToanBoGioHangNeuChuaKhoa() {
+    const arr = Array.isArray(cartItems.value) ? cartItems.value : [];
+    for (const it of arr) {
+      if (!isGiaDaKhoa(it)) khoaGiaChoItemNeuCan(it);
+    }
+  }
+
   // ======= GIÁ =======
   function getGiaGoc(it) {
     if (!it) return 0;
+
+    if (isGiaDaKhoa(it)) {
+      const g0 = Math.round(toNumberSafe(it.__giaGocChot ?? it.giaGoc ?? 0));
+      if (g0 > 0) return g0;
+
+      const gLock = Math.round(toNumberSafe(it.__giaBanChot ?? it.giaBan ?? 0));
+      return gLock > 0 ? gLock : 0;
+    }
+
     const goc = Number(it.giaGoc);
     if (Number.isFinite(goc) && goc > 0) return goc;
 
@@ -92,6 +124,14 @@ export function useBanHangSanPham(deps) {
 
   function getGiaThucTe(it) {
     if (!it) return 0;
+
+    if (isGiaDaKhoa(it)) {
+      const gLock = Math.round(toNumberSafe(it.__giaBanChot ?? it.giaBan ?? 0));
+      if (gLock > 0) return gLock;
+
+      const g0 = Math.round(toNumberSafe(it.__giaGocChot ?? it.giaGoc ?? 0));
+      return g0 > 0 ? g0 : 0;
+    }
 
     const gb = Number(it.giaBan ?? 0);
     if (Number.isFinite(gb) && gb > 0) return Math.round(gb);
@@ -110,6 +150,12 @@ export function useBanHangSanPham(deps) {
   }
 
   function getPhanTramGiamDisplay(it) {
+    if (isGiaDaKhoa(it)) {
+      const pLock = normalizePercent(it.__phanTramGiamChot ?? it.phanTramGiam ?? it.phanTramKhuyenMai ?? 0);
+      if (!Number.isFinite(pLock) || pLock <= 0) return 0;
+      return Math.round(pLock);
+    }
+
     const p = normalizePercent(it?.phanTramGiam ?? it?.phanTramKhuyenMai ?? 0);
     if (!Number.isFinite(p) || p <= 0) return 0;
     return Math.round(p);
@@ -117,10 +163,11 @@ export function useBanHangSanPham(deps) {
 
   function getGiamGiaTitle(it) {
     const pct = getPhanTramGiamDisplay(it);
-    const tenDot = it?.tenDotGiamGia || it?.tenDot || "";
-    const maDot = it?.maDotGiamGia || it?.maDot || "";
-    if (maDot || tenDot)
-      return `Đợt giảm giá: ${[maDot, tenDot].filter(Boolean).join(" - ")} · Giảm ${pct}%`;
+
+    const tenDot = isGiaDaKhoa(it) ? it?.__tenDotGiamGiaChot || it?.tenDotGiamGia || "" : it?.tenDotGiamGia || it?.tenDot || "";
+    const maDot = isGiaDaKhoa(it) ? it?.__maDotGiamGiaChot || it?.maDotGiamGia || "" : it?.maDotGiamGia || it?.maDot || "";
+
+    if (maDot || tenDot) return `Đợt giảm giá: ${[maDot, tenDot].filter(Boolean).join(" - ")} · Giảm ${pct}%`;
     return `Giảm ${pct}%`;
   }
 
@@ -223,6 +270,9 @@ export function useBanHangSanPham(deps) {
     for (const sp of list) {
       if (!sp || sp.id == null) continue;
 
+      // ✅ nếu là item trong giỏ đã khóa giá thì KHÔNG cập nhật lại
+      if (isGiaDaKhoa(sp)) continue;
+
       const best = map.get(Number(sp.id));
 
       const giaBase =
@@ -276,7 +326,12 @@ export function useBanHangSanPham(deps) {
 
   async function capNhatDotGiamGiaChoGioHang() {
     if (!Array.isArray(cartItems.value) || cartItems.value.length === 0) return;
+
+    // cập nhật đợt giảm giá cho những item CHƯA khóa giá
     await ganDotGiamGiaChoDanhSachCtsp(cartItems.value);
+
+    // sau khi đã có giá/giảm đúng, khóa giá lại để không bị đổi về sau
+    khoaGiaToanBoGioHangNeuChuaKhoa();
   }
 
   function normalizeCtspRow(x) {
@@ -319,6 +374,9 @@ export function useBanHangSanPham(deps) {
   async function ensureBaseQtyIfCartHasItems() {
     const hasCart = Array.isArray(cartItems.value) && cartItems.value.length > 0;
     if (!hasCart) return;
+
+    // nếu giỏ có item cũ từ local (chưa có flag), khóa lại để ổn định
+    khoaGiaToanBoGioHangNeuChuaKhoa();
 
     if (Array.isArray(ctspList.value) && ctspList.value.length > 0) return;
 
@@ -443,6 +501,9 @@ export function useBanHangSanPham(deps) {
     const exist = cartItems.value.find((x) => x.id === id);
 
     if (exist) {
+      // ✅ đã có trong giỏ => KHÔNG cập nhật giá nữa (giữ nguyên giá đã khóa)
+      khoaGiaChoItemNeuCan(exist);
+
       const old = Number(exist.qty || 1);
       const max = getMaxQtyForItem(exist);
       const newQty = Math.min(max, old + want);
@@ -453,13 +514,6 @@ export function useBanHangSanPham(deps) {
         return;
       }
 
-      exist.giaGoc = nx.giaGoc ?? exist.giaGoc ?? exist.giaBan;
-      exist.giaBan = nx.giaBan ?? exist.giaBan;
-      exist.phanTramGiam = nx.phanTramGiam ?? exist.phanTramGiam ?? 0;
-      exist.idDotGiamGia = nx.idDotGiamGia ?? exist.idDotGiamGia ?? null;
-      exist.maDotGiamGia = nx.maDotGiamGia ?? exist.maDotGiamGia ?? null;
-      exist.tenDotGiamGia = nx.tenDotGiamGia ?? exist.tenDotGiamGia ?? null;
-
       exist.qty = newQty;
       exist.checked = true;
 
@@ -467,26 +521,42 @@ export function useBanHangSanPham(deps) {
     } else {
       const addQty = Math.min(want, available);
 
-      cartItems.value.unshift({
+      const giaGocLock = Math.round(toNumberSafe(nx.giaGoc ?? nx.giaBan ?? 0));
+      const giaBanLock = Math.round(toNumberSafe(nx.giaBan ?? 0));
+      const pctLock = normalizePercent(nx.phanTramGiam ?? 0);
+
+      const item = {
         id: nx.id,
         maCtsp: nx.maCtsp,
         tenSanPham: nx.tenSanPham,
         mauSac: nx.mauSac,
         kichCo: nx.kichCo,
 
-        giaGoc: nx.giaGoc ?? nx.giaBan,
-        giaBan: nx.giaBan,
+        // hiển thị giá = giá tại thời điểm thêm
+        giaGoc: giaGocLock > 0 ? giaGocLock : 0,
+        giaBan: giaBanLock > 0 ? giaBanLock : 0,
 
-        phanTramGiam: nx.phanTramGiam ?? 0,
+        phanTramGiam: pctLock,
         idDotGiamGia: nx.idDotGiamGia ?? null,
         maDotGiamGia: nx.maDotGiamGia ?? null,
         tenDotGiamGia: nx.tenDotGiamGia ?? null,
+
+        // ✅ khóa giá theo dòng
+        __khoaGia: true,
+        __giaGocChot: giaGocLock > 0 ? giaGocLock : 0,
+        __giaBanChot: giaBanLock > 0 ? giaBanLock : 0,
+        __phanTramGiamChot: pctLock,
+        __idDotGiamGiaChot: nx.idDotGiamGia ?? null,
+        __maDotGiamGiaChot: nx.maDotGiamGia ?? null,
+        __tenDotGiamGiaChot: nx.tenDotGiamGia ?? null,
 
         anhUrl: nx.anhUrl,
 
         qty: addQty,
         checked: true,
-      });
+      };
+
+      cartItems.value.unshift(item);
 
       capNhatTonLocal(id, -addQty);
     }

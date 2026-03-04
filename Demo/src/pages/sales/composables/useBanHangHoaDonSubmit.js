@@ -1,4 +1,3 @@
-// File: src/pages/sales/composables/useBanHangHoaDonSubmit.js
 import { onBeforeUnmount, ref } from "vue";
 
 export function useBanHangHoaDonSubmit(deps) {
@@ -195,16 +194,10 @@ export function useBanHangHoaDonSubmit(deps) {
       tongTien: 0,
       tongTienSauGiam: 0,
 
-      tenKhachHang:
-        (tenKhachHang || "").trim() ||
-        (isShipping ? "Khách vãng lai" : "Khách lẻ"),
-      soDienThoaiKhachHang:
-        String(soDienThoaiKhachHang || "").replace(/\D/g, "") || "0000000000",
-      diaChiKhachHang:
-        diaChiKhachHang || (isShipping ? "Chờ cập nhật" : "Tại quầy"),
-      emailKhachHang: selectedKh.value
-        ? deps.getKhEmail(selectedKh.value) || null
-        : null,
+      tenKhachHang: (tenKhachHang || "").trim() || (isShipping ? "Khách vãng lai" : "Khách lẻ"),
+      soDienThoaiKhachHang: String(soDienThoaiKhachHang || "").replace(/\D/g, "") || "0000000000",
+      diaChiKhachHang: diaChiKhachHang || (isShipping ? "Chờ cập nhật" : "Tại quầy"),
+      emailKhachHang: selectedKh.value ? deps.getKhEmail(selectedKh.value) || null : null,
 
       ghiChu: "Hóa đơn chờ POS",
     };
@@ -241,15 +234,9 @@ export function useBanHangHoaDonSubmit(deps) {
 
     let diaChi = isShipping ? "" : "Tại quầy";
     if (isShipping) {
-      if (selectedKh.value)
-        diaChi = selectedDiaChi.value ? deps.renderDiaChi(selectedDiaChi.value) : "";
+      if (selectedKh.value) diaChi = selectedDiaChi.value ? deps.renderDiaChi(selectedDiaChi.value) : "";
       else {
-        const parts = [
-          guest.diaChiCuThe,
-          guest.xaPhuong,
-          guest.huyenQuan,
-          guest.tinhThanh,
-        ].filter((x) => String(x || "").trim());
+        const parts = [guest.diaChiCuThe, guest.xaPhuong, guest.huyenQuan, guest.tinhThanh].filter((x) => String(x || "").trim());
         diaChi = parts.join(", ");
       }
       diaChi = diaChi || "Chờ cập nhật";
@@ -265,29 +252,33 @@ export function useBanHangHoaDonSubmit(deps) {
       loaiDon,
       phiVanChuyen: Math.round(isShipping ? phiVanChuyenNum.value : 0),
 
-      tongTien: Math.round(
-        tongTienHang.value + (isShipping ? phiVanChuyenNum.value : 0),
-      ),
+      tongTien: Math.round(tongTienHang.value + (isShipping ? phiVanChuyenNum.value : 0)),
       tongTienSauGiam: Math.round(tongPhaiTra.value),
 
       tenKhachHang: tenKh,
       soDienThoaiKhachHang: soDienThoai,
       diaChiKhachHang: diaChi,
-      emailKhachHang: selectedKh.value
-        ? deps.getKhEmail(selectedKh.value) || null
-        : null,
+      emailKhachHang: selectedKh.value ? deps.getKhEmail(selectedKh.value) || null : null,
       ghiChu: null,
     };
   }
 
+  // ✅ gửi thêm donGia để BE có thể lưu theo giá “đã chốt”
   function buildChiTietSnapshotPayload(idHoaDon) {
-    return (cartItems.value || []).map((it) => ({
-      idHoaDon,
-      idChiTietSanPham: it.id,
-      soLuong: Number(it.qty || 1),
-      ghiChu: null,
-      xoaMem: false,
-    }));
+    return (cartItems.value || []).map((it) => {
+      const donGia = Math.round(Number(it?.__giaBanChot ?? it?.giaBan ?? 0) || 0);
+      const giaGoc = Math.round(Number(it?.__giaGocChot ?? it?.giaGoc ?? 0) || 0);
+
+      return {
+        idHoaDon,
+        idChiTietSanPham: it.id,
+        soLuong: Number(it.qty || 1),
+        donGia,   // ✅ thêm
+        giaGoc,   // ✅ thêm (nếu BE cần)
+        ghiChu: null,
+        xoaMem: false,
+      };
+    });
   }
 
   async function reloadCartFromDb(idHoaDon) {
@@ -300,9 +291,11 @@ export function useBanHangHoaDonSubmit(deps) {
         .map((x) => {
           const ctspId = x?.idChiTietSanPham ?? null;
           const found =
-            ctspId != null
-              ? ctspList.value.find((k) => Number(k?.id) === Number(ctspId))
-              : null;
+            ctspId != null ? ctspList.value.find((k) => Number(k?.id) === Number(ctspId)) : null;
+
+          const donGia = Math.round(Number(x?.donGia || 0) || 0);
+          const giaChot = donGia > 0 ? donGia : Math.round(Number(found?.giaBan || 0) || 0);
+          const giaGocChot = Math.round(Number(found?.giaGoc || 0) || 0);
 
           return {
             id: ctspId,
@@ -310,12 +303,24 @@ export function useBanHangHoaDonSubmit(deps) {
             tenSanPham: x?.tenSanPham || found?.tenSanPham || "",
             mauSac: x?.mauSac || found?.mauSac || "",
             kichCo: x?.kichCo || found?.kichCo || "",
-            giaGoc: found?.giaGoc ?? 0,
-            giaBan: found?.giaBan ?? (Number(x?.donGia || 0) || 0),
-            phanTramGiam: found?.phanTramGiam ?? 0,
-            idDotGiamGia: found?.idDotGiamGia ?? null,
-            maDotGiamGia: found?.maDotGiamGia ?? null,
-            tenDotGiamGia: found?.tenDotGiamGia ?? null,
+
+            // ✅ dùng đúng giá trong DB (donGia) và KHÓA
+            giaGoc: giaGocChot > 0 ? giaGocChot : 0,
+            giaBan: giaChot > 0 ? giaChot : 0,
+
+            phanTramGiam: 0,
+            idDotGiamGia: null,
+            maDotGiamGia: null,
+            tenDotGiamGia: null,
+
+            __khoaGia: true,
+            __giaGocChot: giaGocChot > 0 ? giaGocChot : 0,
+            __giaBanChot: giaChot > 0 ? giaChot : 0,
+            __phanTramGiamChot: 0,
+            __idDotGiamGiaChot: null,
+            __maDotGiamGiaChot: null,
+            __tenDotGiamGiaChot: null,
+
             anhUrl: found?.anhUrl ?? null,
             qty: Number(x?.soLuong || 1),
             checked: true,
@@ -326,6 +331,7 @@ export function useBanHangHoaDonSubmit(deps) {
       cartItems.value = out;
 
       await ensureBaseQtyIfCartHasItems();
+      // capNhatDotGiamGiaChoGioHang sẽ tự bỏ qua item đã khóa giá
       await capNhatDotGiamGiaChoGioHang();
       scheduleAutoVoucher();
       persistActiveTab();
@@ -343,43 +349,27 @@ export function useBanHangHoaDonSubmit(deps) {
     try {
       const idHoaDon = await ensureHoaDonChoTab();
 
-      await apiClient.put(
-        `/api/admin/hoa-don/${idHoaDon}/thong-tin`,
-        buildThongTinHoaDonPayload(),
-      );
+      await apiClient.put(`/api/admin/hoa-don/${idHoaDon}/thong-tin`, buildThongTinHoaDonPayload());
 
-      await apiClient.post(
-        `/api/admin/hoa-don/${idHoaDon}/chi-tiet`,
-        buildChiTietSnapshotPayload(idHoaDon),
-      );
+      await apiClient.post(`/api/admin/hoa-don/${idHoaDon}/chi-tiet`, buildChiTietSnapshotPayload(idHoaDon));
 
       return true;
     } catch (e) {
       if (is404(e)) {
-        const daReset = resetHoaDonIdTrongTabDangChon(
-          silent ? "" : "Hóa đơn chờ không còn tồn tại, hệ thống sẽ tạo lại.",
-        );
+        const daReset = resetHoaDonIdTrongTabDangChon(silent ? "" : "Hóa đơn chờ không còn tồn tại, hệ thống sẽ tạo lại.");
 
         if (daReset) {
           try {
             const newId = await ensureHoaDonChoTab();
 
-            await apiClient.put(
-              `/api/admin/hoa-don/${newId}/thong-tin`,
-              buildThongTinHoaDonPayload(),
-            );
+            await apiClient.put(`/api/admin/hoa-don/${newId}/thong-tin`, buildThongTinHoaDonPayload());
 
-            await apiClient.post(
-              `/api/admin/hoa-don/${newId}/chi-tiet`,
-              buildChiTietSnapshotPayload(newId),
-            );
+            await apiClient.post(`/api/admin/hoa-don/${newId}/chi-tiet`, buildChiTietSnapshotPayload(newId));
 
             return true;
           } catch (eRetry) {
             if (!silent) {
-              const msg =
-                eRetry?.response?.data?.message ||
-                "Không đồng bộ được hoá đơn với DB.";
+              const msg = eRetry?.response?.data?.message || "Không đồng bộ được hoá đơn với DB.";
               showToast(msg, "error");
             }
             if (!silent) throw eRetry;
@@ -391,8 +381,7 @@ export function useBanHangHoaDonSubmit(deps) {
       }
 
       if (!silent) {
-        const msg =
-          e?.response?.data?.message || "Không đồng bộ được hoá đơn với DB.";
+        const msg = e?.response?.data?.message || "Không đồng bộ được hoá đơn với DB.";
         showToast(msg, "error");
       }
 
@@ -451,7 +440,6 @@ export function useBanHangHoaDonSubmit(deps) {
     }
   }
 
-  // ✅ build body thanh toán cho đơn giao hàng/online
   function buildBodyThanhToanGiaoHang(pay) {
     const total = Number(tongPhaiTra.value || 0);
     const tm = Number(pay.payTienMatNum.value || 0);
@@ -459,7 +447,6 @@ export function useBanHangHoaDonSubmit(deps) {
 
     const noteBase = "Xác nhận thanh toán đơn giao hàng";
 
-    // ưu tiên theo số tiền đã nhập (không lệ thuộc payMethod)
     if (tm > 0 && ck > 0) {
       if (Number(tm + ck) !== Number(total)) {
         return { error: "Kết hợp: tổng tiền mặt + chuyển khoản phải đúng bằng tổng phải trả." };
@@ -468,11 +455,7 @@ export function useBanHangHoaDonSubmit(deps) {
         ghiChu: noteBase,
         thanhToans: [
           { tenPhuongThuc: "Tiền mặt", soTien: tm },
-          {
-            tenPhuongThuc: "Chuyển khoản",
-            soTien: ck,
-            maThamChieu: (pay.payMaThamChieu.value || "").trim() || null,
-          },
+          { tenPhuongThuc: "Chuyển khoản", soTien: ck, maThamChieu: (pay.payMaThamChieu.value || "").trim() || null },
         ],
       };
     }
@@ -483,17 +466,10 @@ export function useBanHangHoaDonSubmit(deps) {
       }
       return {
         ghiChu: noteBase,
-        thanhToans: [
-          {
-            tenPhuongThuc: "Chuyển khoản",
-            soTien: ck,
-            maThamChieu: (pay.payMaThamChieu.value || "").trim() || null,
-          },
-        ],
+        thanhToans: [{ tenPhuongThuc: "Chuyển khoản", soTien: ck, maThamChieu: (pay.payMaThamChieu.value || "").trim() || null }],
       };
     }
 
-    // tiền mặt: khách có thể đưa dư, nhưng ghi nhận giao dịch = tổng phải trả
     return {
       ghiChu: noteBase,
       thanhToans: [{ tenPhuongThuc: "Tiền mặt", soTien: total }],
@@ -503,7 +479,6 @@ export function useBanHangHoaDonSubmit(deps) {
   async function submitOrder(canSubmit, pay) {
     if (!canSubmit.value) return;
 
-    // ✅ FIX: hủy timer sync đang treo trước khi chốt
     if (syncHdTimer.value) clearTimeout(syncHdTimer.value);
 
     for (const it of cartItems.value) {
@@ -542,25 +517,14 @@ export function useBanHangHoaDonSubmit(deps) {
           const body = {
             ghiChu: noteBase,
             thanhToans: [
-              ...(pay.payTienMatNum.value > 0
-                ? [{ tenPhuongThuc: "Tiền mặt", soTien: pay.payTienMatNum.value }]
-                : []),
+              ...(pay.payTienMatNum.value > 0 ? [{ tenPhuongThuc: "Tiền mặt", soTien: pay.payTienMatNum.value }] : []),
               ...(pay.payChuyenKhoanNum.value > 0
-                ? [
-                    {
-                      tenPhuongThuc: "Chuyển khoản",
-                      soTien: pay.payChuyenKhoanNum.value,
-                      maThamChieu: (pay.payMaThamChieu.value || "").trim() || null,
-                    },
-                  ]
+                ? [{ tenPhuongThuc: "Chuyển khoản", soTien: pay.payChuyenKhoanNum.value, maThamChieu: (pay.payMaThamChieu.value || "").trim() || null }]
                 : []),
             ],
           };
 
-          const done = await apiClient.put(
-            `/api/admin/hoa-don/${idHoaDon}/confirm-tai-quay-ket-hop`,
-            body,
-          );
+          const done = await apiClient.put(`/api/admin/hoa-don/${idHoaDon}/confirm-tai-quay-ket-hop`, body);
           const finalHd = done?.data || { id: idHoaDon };
 
           showToast("Đã chốt đơn tại quầy.", "success");
@@ -578,10 +542,9 @@ export function useBanHangHoaDonSubmit(deps) {
             return;
           }
 
-          const done = await apiClient.put(
-            `/api/admin/hoa-don/${idHoaDon}/confirm-tai-quay-chuyen-khoan`,
-            { ghiChu: "Chốt đơn tại quầy - chuyển khoản" },
-          );
+          const done = await apiClient.put(`/api/admin/hoa-don/${idHoaDon}/confirm-tai-quay-chuyen-khoan`, {
+            ghiChu: "Chốt đơn tại quầy - chuyển khoản",
+          });
           const finalHd = done?.data || { id: idHoaDon };
 
           showToast("Đã chốt đơn tại quầy.", "success");
@@ -598,10 +561,9 @@ export function useBanHangHoaDonSubmit(deps) {
           return;
         }
 
-        const done = await apiClient.put(
-          `/api/admin/hoa-don/${idHoaDon}/confirm-tai-quay-tien-mat`,
-          { ghiChu: "Chốt đơn tại quầy - tiền mặt" },
-        );
+        const done = await apiClient.put(`/api/admin/hoa-don/${idHoaDon}/confirm-tai-quay-tien-mat`, {
+          ghiChu: "Chốt đơn tại quầy - tiền mặt",
+        });
         const finalHd = done?.data || { id: idHoaDon };
 
         showToast("Đã chốt đơn tại quầy.", "success");
@@ -613,7 +575,7 @@ export function useBanHangHoaDonSubmit(deps) {
       }
 
       // =====================
-      // ✅ GIAO HÀNG: PHẢI GHI NHẬN THANH TOÁN -> TẠO giao_dich_thanh_toan
+      // GIAO HÀNG
       // =====================
       const payNum = Number(pay.khachThanhToan.value || 0);
       const total = Number(tongPhaiTra.value || 0);
@@ -631,7 +593,6 @@ export function useBanHangHoaDonSubmit(deps) {
         return;
       }
 
-      // tiền mặt có thể dư, còn CK/kết hợp phải đúng tổng
       if (Number(pay.payChuyenKhoanNum.value || 0) > 0 || Number(pay.payTienMatNum.value || 0) > 0) {
         const tm = Number(pay.payTienMatNum.value || 0);
         const ck = Number(pay.payChuyenKhoanNum.value || 0);
@@ -640,17 +601,14 @@ export function useBanHangHoaDonSubmit(deps) {
           pay.openPayModal();
           return;
         }
-        if (ck > 0 && tm > 0 && (tm + ck) !== total) {
+        if (ck > 0 && tm > 0 && tm + ck !== total) {
           showToast("Kết hợp: tổng tiền mặt + chuyển khoản phải đúng bằng tổng phải trả.", "error");
           pay.openPayModal();
           return;
         }
       }
 
-      const doneShip = await apiClient.put(
-        `/api/admin/hoa-don/${idHoaDon}/confirm-giao-hang-ket-hop`,
-        bodyGiaoHang,
-      );
+      const doneShip = await apiClient.put(`/api/admin/hoa-don/${idHoaDon}/confirm-giao-hang-ket-hop`, bodyGiaoHang);
       const finalHdShip = doneShip?.data || { id: idHoaDon };
 
       showToast("Đã lưu đơn giao hàng và ghi nhận thanh toán.", "success");
@@ -659,9 +617,7 @@ export function useBanHangHoaDonSubmit(deps) {
       if (syncHdTimer.value) clearTimeout(syncHdTimer.value);
       anTabDaHoanTatSauSubmit();
     } catch (e) {
-      const msg =
-        e?.response?.data?.message ||
-        "Xác nhận đơn thất bại. Vui lòng kiểm tra lại.";
+      const msg = e?.response?.data?.message || "Xác nhận đơn thất bại. Vui lòng kiểm tra lại.";
       showToast(msg, "error");
     } finally {
       submitting.value = false;

@@ -178,9 +178,7 @@
                   type="button"
                   @click="incQty(it)"
                   :disabled="Number(it.qty || 1) >= getMaxQtyForItem(it) || !hasPermission"
-                  :title="
-                    Number(it.qty || 1) >= getMaxQtyForItem(it) ? 'Đã đạt tồn tối đa' : 'Tăng số lượng'
-                  "
+                  :title="Number(it.qty || 1) >= getMaxQtyForItem(it) ? 'Đã đạt tồn tối đa' : 'Tăng số lượng'"
                 >
                   +
                 </button>
@@ -277,9 +275,7 @@
                   <!-- 1 hàng: SĐT + Địa chỉ cụ thể -->
                   <div class="ss-guest-row2">
                     <div class="ss-field">
-                      <div class="ss-filter-label">
-                        Số điện thoại <span class="ss-req">*</span>
-                      </div>
+                      <div class="ss-filter-label">Số điện thoại <span class="ss-req">*</span></div>
                       <input
                         v-model="guest.soDienThoai"
                         class="form-control ss-input"
@@ -290,9 +286,7 @@
                     </div>
 
                     <div class="ss-field">
-                      <div class="ss-filter-label">
-                        Địa chỉ cụ thể <span class="ss-req">*</span>
-                      </div>
+                      <div class="ss-filter-label">Địa chỉ cụ thể <span class="ss-req">*</span></div>
                       <input
                         v-model.trim="guest.diaChiCuThe"
                         class="form-control ss-input"
@@ -367,7 +361,7 @@
 
             <div class="ss-panel-body">
               <!-- =========================
-                   ✅ KHÔI PHỤC UI VOUCHER TỐI ƯU (Y HỆT FILE CŨ)
+                   ✅ VOUCHER
                    ========================= -->
               <div class="ss-voucher-row">
                 <div class="ss-field grow">
@@ -394,8 +388,16 @@
                 </div>
                 <div class="ss-voucher-auto-sub">
                   Giảm {{ formatMoney(giamGia) }}
-                  <span v-if="voucherManual" class="ss-voucher-tag">Đã nhập mã</span>
+                  <span v-if="voucherManual && voucherManual.__pinnedPos !== true" class="ss-voucher-tag">Đã nhập mã</span>
+                  <span v-else-if="voucherManual && voucherManual.__pinnedPos === true" class="ss-voucher-tag">Đã giữ</span>
                 </div>
+              </div>
+
+              <!-- ✅ Gợi ý mua thêm để áp dụng voucher tốt hơn -->
+              <div v-if="voucherSuggest && tongTienHang > 0" class="ss-voucher-suggest">
+                Gợi ý: Mua thêm <b>{{ formatMoney(voucherSuggest.soTienCanThem) }}</b> để áp dụng
+                <b>{{ getVoucherLabel(voucherSuggest.voucher) }}</b>
+                và được giảm thêm khoảng <b>{{ formatMoney(voucherSuggest.giamThemDuKien) }}</b>.
               </div>
               <!-- ========================= END VOUCHER ========================= -->
 
@@ -880,6 +882,42 @@
         </div>
       </div>
     </div>
+
+    <!-- ========================= MODAL: VOUCHER MỚI TỐT HƠN ========================= -->
+    <div v-if="showBetterVoucherModal" class="ss-modal-backdrop">
+      <div class="ss-modal ss-modal-md" role="dialog" aria-modal="true">
+        <div class="ss-modal-head">
+          <!-- ✅ đổi sang bind text từ composable -->
+          <div class="ss-modal-title">{{ betterVoucherModalTitleText }}</div>
+          <button class="ss-x" type="button" @click="boQuaVoucherMoiTotHon">×</button>
+        </div>
+
+        <div class="ss-modal-body">
+          <div class="ss-api-hint">
+            Hệ thống vừa cập nhật phiếu giảm giá tốt hơn:
+            <b>{{ getVoucherLabel(betterVoucherCandidate) }}</b>.
+            <!-- ✅ đúng câu hỏi yêu cầu -->
+            <div style="margin-top: 8px"><b>{{ betterVoucherQuestionText }}</b></div>
+          </div>
+
+          <div class="ss-paybox" style="margin-top: 10px">
+            <div class="ss-paybox-row">
+              <div class="ss-paybox-k">Giảm hiện tại</div>
+              <div class="ss-paybox-v">- {{ formatMoney(betterVoucherCurrentDiscount) }}</div>
+            </div>
+            <div class="ss-paybox-row">
+              <div class="ss-paybox-k">Giảm nếu áp dụng phiếu mới</div>
+              <div class="ss-paybox-v ss-paybox-red">- {{ formatMoney(betterVoucherNewDiscount) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ss-modal-actions">
+          <button class="btn ss-btn-outline" type="button" @click="boQuaVoucherMoiTotHon">Giữ phiếu hiện tại</button>
+          <button class="btn ss-btn-primary" type="button" @click="apDungVoucherMoiTotHon">Áp dụng phiếu mới</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1162,6 +1200,14 @@ function dongTatCaModal() {
   kh.showDiaChiModal.value = false;
   pay.showPayModal.value = false;
   hd.showSubmitConfirmModal.value = false;
+
+  // ✅ đóng modal voucher mới tốt hơn (nếu có)
+  try {
+    if (pay?.showBetterVoucherModal?.value) {
+      if (typeof pay?.boQuaVoucherMoiTotHon === "function") pay.boQuaVoucherMoiTotHon();
+      else pay.showBetterVoucherModal.value = false;
+    }
+  } catch (e) {}
 }
 
 const tabsApi = useBanHangTabs({
@@ -1326,7 +1372,8 @@ const anyModalOpen = computed(() => {
     kh.showKhModal.value ||
     kh.showDiaChiModal.value ||
     pay.showPayModal.value ||
-    hd.showSubmitConfirmModal.value
+    hd.showSubmitConfirmModal.value ||
+    (pay?.showBetterVoucherModal?.value || false)
   );
 });
 
@@ -1407,6 +1454,32 @@ watch(isCounter, async (val) => {
   persistActiveTab();
   scheduleSyncHoaDon();
 });
+
+/* ✅ FIX: giữ voucher cũ (voucherPinned) phải theo tab -> mirror sang voucherManual có cờ __pinnedPos */
+watch(
+  () => pay?.voucherPinned?.value,
+  (v) => {
+    try {
+      if (!v) return;
+
+      // nếu đang có voucherManual (user nhập) thì không ghi đè
+      if (!pay.voucherManual.value) {
+        pay.voucherManual.value = { ...v, __pinnedPos: true };
+
+        const code = String(v.maPhieuGiamGia || v.ma || v.code || "").trim();
+        if (code) pay.voucherCode.value = code;
+
+        // clear pinned để tránh "dính" qua tab khác
+        pay.voucherPinned.value = null;
+
+        persistActiveTab();
+        scheduleSyncHoaDon();
+      } else {
+        pay.voucherPinned.value = null;
+      }
+    } catch (e) {}
+  },
+);
 
 /* =========================
    LOGIN USER
@@ -1603,6 +1676,21 @@ const voucherManual = pay.voucherManual;
 const effectiveVoucher = pay.effectiveVoucher;
 const voucherValueText = pay.voucherValueText;
 const giamGia = pay.giamGia;
+
+// ✅ mới: gợi ý voucher
+const voucherSuggest = pay.voucherSuggest;
+
+// ✅ mới: modal voucher tốt hơn
+const showBetterVoucherModal = pay.showBetterVoucherModal;
+const betterVoucherCandidate = pay.betterVoucherCandidate;
+const betterVoucherCurrentDiscount = pay.betterVoucherCurrentDiscount;
+const betterVoucherNewDiscount = pay.betterVoucherNewDiscount;
+const apDungVoucherMoiTotHon = pay.apDungVoucherMoiTotHon;
+const boQuaVoucherMoiTotHon = pay.boQuaVoucherMoiTotHon;
+
+// ✅ mới: text modal (đúng yêu cầu)
+const betterVoucherModalTitleText = pay.betterVoucherModalTitleText;
+const betterVoucherQuestionText = pay.betterVoucherQuestionText;
 
 const phiVanChuyenText = pay.phiVanChuyenText;
 const phiVanChuyenNum = pay.phiVanChuyenNum;
@@ -2201,6 +2289,17 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   color: rgba(153, 27, 27, 0.92);
 }
 
+/* ✅ Gợi ý mua thêm */
+.ss-voucher-suggest {
+  margin-top: 10px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: rgba(17, 24, 39, 0.72);
+}
+
 /* Switch */
 .ss-ship-toggle {
   display: inline-flex;
@@ -2669,13 +2768,13 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
 
 /* EMPTY: CHƯA CÓ ĐƠN HÀNG -> cho to ra như cũ */
 .ss-empty-card {
-  min-height: 360px; 
+  min-height: 360px;
   display: grid;
   place-items: center;
 }
 
 .ss-empty-card .ss-empty-wrap {
-  min-height: auto; 
+  min-height: auto;
 }
 
 /* ✅ FIX: Header "Sản phẩm" (title trái - nút phải, không bị tụt dòng) */
@@ -2702,7 +2801,7 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
 /* ✅ FIX: Empty state trong giỏ hàng (Không có dữ liệu) căn giữa đẹp */
 .ss-empty-wrap {
   width: 100%;
-  min-height: 260px; /* đúng “không có dữ liệu” trong giỏ */
+  min-height: 260px;
   display: grid;
   place-items: center;
   text-align: center;

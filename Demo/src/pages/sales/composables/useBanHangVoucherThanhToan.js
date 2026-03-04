@@ -1,21 +1,17 @@
-import { computed, onBeforeUnmount, reactive, ref } from "vue";
+// File: src/pages/sales/composables/useBanHangVoucherThanhToan.js
+import { computed, onBeforeUnmount, reactive, ref, watch } from "vue";
 
 export function useBanHangVoucherThanhToan(deps) {
   const {
     SalesService,
-
     isCounter,
     selectedKh,
-
     tongTienHang,
-
-    // helpers
     todayYmd,
     toYmd,
     formatMoney,
     parseMoneyText,
     formatNumberText,
-
     showToast,
     persistActiveTab,
     scheduleSyncHoaDon,
@@ -25,12 +21,13 @@ export function useBanHangVoucherThanhToan(deps) {
   const phiVanChuyenText = ref("0");
 
   const voucherCode = ref("");
-  const voucherManual = ref(null);
-  const autoVoucher = ref(null);
+  const voucherManual = ref(null); // user nhập mã hoặc bị “ghim”
+  const autoVoucher = ref(null); // hệ thống tự chọn best
 
   const loadingVoucher = ref(false);
   const voucherDebounce = ref(null);
 
+  // cache
   const voucherCache = reactive({
     all: [],
     personal: [],
@@ -46,9 +43,34 @@ export function useBanHangVoucherThanhToan(deps) {
     return Number.isFinite(n) && n >= 0 ? n : 0;
   });
 
-  // ✅ Quy ước đúng theo BE hiện tại:
+  // =========================
+  // ✅ UI: modal “voucher mới tốt hơn”
+  // =========================
+  const showBetterVoucherModal = ref(false);
+  const betterVoucherCandidate = ref(null);
+  const betterVoucherCurrentDiscount = ref(0);
+  const betterVoucherNewDiscount = ref(0);
+
+  const betterVoucherModalTitleText = ref("Có phiếu giảm giá mới");
+  const betterVoucherQuestionText = ref("Bạn có muốn áp dụng phiếu giảm giá mới không?");
+
+  // ✅ để SalesPage watch mirror -> voucherManual pinned theo tab
+  const voucherPinned = ref(null);
+
+  // ✅ gợi ý mua thêm
+  const voucherSuggest = ref(null);
+
+  // chặn auto đổi voucher trong lúc đang hỏi
+  const dangHoiVoucherMoi = ref(false);
+
+  // user đã “giữ phiếu hiện tại” cho candidate này (tránh hỏi lại)
+  const declinedBetterKey = ref("");
+
+  // =========================
+  // ✅ Quy ước type voucher theo BE
   // loaiPhieuGiamGia = false/0 => GIẢM %
   // loaiPhieuGiamGia = true/1  => GIẢM TIỀN
+  // =========================
   function isVoucherPercent(v) {
     if (!v) return true;
 
@@ -58,21 +80,17 @@ export function useBanHangVoucherThanhToan(deps) {
     if (raw === true || raw === 1 || raw === "1") return false;
 
     const s = String(raw ?? "").trim().toLowerCase();
-    if (s === "false" || s === "0" || s === "percent" || s === "phan_tram" || s === "%")
-      return true;
-    if (s === "true" || s === "1" || s === "money" || s === "tien" || s === "amount")
-      return false;
+    if (s === "false" || s === "0" || s === "percent" || s === "phan_tram" || s === "%") return true;
+    if (s === "true" || s === "1" || s === "money" || s === "tien" || s === "amount") return false;
 
-    // fallback: suy đoán theo giá trị
     const giaTri = Number(v.giaTriGiamGia ?? v.giaTriGiam ?? 0);
-    if (Number.isFinite(giaTri) && giaTri > 100) return false; // >100 thường là tiền
+    if (Number.isFinite(giaTri) && giaTri > 100) return false;
     return true;
   }
 
   function normalizeVoucherPercent(raw) {
     let n = Number(raw ?? 0);
     if (!Number.isFinite(n) || n <= 0) return 0;
-    // hỗ trợ trường hợp BE trả 0.1 = 10%
     if (n > 0 && n <= 1) n = n * 100;
     n = Math.round(n);
     n = Math.max(0, Math.min(100, n));
@@ -85,14 +103,53 @@ export function useBanHangVoucherThanhToan(deps) {
     return Number.isFinite(n) && n > 0 ? n : 0;
   }
 
+  function getSoLuongConLai(v) {
+    const raw =
+      v?.soLuongSuDung ??
+      v?.soLuong ??
+      v?.soLuongConLai ??
+      v?.soLuotSuDungConLai ??
+      v?.conLai ??
+      null;
+    if (raw == null) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function isTrangThaiActive(v) {
+    const t = v?.trangThai;
+    if (t === undefined || t === null) return true;
+    if (t === false || t === 0 || t === "0") return false;
+    return true;
+  }
+
+  function voucherCodeOf(v) {
+    return String(v?.maPhieuGiamGia || v?.ma || v?.code || "").trim();
+  }
+
+  function voucherKeyOf(v) {
+    if (!v) return "";
+    const id = v?.id ?? "";
+    const code = voucherCodeOf(v);
+    const p = v?.__pggcnId ?? "";
+    return `${id}|${p}|${code}`;
+  }
+
+  function makeBetterKey(candidate, tong) {
+    const k = voucherKeyOf(candidate);
+    const d = calcVoucherDiscount(candidate, tong);
+    return `${k}|${Math.round(Number(tong || 0))}|${Math.round(Number(d || 0))}`;
+  }
+
   function calcVoucherDiscount(v, tongTien) {
     const tong = Number(tongTien || 0);
     if (!v || tong <= 0) return 0;
 
-    if (v.xoaMem === true || v.trangThai === false) return 0;
+    if (v.xoaMem === true) return 0;
+    if (!isTrangThaiActive(v)) return 0;
 
-    const remain = Number(v.soLuongSuDung ?? 0);
-    if (Number.isFinite(remain) && remain <= 0) return 0;
+    const remain = getSoLuongConLai(v);
+    if (remain != null && remain <= 0) return 0;
 
     const min = Number(v.hoaDonToiThieu ?? v.hoaDonToiThieuTien ?? 0);
     if (Number.isFinite(min) && min > 0 && tong < min) return 0;
@@ -114,7 +171,6 @@ export function useBanHangVoucherThanhToan(deps) {
       discount = Math.round(Math.max(0, giaTri));
     }
 
-    // ✅ đồng bộ BE: cap tối đa áp dụng cho cả % và tiền
     const cap = getCapToiDa(v);
     if (cap > 0) discount = Math.min(discount, cap);
 
@@ -139,24 +195,90 @@ export function useBanHangVoucherThanhToan(deps) {
     return bestDiscount > 0 ? best : null;
   }
 
-  async function loadPublicVouchersIfNeeded() {
+  function normalizePersonalList(personal) {
+    if (!Array.isArray(personal) || !personal.length) return [];
+    return personal
+      .map((x) => {
+        if (x?.phieuGiamGia) {
+          return {
+            ...x.phieuGiamGia,
+            __pggcnId: x.id || x.idPhieuGiamGiaCaNhan || x.idPggcn || null,
+            __isPersonal: true,
+          };
+        }
+        return { ...x, __isPersonal: true };
+      })
+      .filter(Boolean);
+  }
+
+  // =========================
+  // ✅ Fingerprint detect “admin tạo/update voucher”
+  // =========================
+  function buildFingerprint(list) {
+    const arr = Array.isArray(list) ? list : [];
+    return arr
+      .map((v) => {
+        const id = v?.id ?? "";
+        const p = v?.__pggcnId ?? "";
+        const code = voucherCodeOf(v);
+        const loai = v?.loaiPhieuGiamGia ?? "";
+        const giaTri = Number(v?.giaTriGiamGia ?? v?.giaTriGiam ?? 0);
+        const cap = Number(v?.soTienGiamToiDa ?? 0);
+        const min = Number(v?.hoaDonToiThieu ?? v?.hoaDonToiThieuTien ?? 0);
+        const start = toYmd(v?.ngayBatDau) || "";
+        const end = toYmd(v?.ngayKetThuc) || "";
+        const trangThai = v?.trangThai ?? "";
+        const remain = getSoLuongConLai(v) ?? "";
+        const xoaMem = v?.xoaMem ?? "";
+        return `${id}|${p}|${code}|${loai}|${giaTri}|${cap}|${min}|${start}|${end}|${trangThai}|${remain}|${xoaMem}`;
+      })
+      .sort()
+      .join("~");
+  }
+
+  function getFpStorageKey(khId) {
+    const k = khId ? String(khId) : "0";
+    return `ss_pos_voucher_fp_${k}`;
+  }
+
+  function readFpFromStorage(khId) {
+    try {
+      return localStorage.getItem(getFpStorageKey(khId)) || "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function writeFpToStorage(khId, fp) {
+    try {
+      localStorage.setItem(getFpStorageKey(khId), fp || "");
+    } catch (e) {}
+  }
+
+  // =========================
+  // ✅ Load vouchers (TTL) + force refresh
+  // =========================
+  async function loadPublicVouchers(force = false) {
     const now = Date.now();
-    if (
-      voucherCache.loadedAt &&
-      now - voucherCache.loadedAt < 60_000 &&
-      Array.isArray(voucherCache.all)
-    ) {
+    if (!force && voucherCache.loadedAt && now - voucherCache.loadedAt < 60_000 && Array.isArray(voucherCache.all)) {
       return;
     }
-
     const data = await SalesService.getVouchersPublic().catch(() => []);
     voucherCache.all = Array.isArray(data) ? data : [];
     voucherCache.loadedAt = now;
   }
 
-  async function loadPersonalVouchersMaybe(khachHangId) {
+  async function loadPersonalVouchers(khachHangId, force = false) {
     const now = Date.now();
+    if (!khachHangId) {
+      voucherCache.personal = [];
+      voucherCache.personalKhId = null;
+      voucherCache.loadedAtPersonal = now;
+      return [];
+    }
+
     if (
+      !force &&
       voucherCache.loadedAtPersonal &&
       now - voucherCache.loadedAtPersonal < 30_000 &&
       Array.isArray(voucherCache.personal) &&
@@ -165,68 +287,216 @@ export function useBanHangVoucherThanhToan(deps) {
       return voucherCache.personal;
     }
 
+    const data = await SalesService.getVouchersPersonalByKhachHangId(khachHangId).catch(() => []);
+    voucherCache.personal = Array.isArray(data) ? data : [];
+    voucherCache.personalKhId = khachHangId;
+    voucherCache.loadedAtPersonal = now;
+    return voucherCache.personal;
+  }
+
+  async function getCandidates({ force = false } = {}) {
+    await loadPublicVouchers(force);
+
+    const all = Array.isArray(voucherCache.all) ? voucherCache.all : [];
+    let candidates = [...all];
+
+    const khId = selectedKh.value?.id || null;
+    if (khId) {
+      const personal = await loadPersonalVouchers(khId, force);
+      const normalized = normalizePersonalList(personal);
+      if (normalized.length) candidates = candidates.concat(normalized);
+    }
+
+    return candidates;
+  }
+
+  // =========================
+  // ✅ Gợi ý mua thêm
+  // =========================
+  function updateVoucherSuggest(candidates, tong, currentDiscount) {
     try {
-      const data = await SalesService.getVouchersPersonalByKhachHangId(khachHangId).catch(() => []);
-      voucherCache.personal = Array.isArray(data) ? data : [];
-      voucherCache.personalKhId = khachHangId;
-      voucherCache.loadedAtPersonal = now;
-      return voucherCache.personal;
+      voucherSuggest.value = null;
+      if (!Array.isArray(candidates) || !candidates.length) return;
+      if (!Number.isFinite(tong) || tong <= 0) return;
+
+      let best = null;
+
+      for (const v of candidates) {
+        const min = Number(v.hoaDonToiThieu ?? v.hoaDonToiThieuTien ?? 0);
+        if (!Number.isFinite(min) || min <= 0) continue;
+        if (tong >= min) continue;
+
+        const canThem = Math.max(0, Math.round(min - tong));
+        if (canThem <= 0) continue;
+
+        const discAtMin = calcVoucherDiscount(v, min);
+        if (discAtMin <= 0) continue;
+
+        const giamThem = Math.max(0, discAtMin - Math.max(0, currentDiscount || 0));
+        if (giamThem <= 0) continue;
+
+        const candidate = { soTienCanThem: canThem, giamThemDuKien: giamThem, voucher: v };
+
+        if (
+          !best ||
+          candidate.giamThemDuKien > best.giamThemDuKien ||
+          (candidate.giamThemDuKien === best.giamThemDuKien && candidate.soTienCanThem < best.soTienCanThem)
+        ) {
+          best = candidate;
+        }
+      }
+
+      voucherSuggest.value = best;
     } catch (e) {
-      voucherCache.personal = [];
-      voucherCache.personalKhId = khachHangId;
-      voucherCache.loadedAtPersonal = now;
-      return [];
+      voucherSuggest.value = null;
     }
   }
 
+  // =========================
+  // ✅ Helpers: mở modal + refresh voucher đang áp dụng
+  // =========================
+  function moModalVoucherTotHon(best, curDiscount, bestDiscount) {
+    try {
+      const tong = Math.round(Number(tongTienHang.value || 0));
+      const key = makeBetterKey(best, tong);
+      if (declinedBetterKey.value && declinedBetterKey.value === key) return false;
+
+      dangHoiVoucherMoi.value = true;
+      betterVoucherCandidate.value = best;
+      betterVoucherCurrentDiscount.value = Math.max(0, Math.round(curDiscount));
+      betterVoucherNewDiscount.value = Math.max(0, Math.round(bestDiscount));
+      showBetterVoucherModal.value = true;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function refreshVoucherDangApDung(best) {
+    try {
+      const cur = effectiveVoucher.value;
+      if (!cur || !best) return;
+
+      const kCur = voucherKeyOf(cur);
+      const kBest = voucherKeyOf(best);
+      if (!kCur || kCur !== kBest) return;
+
+      if (voucherManual.value && voucherKeyOf(voucherManual.value) === kBest) {
+        const pinned = voucherManual.value?.__pinnedPos === true;
+        voucherManual.value = { ...best, __pinnedPos: pinned ? true : undefined };
+        return;
+      }
+
+      if (autoVoucher.value && voucherKeyOf(autoVoucher.value) === kBest) {
+        autoVoucher.value = { ...best };
+        return;
+      }
+
+      // fallback: theo effective
+      if (voucherManual.value) {
+        const pinned = voucherManual.value?.__pinnedPos === true;
+        voucherManual.value = { ...best, __pinnedPos: pinned ? true : undefined };
+      } else {
+        autoVoucher.value = { ...best };
+      }
+    } catch (e) {}
+  }
+
+  // =========================
+  // ✅ Auto best theo giỏ hàng
+  // =========================
   async function loadBestVoucher() {
-    if (voucherManual.value) {
+    const tong = Math.round(Number(tongTienHang.value || 0));
+    if (tong <= 0) {
+      autoVoucher.value = null;
+      voucherSuggest.value = null;
       persistActiveTab();
       return;
     }
 
-    autoVoucher.value = null;
-
-    const tong = Math.round(Number(tongTienHang.value || 0));
-    if (tong <= 0) {
-      persistActiveTab();
+    // đang hỏi voucher mới -> không auto đổi
+    if (dangHoiVoucherMoi.value || showBetterVoucherModal.value) {
+      try {
+        const candidates = await getCandidates({ force: false });
+        const cur = effectiveVoucher.value;
+        const curDiscount = cur ? calcVoucherDiscount(cur, tong) : 0;
+        updateVoucherSuggest(candidates, tong, curDiscount);
+      } catch (e) {}
       return;
     }
 
     loadingVoucher.value = true;
     try {
-      await loadPublicVouchersIfNeeded();
+      const candidates = await getCandidates({ force: false });
 
-      const all = Array.isArray(voucherCache.all) ? voucherCache.all : [];
-      let candidates = [...all];
-
-      if (selectedKh.value?.id) {
-        const personal = await loadPersonalVouchersMaybe(selectedKh.value.id);
-        if (Array.isArray(personal) && personal.length) {
-          const normalized = personal
-            .map((x) => {
-              if (x?.phieuGiamGia) {
-                return {
-                  ...x.phieuGiamGia,
-                  __pggcnId: x.id || x.idPhieuGiamGiaCaNhan || x.idPggcn || null,
-                  __isPersonal: true,
-                };
-              }
-              return { ...x, __isPersonal: true };
-            })
-            .filter(Boolean);
-
-          candidates = candidates.concat(normalized);
+      // ✅ detect list voucher vừa thay đổi (không chỉ prime)
+      let listChanged = false;
+      try {
+        const khId = selectedKh.value?.id || null;
+        const fpNow = buildFingerprint(candidates) + `|KH=${khId || ""}`;
+        const old = readFpFromStorage(khId);
+        if (!old) {
+          writeFpToStorage(khId, fpNow);
+        } else if (old !== fpNow) {
+          writeFpToStorage(khId, fpNow);
+          listChanged = true;
         }
-      }
+      } catch (e) {}
+
+      const cur = effectiveVoucher.value;
+      const curDiscount = cur ? calcVoucherDiscount(cur, tong) : 0;
 
       const best = pickBestVoucher(candidates, tong);
+      const bestDiscount = best ? calcVoucherDiscount(best, tong) : 0;
+
+      updateVoucherSuggest(candidates, tong, curDiscount);
+
+      // current không hợp lệ -> tự chọn lại (không cần hỏi)
+      if (cur && curDiscount <= 0) {
+        voucherManual.value = null;
+        autoVoucher.value = best || null;
+        showToast("Phiếu giảm giá hiện tại không còn hợp lệ, hệ thống đã tự chọn lại.", "info");
+        persistActiveTab();
+        scheduleSyncHoaDon();
+        return;
+      }
+
+      // ✅ nếu listChanged và best tốt hơn current -> CHỈ HỎI, KHÔNG AUTO APPLY
+      if (listChanged && cur && best && bestDiscount > curDiscount) {
+        // nếu voucher đang áp dụng chính là voucher vừa được update -> refresh luôn
+        if (voucherKeyOf(best) === voucherKeyOf(cur)) {
+          refreshVoucherDangApDung(best);
+          showToast("Phiếu giảm giá đang áp dụng vừa được cập nhật.", "info");
+          persistActiveTab();
+          scheduleSyncHoaDon();
+          return;
+        }
+
+        // mở modal hỏi
+        const opened = moModalVoucherTotHon(best, curDiscount, bestDiscount);
+        if (opened) {
+          persistActiveTab();
+          return;
+        }
+
+        // user đã từ chối candidate này -> giữ nguyên, không auto đổi
+        persistActiveTab();
+        return;
+      }
+
+      // manual (user nhập) hoặc pinned -> giữ nguyên
+      if (voucherManual.value) {
+        persistActiveTab();
+        return;
+      }
+
+      // auto best bình thường (do giỏ hàng thay đổi)
       autoVoucher.value = best || null;
+      persistActiveTab();
     } catch (e) {
-      autoVoucher.value = null;
+      persistActiveTab();
     } finally {
       loadingVoucher.value = false;
-      persistActiveTab();
     }
   }
 
@@ -237,10 +507,155 @@ export function useBanHangVoucherThanhToan(deps) {
     }, 350);
   }
 
+  // =========================
+  // ✅ Detect “admin vừa tạo/update voucher” -> mở MODAL hỏi
+  // =========================
+  async function kiemTraVoucherMoiTotHon() {
+    // đang mở modal -> không check để khỏi spam
+    if (dangHoiVoucherMoi.value || showBetterVoucherModal.value) return;
+
+    const tong = Math.round(Number(tongTienHang.value || 0));
+    if (tong <= 0) return;
+
+    try {
+      const khId = selectedKh.value?.id || null;
+
+      // force refresh để thấy voucher mới
+      const candidates = await getCandidates({ force: true });
+
+      const fp = buildFingerprint(candidates) + `|KH=${khId || ""}`;
+      const lastFp = readFpFromStorage(khId);
+
+      // lần đầu chưa có fp -> lưu lại và thôi
+      if (!lastFp) {
+        writeFpToStorage(khId, fp);
+        return;
+      }
+
+      // không đổi dữ liệu -> thôi
+      if (lastFp === fp) return;
+
+      // có đổi -> lưu fp mới
+      writeFpToStorage(khId, fp);
+
+      const cur = effectiveVoucher.value;
+      const best = pickBestVoucher(candidates, tong);
+
+      // nếu chưa có voucher -> cho auto best luôn
+      if (!cur) {
+        autoVoucher.value = best || null;
+        persistActiveTab();
+        return;
+      }
+
+      const curDiscount = calcVoucherDiscount(cur, tong);
+      const bestDiscount = best ? calcVoucherDiscount(best, tong) : 0;
+
+      updateVoucherSuggest(candidates, tong, curDiscount);
+
+      // current không hợp lệ -> tự chọn lại
+      if (curDiscount <= 0) {
+        voucherManual.value = null;
+        autoVoucher.value = best || null;
+        showToast("Phiếu giảm giá hiện tại không còn hợp lệ, hệ thống đã tự chọn lại.", "info");
+        persistActiveTab();
+        scheduleSyncHoaDon();
+        return;
+      }
+
+      // ✅ nếu voucher đang áp dụng chính là voucher vừa được update -> refresh + toast
+      if (best && voucherKeyOf(best) === voucherKeyOf(cur)) {
+        refreshVoucherDangApDung(best);
+        showToast("Phiếu giảm giá đang áp dụng vừa được cập nhật.", "info");
+        persistActiveTab();
+        scheduleSyncHoaDon();
+        return;
+      }
+
+      // best không tốt hơn -> thôi
+      if (!best || bestDiscount <= curDiscount) return;
+
+      // user đã từ chối candidate này -> thôi
+      const key = makeBetterKey(best, tong);
+      if (declinedBetterKey.value && declinedBetterKey.value === key) return;
+
+      // ✅ mở modal hỏi
+      moModalVoucherTotHon(best, curDiscount, bestDiscount);
+    } catch (e) {}
+  }
+
+  function boQuaVoucherMoiTotHon() {
+    try {
+      const tong = Math.round(Number(tongTienHang.value || 0));
+      const best = betterVoucherCandidate.value;
+      if (best) declinedBetterKey.value = makeBetterKey(best, tong);
+
+      // ✅ GIỮ PHIẾU HIỆN TẠI & GHIM LẠI
+      const cur = effectiveVoucher.value;
+      if (cur) {
+        const pinned = { ...cur, __pinnedPos: true };
+        voucherManual.value = pinned; // chuyển sang manual để chặn auto đổi
+        autoVoucher.value = null;
+        voucherPinned.value = { ...pinned };
+      }
+
+      showBetterVoucherModal.value = false;
+      betterVoucherCandidate.value = null;
+      betterVoucherCurrentDiscount.value = 0;
+      betterVoucherNewDiscount.value = 0;
+      dangHoiVoucherMoi.value = false;
+
+      persistActiveTab();
+      scheduleSyncHoaDon();
+
+      showToast("Đã giữ phiếu giảm giá hiện tại.", "info");
+    } catch (e) {
+      showBetterVoucherModal.value = false;
+      dangHoiVoucherMoi.value = false;
+    }
+  }
+
+  function apDungVoucherMoiTotHon() {
+    try {
+      const best = betterVoucherCandidate.value;
+      if (!best) {
+        showBetterVoucherModal.value = false;
+        dangHoiVoucherMoi.value = false;
+        return;
+      }
+
+      declinedBetterKey.value = "";
+
+      // ✅ áp dụng voucher mới
+      voucherManual.value = null;
+      autoVoucher.value = best;
+      voucherCode.value = "";
+      voucherPinned.value = null;
+
+      showBetterVoucherModal.value = false;
+      betterVoucherCandidate.value = null;
+      betterVoucherCurrentDiscount.value = 0;
+      betterVoucherNewDiscount.value = 0;
+      dangHoiVoucherMoi.value = false;
+
+      persistActiveTab();
+      scheduleSyncHoaDon();
+
+      showToast("Đã áp dụng phiếu giảm giá mới tốt hơn.", "success");
+    } catch (e) {
+      showBetterVoucherModal.value = false;
+      dangHoiVoucherMoi.value = false;
+    }
+  }
+
+  // =========================
+  // ✅ Áp dụng mã (manual)
+  // =========================
   async function applyVoucherCode() {
     const code = (voucherCode.value || "").trim();
     if (!code) {
       voucherManual.value = null;
+      voucherPinned.value = null;
       showToast("Đã bỏ mã phiếu giảm giá.", "info");
       scheduleAutoVoucher();
       scheduleSyncHoaDon();
@@ -248,28 +663,9 @@ export function useBanHangVoucherThanhToan(deps) {
     }
 
     try {
-      await loadPublicVouchersIfNeeded();
+      const candidates = await getCandidates({ force: true });
 
-      let candidates = Array.isArray(voucherCache.all) ? [...voucherCache.all] : [];
-
-      if (selectedKh.value?.id) {
-        const personal = await loadPersonalVouchersMaybe(selectedKh.value.id);
-        if (Array.isArray(personal) && personal.length) {
-          const normalized = personal
-            .map((x) =>
-              x?.phieuGiamGia
-                ? { ...x.phieuGiamGia, __pggcnId: x.id, __isPersonal: true }
-                : { ...x, __isPersonal: true },
-            )
-            .filter(Boolean);
-          candidates = candidates.concat(normalized);
-        }
-      }
-
-      const found = candidates.find(
-        (v) => String(v.maPhieuGiamGia || v.ma || v.code || "").trim() === code,
-      );
-
+      const found = candidates.find((v) => voucherCodeOf(v) === code);
       if (!found) {
         voucherManual.value = null;
         showToast("Không tìm thấy mã phiếu giảm giá.", "error");
@@ -285,7 +681,11 @@ export function useBanHangVoucherThanhToan(deps) {
 
       voucherManual.value = found;
       autoVoucher.value = null;
+      voucherPinned.value = null;
+
+      declinedBetterKey.value = "";
       showToast(`Đã áp dụng mã: ${code}`, "success");
+
       persistActiveTab();
       scheduleSyncHoaDon();
     } catch (e) {
@@ -294,11 +694,13 @@ export function useBanHangVoucherThanhToan(deps) {
     }
   }
 
+  // =========================
+  // totals
+  // =========================
   const giamGia = computed(() => {
     const v = effectiveVoucher.value;
     const tong = Number(tongTienHang.value || 0);
     if (!v || tong <= 0) return 0;
-
     return calcVoucherDiscount(v, tong);
   });
 
@@ -320,18 +722,13 @@ export function useBanHangVoucherThanhToan(deps) {
   const payTienMatNum = computed(() => parseMoneyText(payTienMatText.value));
   const payChuyenKhoanNum = computed(() => parseMoneyText(payChuyenKhoanText.value));
   const payTotalNum = computed(() => Math.max(0, payTienMatNum.value + payChuyenKhoanNum.value));
-
   const tienThieu = computed(() => Math.max(0, tongPhaiTra.value - Number(khachThanhToan.value || 0)));
 
   const voucherValueText = computed(() => {
     const v = effectiveVoucher.value;
     if (!v) return "";
-
     const giaTri = Number(v.giaTriGiamGia ?? v.giaTriGiam ?? 0);
-    if (isVoucherPercent(v)) {
-      const pct = normalizeVoucherPercent(giaTri);
-      return `${pct}%`;
-    }
+    if (isVoucherPercent(v)) return `${normalizeVoucherPercent(giaTri)}%`;
     return formatMoney(giaTri);
   });
 
@@ -389,7 +786,6 @@ export function useBanHangVoucherThanhToan(deps) {
     payTienMat.value = tienMat;
     payChuyenKhoan.value = chuyenKhoan;
     payMaThamChieu.value = (payMaThamChieu.value || "").trim();
-
     khachThanhToan.value = total;
 
     if (tienMat > 0 && chuyenKhoan > 0) payMethod.value = "KET_HOP";
@@ -411,9 +807,56 @@ export function useBanHangVoucherThanhToan(deps) {
     scheduleSyncHoaDon();
   }
 
+  // =========================
+  // ✅ Poll + focus để detect update nhanh
+  // =========================
+  const pollTimer = ref(null);
+
+  function startPoll() {
+    if (pollTimer.value) return;
+    pollTimer.value = setInterval(() => {
+      kiemTraVoucherMoiTotHon().catch?.(() => {});
+    }, 2500);
+  }
+
+  function stopPoll() {
+    if (!pollTimer.value) return;
+    clearInterval(pollTimer.value);
+    pollTimer.value = null;
+  }
+
+  function onFocus() {
+    kiemTraVoucherMoiTotHon().catch?.(() => {});
+  }
+
+  function onVisibilityChange() {
+    if (document.visibilityState === "visible") kiemTraVoucherMoiTotHon().catch?.(() => {});
+  }
+
+  watch(
+    () => selectedKh.value?.id || null,
+    () => {
+      declinedBetterKey.value = "";
+      kiemTraVoucherMoiTotHon().catch?.(() => {});
+    },
+  );
+
+  // init
+  kiemTraVoucherMoiTotHon().catch?.(() => {});
+  startPoll();
+  window.addEventListener("focus", onFocus);
+  document.addEventListener("visibilitychange", onVisibilityChange);
+
   onBeforeUnmount(() => {
     try {
       if (voucherDebounce.value) clearTimeout(voucherDebounce.value);
+    } catch (e) {}
+    try {
+      stopPoll();
+    } catch (e) {}
+    try {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     } catch (e) {}
   });
 
@@ -432,13 +875,26 @@ export function useBanHangVoucherThanhToan(deps) {
     loadingVoucher,
     voucherValueText,
     giamGia,
-
-    // expose helper (để SalesPage dùng chung rule, tránh đảo)
     isVoucherPercent,
 
     scheduleAutoVoucher,
     loadBestVoucher,
     applyVoucherCode,
+
+    // ✅ gợi ý + modal
+    voucherSuggest,
+    voucherPinned,
+    showBetterVoucherModal,
+    betterVoucherCandidate,
+    betterVoucherCurrentDiscount,
+    betterVoucherNewDiscount,
+
+    // ✅ text modal
+    betterVoucherModalTitleText,
+    betterVoucherQuestionText,
+
+    apDungVoucherMoiTotHon,
+    boQuaVoucherMoiTotHon,
 
     // payment
     showPayModal,
