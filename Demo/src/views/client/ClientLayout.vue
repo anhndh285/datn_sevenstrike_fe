@@ -25,7 +25,7 @@
       <div class="container">
         <div class="row align-items-center">
           <!-- Left spacer (hidden on mobile) -->
-          <div class="col-md-3 d-none d-md-block"></div>
+          <div class="col-md-2 d-none d-md-block"></div>
 
           <!-- Logo + Brand (Center) -->
           <div class="col-md-6 col-6">
@@ -44,7 +44,7 @@
           </div>
 
           <!-- Search + Icons (Right) -->
-          <div class="col-md-3 col-6 d-flex align-items-center justify-content-end gap-3">
+          <div class="col-md-4 col-6 d-flex align-items-center justify-content-end gap-3">
             <!-- Search -->
             <div class="input-group d-none d-md-flex" style="max-width: 200px;">
               <input
@@ -85,12 +85,13 @@
             <!-- User: Logged In -->
             <div v-if="isLoggedIn" ref="userDropdownWrap" class="position-relative">
               <button
-                class="btn btn-link text-dark p-1"
+                class="btn btn-link text-dark p-1 d-flex align-items-center gap-1"
                 type="button"
                 @click.stop="showUserDropdown = !showUserDropdown"
                 style="line-height: 1;"
               >
-                <img v-if="customer.anhDaiDien" :src="baseUrl + customer.anhDaiDien" class="rounded-circle" width="26" height="26" style="object-fit: cover; vertical-align: middle;" alt="Avatar">
+                <span class="d-none d-md-block" style="font-size: 14px; font-weight: 500; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #212529; line-height: 1.5; padding-bottom: 2px;">{{ tenNgan }}</span>
+                <img v-if="customer.anhDaiDien" :src="baseUrl + customer.anhDaiDien" class="rounded-circle" width="26" height="26" style="object-fit: cover;" alt="Avatar">
                 <i v-else class="bi bi-person-circle" style="font-size: 22px;"></i>
               </button>
               <transition name="dropdown-fade">
@@ -243,6 +244,9 @@
       </div>
     </footer>
   </div>
+
+  <!-- Widget chat AI + Nhân viên — chỉ hiện ở phần /client/ -->
+  <ChatWidget />
 </template>
 
 <script setup>
@@ -250,12 +254,14 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCart } from '@/services/cart';
 import { useClientAuth } from '@/services/authClient';
+import ChatWidget from '@/chatAI/components/ChatWidget.vue';
 
 const router = useRouter();
 const { cart } = useCart();
 const { customer, isLoggedIn, logout } = useClientAuth();
 const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const cartCount = computed(() => cart.value.reduce((acc, item) => acc + item.quantity, 0));
+const tenNgan = computed(() => customer.value?.hoTen?.trim() || '');
 
 const searchQuery = ref('');
 const showMobileSearch = ref(false);

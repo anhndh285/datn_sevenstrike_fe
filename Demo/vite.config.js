@@ -12,6 +12,12 @@ export default defineConfig({
       vue: "vue/dist/vue.esm-bundler.js",
     },
   },
+  define: {
+    global: "globalThis",
+  },
+  optimizeDeps: {
+    include: ["sockjs-client/dist/sockjs"],
+  },
   server: {
     host: true,
     port: 5173,

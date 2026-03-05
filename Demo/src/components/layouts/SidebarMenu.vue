@@ -1,9 +1,16 @@
 <!-- File: src/components/layouts/SidebarMenu.vue -->
 <template>
-  <aside class="sidebar bg-white border-end d-flex flex-column position-fixed h-100 ss-sidebar" style="z-index: 1000">
+  <aside
+    class="sidebar bg-white border-end d-flex flex-column position-fixed h-100 ss-sidebar"
+    style="z-index: 1000"
+  >
     <!-- Logo -->
     <div class="ss-logo-wrap text-center">
-      <img src="@/assets/images/logo/Logo_SevenStrike.png" alt="SevenStrike" class="img-fluid ss-logo" />
+      <img
+        src="@/assets/images/logo/Logo_SevenStrike.png"
+        alt="SevenStrike"
+        class="img-fluid ss-logo"
+      />
     </div>
 
     <nav class="nav flex-column px-3 py-0 gap-1 flex-grow-1">
@@ -34,7 +41,12 @@
       <!-- Khách hàng:
            - NHAN_VIEN: hiển thị dạng item riêng
            - ADMIN: KHÔNG hiển thị (vì đã có trong Quản lý tài khoản) -->
-      <RouterLink v-if="!isAdmin" class="ss-nav-link" to="/admin/tai-khoan/khach-hang" title="Khách hàng">
+      <RouterLink
+        v-if="!isAdmin"
+        class="ss-nav-link"
+        to="/admin/tai-khoan/khach-hang"
+        title="Khách hàng"
+      >
         <span class="material-icons ss-ic">person</span>
         <span class="ss-nav-label">Khách hàng</span>
       </RouterLink>
@@ -43,7 +55,12 @@
       <template v-if="isAdmin">
         <!-- Quản lý sản phẩm -->
         <div class="ss-nav-group">
-          <button class="ss-nav-toggle" @click="toggle('product')" type="button" title="Quản lý sản phẩm">
+          <button
+            class="ss-nav-toggle"
+            @click="toggle('product')"
+            type="button"
+            title="Quản lý sản phẩm"
+          >
             <div class="ss-toggle-left">
               <span class="material-icons ss-ic">inventory_2</span>
               <span class="ss-nav-label">Quản lý sản phẩm</span>
@@ -66,7 +83,12 @@
 
         <!-- Danh sách thuộc tính -->
         <div class="ss-nav-group">
-          <button class="ss-nav-toggle" @click="toggle('attr')" type="button" title="Danh sách thuộc tính">
+          <button
+            class="ss-nav-toggle"
+            @click="toggle('attr')"
+            type="button"
+            title="Danh sách thuộc tính"
+          >
             <div class="ss-toggle-left">
               <span class="material-icons ss-ic">tune</span>
               <span class="ss-nav-label">Danh sách thuộc tính</span>
@@ -77,32 +99,47 @@
           </button>
 
           <div v-show="openGroup.attr" class="ss-submenu">
-            <RouterLink class="ss-sub-link" to="/admin/thuong-hieu" title="Thương hiệu"><span
-                class="ss-sub-label">Thương hiệu</span></RouterLink>
-            <RouterLink class="ss-sub-link" to="/admin/xuat-xu" title="Xuất xứ"><span class="ss-sub-label">Xuất
-                xứ</span></RouterLink>
-            <RouterLink class="ss-sub-link" to="/admin/vi-tri-thi-dau" title="Vị trí thi đấu"><span
-                class="ss-sub-label">Vị trí thi đấu</span></RouterLink>
-            <RouterLink class="ss-sub-link" to="/admin/phong-cach-choi" title="Phong cách chơi"><span
-                class="ss-sub-label">Phong cách chơi</span></RouterLink>
-            <RouterLink class="ss-sub-link" to="/admin/co-giay" title="Cổ giày"><span class="ss-sub-label">Cổ
-                giày</span></RouterLink>
-            <RouterLink class="ss-sub-link" to="/admin/chat-lieu" title="Chất liệu"><span class="ss-sub-label">Chất
-                liệu</span></RouterLink>
-            <RouterLink class="ss-sub-link" to="/admin/mau-sac" title="Màu sắc"><span class="ss-sub-label">Màu
-                sắc</span></RouterLink>
-            <RouterLink class="ss-sub-link" to="/admin/kich-thuoc" title="Kích thước"><span class="ss-sub-label">Kích
-                thước</span></RouterLink>
-            <RouterLink class="ss-sub-link" to="/admin/loai-san" title="Loại sân"><span class="ss-sub-label">Loại
-                sân</span></RouterLink>
-            <RouterLink class="ss-sub-link" to="/admin/form-chan" title="Form chân"><span class="ss-sub-label">Form
-                chân</span></RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/thuong-hieu" title="Thương hiệu">
+              <span class="ss-sub-label">Thương hiệu</span>
+            </RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/xuat-xu" title="Xuất xứ">
+              <span class="ss-sub-label">Xuất xứ</span>
+            </RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/vi-tri-thi-dau" title="Vị trí thi đấu">
+              <span class="ss-sub-label">Vị trí thi đấu</span>
+            </RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/phong-cach-choi" title="Phong cách chơi">
+              <span class="ss-sub-label">Phong cách chơi</span>
+            </RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/co-giay" title="Cổ giày">
+              <span class="ss-sub-label">Cổ giày</span>
+            </RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/chat-lieu" title="Chất liệu">
+              <span class="ss-sub-label">Chất liệu</span>
+            </RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/mau-sac" title="Màu sắc">
+              <span class="ss-sub-label">Màu sắc</span>
+            </RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/kich-thuoc" title="Kích thước">
+              <span class="ss-sub-label">Kích thước</span>
+            </RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/loai-san" title="Loại sân">
+              <span class="ss-sub-label">Loại sân</span>
+            </RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/form-chan" title="Form chân">
+              <span class="ss-sub-label">Form chân</span>
+            </RouterLink>
           </div>
         </div>
 
         <!-- Quản lý giảm giá -->
         <div class="ss-nav-group">
-          <button class="ss-nav-toggle" @click="toggle('discount')" type="button" title="Quản lý giảm giá">
+          <button
+            class="ss-nav-toggle"
+            @click="toggle('discount')"
+            type="button"
+            title="Quản lý giảm giá"
+          >
             <div class="ss-toggle-left">
               <span class="material-icons ss-ic">local_offer</span>
               <span class="ss-nav-label">Quản lý giảm giá</span>
@@ -113,16 +150,23 @@
           </button>
 
           <div v-show="openGroup.discount" class="ss-submenu">
-            <RouterLink class="ss-sub-link" to="/admin/giam-gia/phieu" title="Phiếu giảm giá"><span
-                class="ss-sub-label">Phiếu giảm giá</span></RouterLink>
-            <RouterLink class="ss-sub-link" to="/admin/giam-gia/dot" title="Đợt giảm giá"><span class="ss-sub-label">Đợt
-                giảm giá</span></RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/giam-gia/phieu" title="Phiếu giảm giá">
+              <span class="ss-sub-label">Phiếu giảm giá</span>
+            </RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/giam-gia/dot" title="Đợt giảm giá">
+              <span class="ss-sub-label">Đợt giảm giá</span>
+            </RouterLink>
           </div>
         </div>
 
-        <!-- Quản lý tài khoản (ADMIN có Khách hàng + Nhân viên) -->
+        <!-- Quản lý tài khoản -->
         <div class="ss-nav-group">
-          <button class="ss-nav-toggle" @click="toggle('account')" type="button" title="Quản lý tài khoản">
+          <button
+            class="ss-nav-toggle"
+            @click="toggle('account')"
+            type="button"
+            title="Quản lý tài khoản"
+          >
             <div class="ss-toggle-left">
               <span class="material-icons ss-ic">group</span>
               <span class="ss-nav-label">Quản lý tài khoản</span>
@@ -133,15 +177,17 @@
           </button>
 
           <div v-show="openGroup.account" class="ss-submenu">
-            <RouterLink class="ss-sub-link" to="/admin/tai-khoan/khach-hang" title="Khách hàng"><span
-                class="ss-sub-label">Khách hàng</span></RouterLink>
-            <RouterLink class="ss-sub-link" to="/admin/tai-khoan/nhan-vien" title="Nhân viên"><span
-                class="ss-sub-label">Nhân viên</span></RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/tai-khoan/khach-hang" title="Khách hàng">
+              <span class="ss-sub-label">Khách hàng</span>
+            </RouterLink>
+            <RouterLink class="ss-sub-link" to="/admin/tai-khoan/nhan-vien" title="Nhân viên">
+              <span class="ss-sub-label">Nhân viên</span>
+            </RouterLink>
           </div>
         </div>
       </template>
 
-      <!-- Lịch làm việc: ADMIN + NHAN_VIEN (đặt cuối menu) -->
+      <!-- Lịch làm việc -->
       <div class="ss-nav-group">
         <button class="ss-nav-toggle" @click="toggle('work')" type="button" title="Lịch làm việc">
           <div class="ss-toggle-left">
@@ -162,11 +208,17 @@
             <span class="ss-sub-label">Giao ca</span>
           </RouterLink>
 
-          <RouterLink class="ss-sub-link" to="/admin/lich-ca-lam" title="Lịch ca làm">
+          <RouterLink v-if="isAdmin" class="ss-sub-link" to="/admin/lich-ca-lam" title="Lịch ca làm">
             <span class="ss-sub-label">Lịch ca làm</span>
           </RouterLink>
         </div>
       </div>
+
+      <!-- Quản lý Chat -->
+      <RouterLink class="ss-nav-link" to="/admin/chat" title="Quản lý Chat">
+        <span class="material-icons ss-ic">chat</span>
+        <span class="ss-nav-label">Quản lý Chat</span>
+      </RouterLink>
     </nav>
   </aside>
 </template>
@@ -179,8 +231,10 @@ const route = useRoute();
 
 const normalizeRole = (role) => {
   const r = String(role || "").trim().toUpperCase();
+
   if (r === "STAFF") return "NHAN_VIEN";
   if (r === "NHANVIEN" || r === "NHÂN_VIÊN" || r === "NHÂN VIÊN") return "NHAN_VIEN";
+
   return r;
 };
 
@@ -220,12 +274,16 @@ const openGroup = reactive({
   attr: false,
   discount: false,
   account: false,
-  work: true,
+  work: false,
 });
 
 function toggle(key) {
   openGroup[key] = !openGroup[key];
 }
+
+const batDauBangMotTrongCacPath = (path, pathList) => {
+  return pathList.some((item) => path.startsWith(item));
+};
 
 const attrPaths = [
   "/admin/thuong-hieu",
@@ -240,25 +298,25 @@ const attrPaths = [
   "/admin/form-chan",
 ];
 
+const productPaths = [
+  "/admin/san-pham",
+  "/admin/chi-tiet-san-pham",
+];
+
+const workPaths = [
+  "/admin/lich-lam-viec",
+  "/admin/giao-ca",
+  "/admin/lich-ca-lam",
+];
+
 watch(
   () => route.path,
   (p) => {
+    openGroup.product = batDauBangMotTrongCacPath(p, productPaths);
+    openGroup.attr = batDauBangMotTrongCacPath(p, attrPaths);
     openGroup.discount = p.startsWith("/admin/giam-gia/");
     openGroup.account = p.startsWith("/admin/tai-khoan/");
-
-    const isProduct =
-      p.startsWith("/admin/san-pham") ||
-      p.startsWith("/admin/chi-tiet-san-pham");
-
-    const isAttr = attrPaths.some((base) => p.startsWith(base));
-
-    const isWork =
-      p.startsWith("/admin/lich-lam-viec") ||
-      p.startsWith("/admin/giao-ca");
-
-    openGroup.product = isProduct;
-    openGroup.attr = isAttr;
-    openGroup.work = isWork;
+    openGroup.work = batDauBangMotTrongCacPath(p, workPaths);
   },
   { immediate: true }
 );
