@@ -21,13 +21,12 @@ export function useBanHangVoucherThanhToan(deps) {
   const phiVanChuyenText = ref("0");
 
   const voucherCode = ref("");
-  const voucherManual = ref(null); // user nhập mã hoặc bị “ghim”
-  const autoVoucher = ref(null); // hệ thống tự chọn best
+  const voucherManual = ref(null);
+  const autoVoucher = ref(null);
 
   const loadingVoucher = ref(false);
   const voucherDebounce = ref(null);
 
-  // cache
   const voucherCache = reactive({
     all: [],
     personal: [],
@@ -43,9 +42,6 @@ export function useBanHangVoucherThanhToan(deps) {
     return Number.isFinite(n) && n >= 0 ? n : 0;
   });
 
-  // =========================
-  // ✅ UI: modal “voucher mới tốt hơn”
-  // =========================
   const showBetterVoucherModal = ref(false);
   const betterVoucherCandidate = ref(null);
   const betterVoucherCurrentDiscount = ref(0);
@@ -54,23 +50,12 @@ export function useBanHangVoucherThanhToan(deps) {
   const betterVoucherModalTitleText = ref("Có phiếu giảm giá mới");
   const betterVoucherQuestionText = ref("Bạn có muốn áp dụng phiếu giảm giá mới không?");
 
-  // ✅ để SalesPage watch mirror -> voucherManual pinned theo tab
   const voucherPinned = ref(null);
-
-  // ✅ gợi ý mua thêm
   const voucherSuggest = ref(null);
 
-  // chặn auto đổi voucher trong lúc đang hỏi
   const dangHoiVoucherMoi = ref(false);
-
-  // user đã “giữ phiếu hiện tại” cho candidate này (tránh hỏi lại)
   const declinedBetterKey = ref("");
 
-  // =========================
-  // ✅ Quy ước type voucher theo BE
-  // loaiPhieuGiamGia = false/0 => GIẢM %
-  // loaiPhieuGiamGia = true/1  => GIẢM TIỀN
-  // =========================
   function isVoucherPercent(v) {
     if (!v) return true;
 
@@ -211,9 +196,6 @@ export function useBanHangVoucherThanhToan(deps) {
       .filter(Boolean);
   }
 
-  // =========================
-  // ✅ Fingerprint detect “admin tạo/update voucher”
-  // =========================
   function buildFingerprint(list) {
     const arr = Array.isArray(list) ? list : [];
     return arr
@@ -255,9 +237,31 @@ export function useBanHangVoucherThanhToan(deps) {
     } catch (e) {}
   }
 
-  // =========================
-  // ✅ Load vouchers (TTL) + force refresh
-  // =========================
+  function clearVoucherDangApDung() {
+    voucherManual.value = null;
+    autoVoucher.value = null;
+    voucherCode.value = "";
+    voucherPinned.value = null;
+    declinedBetterKey.value = "";
+  }
+
+  function apDungVoucherTuDong(best) {
+    voucherManual.value = null;
+    autoVoucher.value = best || null;
+    voucherCode.value = "";
+    voucherPinned.value = null;
+  }
+
+  function thongBaoVoucherBiNgungHoatDong(best) {
+    showToast("Phiếu giảm giá hiện tại đã ngừng hoạt động, hệ thống đang tự động tìm phiếu giảm giá tốt nhất.", "info");
+
+    if (best) {
+      showToast("Đã tự động áp dụng phiếu giảm giá tốt nhất.", "success");
+    } else {
+      showToast("Phiếu giảm giá đã bị gỡ, hiện không còn phiếu phù hợp.", "info");
+    }
+  }
+
   async function loadPublicVouchers(force = false) {
     const now = Date.now();
     if (!force && voucherCache.loadedAt && now - voucherCache.loadedAt < 60_000 && Array.isArray(voucherCache.all)) {
@@ -310,9 +314,6 @@ export function useBanHangVoucherThanhToan(deps) {
     return candidates;
   }
 
-  // =========================
-  // ✅ Gợi ý mua thêm
-  // =========================
   function updateVoucherSuggest(candidates, tong, currentDiscount) {
     try {
       voucherSuggest.value = null;
@@ -352,9 +353,6 @@ export function useBanHangVoucherThanhToan(deps) {
     }
   }
 
-  // =========================
-  // ✅ Helpers: mở modal + refresh voucher đang áp dụng
-  // =========================
   function moModalVoucherTotHon(best, curDiscount, bestDiscount) {
     try {
       const tong = Math.round(Number(tongTienHang.value || 0));
@@ -392,7 +390,6 @@ export function useBanHangVoucherThanhToan(deps) {
         return;
       }
 
-      // fallback: theo effective
       if (voucherManual.value) {
         const pinned = voucherManual.value?.__pinnedPos === true;
         voucherManual.value = { ...best, __pinnedPos: pinned ? true : undefined };
@@ -402,9 +399,6 @@ export function useBanHangVoucherThanhToan(deps) {
     } catch (e) {}
   }
 
-  // =========================
-  // ✅ Auto best theo giỏ hàng
-  // =========================
   async function loadBestVoucher() {
     const tong = Math.round(Number(tongTienHang.value || 0));
     if (tong <= 0) {
@@ -414,7 +408,6 @@ export function useBanHangVoucherThanhToan(deps) {
       return;
     }
 
-    // đang hỏi voucher mới -> không auto đổi
     if (dangHoiVoucherMoi.value || showBetterVoucherModal.value) {
       try {
         const candidates = await getCandidates({ force: false });
@@ -429,7 +422,6 @@ export function useBanHangVoucherThanhToan(deps) {
     try {
       const candidates = await getCandidates({ force: false });
 
-      // ✅ detect list voucher vừa thay đổi (không chỉ prime)
       let listChanged = false;
       try {
         const khId = selectedKh.value?.id || null;
@@ -451,19 +443,16 @@ export function useBanHangVoucherThanhToan(deps) {
 
       updateVoucherSuggest(candidates, tong, curDiscount);
 
-      // current không hợp lệ -> tự chọn lại (không cần hỏi)
       if (cur && curDiscount <= 0) {
-        voucherManual.value = null;
-        autoVoucher.value = best || null;
-        showToast("Phiếu giảm giá hiện tại không còn hợp lệ, hệ thống đã tự chọn lại.", "info");
+        clearVoucherDangApDung();
+        apDungVoucherTuDong(best || null);
+        thongBaoVoucherBiNgungHoatDong(best || null);
         persistActiveTab();
         scheduleSyncHoaDon();
         return;
       }
 
-      // ✅ nếu listChanged và best tốt hơn current -> CHỈ HỎI, KHÔNG AUTO APPLY
       if (listChanged && cur && best && bestDiscount > curDiscount) {
-        // nếu voucher đang áp dụng chính là voucher vừa được update -> refresh luôn
         if (voucherKeyOf(best) === voucherKeyOf(cur)) {
           refreshVoucherDangApDung(best);
           showToast("Phiếu giảm giá đang áp dụng vừa được cập nhật.", "info");
@@ -472,25 +461,21 @@ export function useBanHangVoucherThanhToan(deps) {
           return;
         }
 
-        // mở modal hỏi
         const opened = moModalVoucherTotHon(best, curDiscount, bestDiscount);
         if (opened) {
           persistActiveTab();
           return;
         }
 
-        // user đã từ chối candidate này -> giữ nguyên, không auto đổi
         persistActiveTab();
         return;
       }
 
-      // manual (user nhập) hoặc pinned -> giữ nguyên
       if (voucherManual.value) {
         persistActiveTab();
         return;
       }
 
-      // auto best bình thường (do giỏ hàng thay đổi)
       autoVoucher.value = best || null;
       persistActiveTab();
     } catch (e) {
@@ -507,11 +492,7 @@ export function useBanHangVoucherThanhToan(deps) {
     }, 350);
   }
 
-  // =========================
-  // ✅ Detect “admin vừa tạo/update voucher” -> mở MODAL hỏi
-  // =========================
   async function kiemTraVoucherMoiTotHon() {
-    // đang mở modal -> không check để khỏi spam
     if (dangHoiVoucherMoi.value || showBetterVoucherModal.value) return;
 
     const tong = Math.round(Number(tongTienHang.value || 0));
@@ -519,29 +500,23 @@ export function useBanHangVoucherThanhToan(deps) {
 
     try {
       const khId = selectedKh.value?.id || null;
-
-      // force refresh để thấy voucher mới
       const candidates = await getCandidates({ force: true });
 
       const fp = buildFingerprint(candidates) + `|KH=${khId || ""}`;
       const lastFp = readFpFromStorage(khId);
 
-      // lần đầu chưa có fp -> lưu lại và thôi
       if (!lastFp) {
         writeFpToStorage(khId, fp);
         return;
       }
 
-      // không đổi dữ liệu -> thôi
       if (lastFp === fp) return;
 
-      // có đổi -> lưu fp mới
       writeFpToStorage(khId, fp);
 
       const cur = effectiveVoucher.value;
       const best = pickBestVoucher(candidates, tong);
 
-      // nếu chưa có voucher -> cho auto best luôn
       if (!cur) {
         autoVoucher.value = best || null;
         persistActiveTab();
@@ -553,17 +528,15 @@ export function useBanHangVoucherThanhToan(deps) {
 
       updateVoucherSuggest(candidates, tong, curDiscount);
 
-      // current không hợp lệ -> tự chọn lại
       if (curDiscount <= 0) {
-        voucherManual.value = null;
-        autoVoucher.value = best || null;
-        showToast("Phiếu giảm giá hiện tại không còn hợp lệ, hệ thống đã tự chọn lại.", "info");
+        clearVoucherDangApDung();
+        apDungVoucherTuDong(best || null);
+        thongBaoVoucherBiNgungHoatDong(best || null);
         persistActiveTab();
         scheduleSyncHoaDon();
         return;
       }
 
-      // ✅ nếu voucher đang áp dụng chính là voucher vừa được update -> refresh + toast
       if (best && voucherKeyOf(best) === voucherKeyOf(cur)) {
         refreshVoucherDangApDung(best);
         showToast("Phiếu giảm giá đang áp dụng vừa được cập nhật.", "info");
@@ -572,14 +545,11 @@ export function useBanHangVoucherThanhToan(deps) {
         return;
       }
 
-      // best không tốt hơn -> thôi
       if (!best || bestDiscount <= curDiscount) return;
 
-      // user đã từ chối candidate này -> thôi
       const key = makeBetterKey(best, tong);
       if (declinedBetterKey.value && declinedBetterKey.value === key) return;
 
-      // ✅ mở modal hỏi
       moModalVoucherTotHon(best, curDiscount, bestDiscount);
     } catch (e) {}
   }
@@ -590,11 +560,10 @@ export function useBanHangVoucherThanhToan(deps) {
       const best = betterVoucherCandidate.value;
       if (best) declinedBetterKey.value = makeBetterKey(best, tong);
 
-      // ✅ GIỮ PHIẾU HIỆN TẠI & GHIM LẠI
       const cur = effectiveVoucher.value;
       if (cur) {
         const pinned = { ...cur, __pinnedPos: true };
-        voucherManual.value = pinned; // chuyển sang manual để chặn auto đổi
+        voucherManual.value = pinned;
         autoVoucher.value = null;
         voucherPinned.value = { ...pinned };
       }
@@ -626,7 +595,6 @@ export function useBanHangVoucherThanhToan(deps) {
 
       declinedBetterKey.value = "";
 
-      // ✅ áp dụng voucher mới
       voucherManual.value = null;
       autoVoucher.value = best;
       voucherCode.value = "";
@@ -648,9 +616,6 @@ export function useBanHangVoucherThanhToan(deps) {
     }
   }
 
-  // =========================
-  // ✅ Áp dụng mã (manual)
-  // =========================
   async function applyVoucherCode() {
     const code = (voucherCode.value || "").trim();
     if (!code) {
@@ -694,9 +659,63 @@ export function useBanHangVoucherThanhToan(deps) {
     }
   }
 
-  // =========================
-  // totals
-  // =========================
+  async function refreshVoucherRealtimeTruocKhiXacNhan() {
+    const tong = Math.round(Number(tongTienHang.value || 0));
+    if (tong <= 0) {
+      autoVoucher.value = null;
+      voucherManual.value = null;
+      voucherPinned.value = null;
+      voucherSuggest.value = null;
+      persistActiveTab();
+      return;
+    }
+
+    try {
+      const candidates = await getCandidates({ force: true });
+
+      const cur = effectiveVoucher.value;
+      const curDiscount = cur ? calcVoucherDiscount(cur, tong) : 0;
+
+      const best = pickBestVoucher(candidates, tong);
+      const bestDiscount = best ? calcVoucherDiscount(best, tong) : 0;
+
+      updateVoucherSuggest(candidates, tong, curDiscount);
+
+      if (cur) {
+        const foundCur = candidates.find((v) => voucherKeyOf(v) === voucherKeyOf(cur)) || null;
+        if (foundCur) refreshVoucherDangApDung(foundCur);
+      }
+
+      if (cur && curDiscount <= 0) {
+        clearVoucherDangApDung();
+        apDungVoucherTuDong(best || null);
+        thongBaoVoucherBiNgungHoatDong(best || null);
+
+        persistActiveTab();
+        scheduleSyncHoaDon();
+        return;
+      }
+
+      if (!cur) {
+        autoVoucher.value = best || null;
+        persistActiveTab();
+        scheduleSyncHoaDon();
+        return;
+      }
+
+      if (voucherManual.value) {
+        persistActiveTab();
+        return;
+      }
+
+      if (!autoVoucher.value && best && bestDiscount > 0) {
+        autoVoucher.value = best;
+      }
+
+      persistActiveTab();
+    } catch (e) {}
+  }
+
   const giamGia = computed(() => {
     const v = effectiveVoucher.value;
     const tong = Number(tongTienHang.value || 0);
@@ -709,7 +728,6 @@ export function useBanHangVoucherThanhToan(deps) {
     return Math.max(0, Number(tongTienHang.value || 0) - Number(giamGia.value || 0) + ship);
   });
 
-  // ======= Thanh toán =======
   const showPayModal = ref(false);
   const payMethod = ref("TIEN_MAT");
   const payTienMat = ref(0);
@@ -807,9 +825,6 @@ export function useBanHangVoucherThanhToan(deps) {
     scheduleSyncHoaDon();
   }
 
-  // =========================
-  // ✅ Poll + focus để detect update nhanh
-  // =========================
   const pollTimer = ref(null);
 
   function startPoll() {
@@ -841,7 +856,6 @@ export function useBanHangVoucherThanhToan(deps) {
     },
   );
 
-  // init
   kiemTraVoucherMoiTotHon().catch?.(() => {});
   startPoll();
   window.addEventListener("focus", onFocus);
@@ -861,13 +875,11 @@ export function useBanHangVoucherThanhToan(deps) {
   });
 
   return {
-    // ship
     phiVanChuyen,
     phiVanChuyenText,
     phiVanChuyenNum,
     onShipFeeInput,
 
-    // voucher
     voucherCode,
     voucherManual,
     autoVoucher,
@@ -881,7 +893,8 @@ export function useBanHangVoucherThanhToan(deps) {
     loadBestVoucher,
     applyVoucherCode,
 
-    // ✅ gợi ý + modal
+    refreshVoucherRealtimeTruocKhiXacNhan,
+
     voucherSuggest,
     voucherPinned,
     showBetterVoucherModal,
@@ -889,14 +902,12 @@ export function useBanHangVoucherThanhToan(deps) {
     betterVoucherCurrentDiscount,
     betterVoucherNewDiscount,
 
-    // ✅ text modal
     betterVoucherModalTitleText,
     betterVoucherQuestionText,
 
     apDungVoucherMoiTotHon,
     boQuaVoucherMoiTotHon,
 
-    // payment
     showPayModal,
     payMethod,
     payTienMat,
@@ -917,7 +928,6 @@ export function useBanHangVoucherThanhToan(deps) {
     fillPayConLai,
     confirmPay,
 
-    // totals
     tongPhaiTra,
   };
 }

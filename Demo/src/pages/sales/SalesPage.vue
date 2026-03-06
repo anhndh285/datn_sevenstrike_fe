@@ -167,8 +167,12 @@
                   class="ss-qty-input"
                   type="text"
                   :value="String(it.qty || 1)"
-                  :title="`Tối đa: ${getMaxQtyForItem(it)}`"
-                  :disabled="!hasPermission"
+                  :title="
+                    isGiaDaDoiTrongGio(it)
+                      ? 'Giá sản phẩm đã thay đổi, chỉ được giảm hoặc xóa dòng giá cũ.'
+                      : `Tối đa: ${getMaxQtyForItem(it)}`
+                  "
+                  :disabled="!hasPermission || isGiaDaDoiTrongGio(it)"
                   @input="onQtyInput(it, $event)"
                   @blur="onQtyBlur(it)"
                 />
@@ -177,8 +181,18 @@
                   class="ss-qty-btn"
                   type="button"
                   @click="incQty(it)"
-                  :disabled="Number(it.qty || 1) >= getMaxQtyForItem(it) || !hasPermission"
-                  :title="Number(it.qty || 1) >= getMaxQtyForItem(it) ? 'Đã đạt tồn tối đa' : 'Tăng số lượng'"
+                  :disabled="
+                    Number(it.qty || 1) >= getMaxQtyForItem(it) ||
+                    !hasPermission ||
+                    isGiaDaDoiTrongGio(it)
+                  "
+                  :title="
+                    isGiaDaDoiTrongGio(it)
+                      ? 'Giá sản phẩm đã thay đổi, chỉ được giảm hoặc xóa dòng giá cũ.'
+                      : Number(it.qty || 1) >= getMaxQtyForItem(it)
+                        ? 'Đã đạt tồn tối đa'
+                        : 'Tăng số lượng'
+                  "
                 >
                   +
                 </button>
@@ -260,7 +274,7 @@
                   <div class="ss-kv">
                     <div class="ss-k">Địa chỉ giao hàng</div>
                     <div class="ss-v">
-                      <span v-if="selectedDiaChi">{{ renderDiaChi(selectedDiaChi) }}</span>
+                      <span v-if="selectedDiaChi">{{ getDiaChiGiaoHangHienThi() }}</span>
                       <span v-else>Chưa chọn địa chỉ.</span>
                     </div>
                   </div>
@@ -410,16 +424,26 @@
               <div v-if="isCounter" class="ss-pay-kv">
                 <div class="ss-pay-k">Phí vận chuyển</div>
                 <div class="ss-pay-v ss-pay-inline">
-                  <input
-                    class="form-control ss-input ss-ship-fee"
-                    type="text"
-                    :value="phiVanChuyenText"
-                    @input="onShipFeeInput"
-                    placeholder="0"
-                    :disabled="!hasPermission"
-                  />
+                  <input class="form-control ss-input ss-ship-fee" type="text" :value="phiVanChuyenText" placeholder="0" disabled />
+
+                  <button
+                    class="ss-ship-refresh"
+                    type="button"
+                    title="Tính lại phí GHN"
+                    @click="refreshShipFee"
+                    :disabled="shipLoading || !hasPermission"
+                  >
+                    <span class="material-icons-outlined">refresh</span>
+                  </button>
+
                   <span class="ss-currency">đ</span>
                 </div>
+              </div>
+
+              <div v-if="isCounter" class="ss-ship-note" :class="{ err: !!shipErr }">
+                <template v-if="shipLoading">Đang tính phí vận chuyển GHN...</template>
+                <template v-else-if="shipErr">{{ shipErr }}</template>
+                <template v-else>Phí vận chuyển lấy theo GHN.</template>
               </div>
 
               <div class="ss-pay-kv">
@@ -560,20 +584,12 @@
                   </td>
 
                   <td class="col-action">
+                    <!-- ✅ GĐ3: bỏ nhập số lượng trong modal - mỗi lần bấm Thêm = 1 -->
                     <div class="ss-pick-wrap">
-                      <input
-                        class="form-control ss-input ss-pick-qty"
-                        type="text"
-                        :value="String(ctspPickQty[row.id] ?? 1)"
-                        :disabled="Number(row.__available || 0) <= 0 || !hasPermission"
-                        @input="onCtspPickQtyInput(row, $event)"
-                        :title="`Tối đa có thể thêm: ${Number(row.__available || 0)}`"
-                      />
-
                       <button
                         class="btn ss-btn-outline ss-btn-mini"
                         type="button"
-                        @click="pickCtsp(row, ctspPickQty[row.id] ?? 1)"
+                        @click="pickCtsp(row, 1)"
                         :disabled="Number(row.__available || 0) <= 0 || !hasPermission"
                         :title="Number(row.__available || 0) <= 0 ? 'Hết hàng' : 'Thêm vào đơn'"
                       >
@@ -639,62 +655,67 @@
       </div>
     </div>
 
-    <!-- ========================= MODAL: CHỌN KH ========================= -->
-    <div v-if="showKhModal" class="ss-modal-backdrop">
-      <div class="ss-modal ss-modal-kh" role="dialog" aria-modal="true">
-        <div class="ss-modal-head ss-kh-head">
-          <div class="ss-modal-title">Chọn khách hàng</div>
-          <button class="ss-x" type="button" @click="closeKhModal">×</button>
-        </div>
+<!-- ========================= MODAL: CHỌN KH ========================= -->
+<div v-if="showKhModal" class="ss-modal-backdrop">
+  <div class="ss-modal ss-modal-kh" role="dialog" aria-modal="true">
+    <div class="ss-modal-head ss-kh-head">
+      <div class="ss-modal-title">Chọn khách hàng</div>
+      <button class="ss-x" type="button" @click="closeKhModal">×</button>
+    </div>
 
-        <div class="ss-modal-body ss-kh-body">
-          <div class="ss-kh-top">
-            <input
-              v-model.trim="khFilter.keyword"
-              class="form-control ss-kh-search"
-              placeholder="Tìm theo tên, SĐT, địa chỉ..."
-            />
-            <button class="btn ss-kh-reload" type="button" @click="reloadKh">Tải lại</button>
-          </div>
+    <div class="ss-kh-body">
+      <div class="ss-kh-top">
+        <input
+          v-model.trim="khFilter.keyword"
+          class="form-control ss-kh-search"
+          placeholder="Tìm theo tên, SĐT, địa chỉ..."
+          :disabled="!hasPermission"
+        />
+        <button class="btn ss-kh-reload" type="button" @click="reloadKh" :disabled="!hasPermission">
+          Tải lại
+        </button>
+      </div>
 
-          <div v-if="khErr" class="ss-api-hint">{{ khErr }}</div>
+      <div v-if="khErr" class="ss-api-hint">{{ khErr }}</div>
 
-          <div v-else class="ss-kh-tablewrap">
-            <table class="table ss-kh-table mb-0">
-              <thead>
-                <tr>
-                  <th class="kh-col-stt">#</th>
-                  <th class="kh-col-name">Tên khách</th>
-                  <th class="kh-col-phone">Số điện thoại</th>
-                  <th class="kh-col-addr">Địa chỉ</th>
-                  <th class="kh-col-act">Hành động</th>
-                </tr>
-              </thead>
+      <div v-else class="ss-kh-tablewrap">
+        <table class="table ss-kh-table mb-0">
+          <thead>
+            <tr>
+              <th class="kh-col-stt">#</th>
+              <th class="kh-col-name">Tên khách</th>
+              <th class="kh-col-phone">Số điện thoại</th>
+              <th class="kh-col-addr">Địa chỉ</th>
+              <th class="kh-col-act">Hành động</th>
+            </tr>
+          </thead>
 
-              <tbody>
-                <tr v-for="(k, idx) in filteredKh" :key="k.id">
-                  <td class="kh-col-stt">{{ idx + 1 }}</td>
-                  <td class="kh-col-name">{{ getKhName(k) }}</td>
-                  <td class="kh-col-phone">{{ getKhPhone(k) }}</td>
-                  <td class="kh-col-addr">{{ khAddrCache[k.id] || renderKhDiaChi(k) || "—" }}</td>
-                  <td class="kh-col-act">
-                    <button class="btn ss-kh-pick" type="button" @click="pickKh(k)" :disabled="!hasPermission">Chọn</button>
-                  </td>
-                </tr>
+          <tbody>
+            <tr v-for="(k, idx) in filteredKh" :key="k.id">
+              <td class="kh-col-stt">{{ idx + 1 }}</td>
+              <td class="kh-col-name">{{ getKhName(k) }}</td>
+              <td class="kh-col-phone">{{ getKhPhone(k) }}</td>
+              <td class="kh-col-addr">{{ khAddrCache[k.id] || renderKhDiaChi(k) || "—" }}</td>
+              <td class="kh-col-act">
+                <button class="btn ss-kh-pick" type="button" @click="pickKh(k)" :disabled="!hasPermission">
+                  Chọn
+                </button>
+              </td>
+            </tr>
 
-                <tr v-if="filteredKh.length === 0">
-                  <td colspan="5" class="ss-empty-row">Không có dữ liệu</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+            <tr v-if="filteredKh.length === 0">
+              <td colspan="5" class="ss-empty-row">Không có dữ liệu</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-          <div class="ss-kh-foot">
-            <button class="btn ss-kh-close" type="button" @click="closeKhModal">Đóng</button>
-          </div>
-        </div>
+      <div class="ss-kh-foot">
+        <button class="btn ss-kh-close" type="button" @click="closeKhModal">Đóng</button>
       </div>
     </div>
+  </div>
+</div>
 
     <!-- ========================= MODAL: CHỌN ĐỊA CHỈ ========================= -->
     <div v-if="showDiaChiModal" class="ss-modal-backdrop">
@@ -721,7 +742,7 @@
                 <span class="ss-dc-name">{{ dc.hoTenNguoiNhan || getKhName(selectedKh) || "Khách" }}</span>
                 <span v-if="dc.macDinh" class="ss-badge">Mặc định</span>
               </div>
-              <div class="ss-dc-text">{{ renderDiaChi(dc) }}</div>
+              <div class="ss-dc-text">{{ renderDiaChiDayDuTheoObj(dc) }}</div>
             </button>
 
             <div v-if="diaChiList.length === 0" class="ss-empty-row">Khách hàng chưa có địa chỉ.</div>
@@ -887,7 +908,6 @@
     <div v-if="showBetterVoucherModal" class="ss-modal-backdrop">
       <div class="ss-modal ss-modal-md" role="dialog" aria-modal="true">
         <div class="ss-modal-head">
-          <!-- ✅ đổi sang bind text từ composable -->
           <div class="ss-modal-title">{{ betterVoucherModalTitleText }}</div>
           <button class="ss-x" type="button" @click="boQuaVoucherMoiTotHon">×</button>
         </div>
@@ -896,7 +916,6 @@
           <div class="ss-api-hint">
             Hệ thống vừa cập nhật phiếu giảm giá tốt hơn:
             <b>{{ getVoucherLabel(betterVoucherCandidate) }}</b>.
-            <!-- ✅ đúng câu hỏi yêu cầu -->
             <div style="margin-top: 8px"><b>{{ betterVoucherQuestionText }}</b></div>
           </div>
 
@@ -1156,6 +1175,51 @@ const sp = useBanHangSanPham({
 });
 
 /* =========================
+   GĐ3: chặn tăng/đổi dòng giá cũ khi giá CTSP đã thay đổi
+========================= */
+function getGiaChotTrongGio(it) {
+  const n = Number(it?.__giaBanChot ?? it?.giaBan ?? 0);
+  return Number.isFinite(n) ? Math.round(n) : 0;
+}
+function getGiaHienTaiTheoCtspId(idCtsp) {
+  const id = Number(idCtsp);
+  if (!Number.isFinite(id)) return null;
+  const found = (sp.ctspList?.value || []).find((x) => Number(x?.id) === id);
+  if (!found) return null;
+  const n = Number(sp.getGiaThucTe(found) || 0);
+  return Number.isFinite(n) ? Math.round(n) : null;
+}
+function isGiaDaDoiTrongGio(it) {
+  try {
+    const giaChot = getGiaChotTrongGio(it);
+    const giaMoi = getGiaHienTaiTheoCtspId(it?.id);
+    if (!giaChot || giaMoi == null || !giaMoi) return false;
+    return giaMoi !== giaChot;
+  } catch (e) {
+    return false;
+  }
+}
+function pickCtspTheoGia(row, qty = 1) {
+  try {
+    const id = row?.id;
+    if (id == null) return;
+
+    const exist = cartItems.value.find((x) => Number(x?.id) === Number(id));
+    if (exist) {
+      const giaChot = getGiaChotTrongGio(exist);
+      const giaMoi = getGiaHienTaiTheoCtspId(id);
+
+      if (giaMoi != null && giaChot > 0 && giaMoi !== giaChot) {
+        showToast("Giá sản phẩm đã thay đổi. Chỉ được giảm hoặc xóa dòng giá cũ trước khi thêm theo giá mới.", "info");
+        return;
+      }
+    }
+
+    sp.pickCtsp(row, qty);
+  } catch (e) {}
+}
+
+/* =========================
    TỔNG TIỀN HÀNG
 ========================= */
 const tongTienHang = computed(() => {
@@ -1191,6 +1255,373 @@ const pay = useBanHangVoucherThanhToan({
 scheduleAutoVoucher = pay.scheduleAutoVoucher;
 
 /* =========================
+   HIỂN THỊ ĐỊA CHỈ KHÁCH HÀNG (ĐẦY ĐỦ)
+========================= */
+function pickString(obj, keys) {
+  try {
+    for (const k of keys) {
+      const v = String(obj?.[k] ?? "").trim();
+      if (v) return v;
+    }
+  } catch (e) {}
+  return "";
+}
+
+function renderDiaChiDayDuTheoObj(dc) {
+  try {
+    if (!dc) return "";
+
+    // ưu tiên nếu object có sẵn chuỗi đầy đủ
+    const fullText = pickString(dc, ["diaChiDayDu", "diaChi", "fullAddress", "addressText", "shopAddress"]);
+    if (fullText) return fullText;
+
+    const cuThe = pickString(dc, ["diaChiCuThe", "diaChiChiTiet", "soNha", "duong", "address", "addressDetail"]);
+    const xa = pickString(dc, ["xaPhuong", "phuongXa", "tenXa", "phuong", "xa", "wardName"]);
+    const huyen = pickString(dc, ["huyenQuan", "quanHuyen", "tenHuyen", "quan", "huyen", "districtName"]);
+    const tinh = pickString(dc, ["tinhThanh", "thanhPho", "tinh", "tenTinh", "provinceName"]);
+
+    const parts = [];
+    if (cuThe) parts.push(cuThe);
+    if (xa) parts.push(xa);
+    if (huyen) parts.push(huyen);
+    if (tinh) parts.push(tinh);
+
+    return parts.join(", ");
+  } catch (e) {
+    return "";
+  }
+}
+
+function getDiaChiGiaoHangHienThi() {
+  try {
+    if (!isCounter.value) return "";
+    const khach = kh.selectedKh.value;
+    const dc = kh.selectedDiaChi.value;
+
+    // 1) ưu tiên theo địa chỉ đang chọn
+    const textDc = dc ? renderDiaChiDayDuTheoObj(dc) : "";
+    if (textDc) return textDc;
+
+    // 2) fallback: cache địa chỉ đầy đủ như ở modal chọn KH
+    const id = khach?.id;
+    const cacheText = id != null ? String(kh.khAddrCache?.[id] || "").trim() : "";
+    if (cacheText) return cacheText;
+
+    // 3) fallback: helper của composable (thường join ward/district/province)
+    if (khach && typeof kh.renderKhDiaChi === "function") {
+      const t = String(kh.renderKhDiaChi(khach) || "").trim();
+      if (t) return t;
+    }
+
+    return "";
+  } catch (e) {
+    return "";
+  }
+}
+
+/* =========================
+   GHN - TÍNH PHÍ VẬN CHUYỂN (BẮT BUỘC CALL API)
+========================= */
+const GHN_API_PREFIX = "/api/admin/ghn";
+
+const shipLoading = ref(false);
+const shipErr = ref("");
+
+const ghnTinhOptions = ref([]);
+const cacheQuanHuyenTheoTinh = new Map(); // key: provinceId -> [{code,name}]
+const cachePhuongXaTheoHuyen = new Map(); // key: districtId -> [{code,name}]
+
+let shipTimer = null;
+
+function setPhiVanChuyenNum(n) {
+  const val = Math.max(0, Math.round(Number(n || 0)));
+  pay.phiVanChuyen.value = val;
+  pay.phiVanChuyenText.value = tienIch.formatNumberText(val);
+  persistActiveTab();
+  scheduleSyncHoaDon();
+}
+
+function boDauTiengViet(s) {
+  try {
+    return String(s || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  } catch (e) {
+    return String(s || "");
+  }
+}
+
+function normalizeTenDiaChi(s) {
+  const x = boDauTiengViet(s)
+    .toLowerCase()
+    .replace(/\b(tp|tp\.|thanh pho|tinh|quan|q\.|huyen|h\.|phuong|p\.|xa|x\.|thi tran|tt\.|thi xa)\b/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return x;
+}
+
+function timTheoTenGanDung(options, tenCanTim) {
+  const key = normalizeTenDiaChi(tenCanTim);
+  if (!key) return null;
+
+  const arr = Array.isArray(options) ? options : [];
+  let found = arr.find((o) => normalizeTenDiaChi(o?.name) === key);
+  if (found) return found;
+
+  found =
+    arr.find((o) => normalizeTenDiaChi(o?.name).includes(key)) ||
+    arr.find((o) => key.includes(normalizeTenDiaChi(o?.name)));
+
+  return found || null;
+}
+
+function mapTinhThanh(raw) {
+  const arr = Array.isArray(raw) ? raw : [];
+  return arr
+    .map((x) => ({
+      code: Number(x?.provinceId),
+      name: String(x?.provinceName || "").trim(),
+    }))
+    .filter((x) => Number.isFinite(x.code) && x.code > 0 && x.name);
+}
+
+function mapQuanHuyen(raw) {
+  const arr = Array.isArray(raw) ? raw : [];
+  return arr
+    .map((x) => ({
+      code: Number(x?.districtId),
+      name: String(x?.districtName || "").trim(),
+    }))
+    .filter((x) => Number.isFinite(x.code) && x.code > 0 && x.name);
+}
+
+function mapPhuongXa(raw) {
+  const arr = Array.isArray(raw) ? raw : [];
+  return arr
+    .map((x) => ({
+      code: String(x?.wardCode || "").trim(),
+      name: String(x?.wardName || "").trim(),
+    }))
+    .filter((x) => x.code && x.name);
+}
+
+async function loadGhnTinhOptionsIfNeed() {
+  if (ghnTinhOptions.value.length) return;
+  try {
+    const res = await apiClient.get(`${GHN_API_PREFIX}/tinh-thanh`);
+    ghnTinhOptions.value = mapTinhThanh(res?.data || []);
+  } catch (e) {
+    ghnTinhOptions.value = [];
+  }
+}
+
+async function layQuanHuyenTheoTinhId(provinceId) {
+  const pid = Number(provinceId);
+  if (!Number.isFinite(pid) || pid <= 0) return [];
+  if (cacheQuanHuyenTheoTinh.has(pid)) return cacheQuanHuyenTheoTinh.get(pid);
+
+  try {
+    const res = await apiClient.get(`${GHN_API_PREFIX}/quan-huyen/${pid}`);
+    const list = mapQuanHuyen(res?.data || []);
+    cacheQuanHuyenTheoTinh.set(pid, list);
+    return list;
+  } catch (e) {
+    cacheQuanHuyenTheoTinh.set(pid, []);
+    return [];
+  }
+}
+
+async function layPhuongXaTheoHuyenId(districtId) {
+  const did = Number(districtId);
+  if (!Number.isFinite(did) || did <= 0) return [];
+  if (cachePhuongXaTheoHuyen.has(did)) return cachePhuongXaTheoHuyen.get(did);
+
+  try {
+    const res = await apiClient.get(`${GHN_API_PREFIX}/phuong-xa/${did}`);
+    const list = mapPhuongXa(res?.data || []);
+    cachePhuongXaTheoHuyen.set(did, list);
+    return list;
+  } catch (e) {
+    cachePhuongXaTheoHuyen.set(did, []);
+    return [];
+  }
+}
+
+function tachTinhHuyenXaTuChuoiDiaChi(diaChiText) {
+  const parts = String(diaChiText || "")
+    .split(",")
+    .map((x) => String(x || "").trim())
+    .filter(Boolean);
+
+  if (parts.length < 3) return { tinh: "", huyen: "", xa: "" };
+
+  // bỏ "Việt Nam" nếu có
+  const last = normalizeTenDiaChi(parts[parts.length - 1]);
+  if (last === "viet nam" && parts.length >= 4) {
+    parts.pop();
+  }
+
+  const tinh = parts[parts.length - 1] || "";
+  const huyen = parts[parts.length - 2] || "";
+  const xa = parts[parts.length - 3] || "";
+
+  return { tinh, huyen, xa };
+}
+
+async function resolveToDistrictWardByTenDiaChi({ tinh, huyen, xa }) {
+  await loadGhnTinhOptionsIfNeed();
+
+  const tinhOpt = timTheoTenGanDung(ghnTinhOptions.value, tinh);
+  const provinceId = tinhOpt?.code;
+  if (!provinceId) return null;
+
+  const dsHuyen = await layQuanHuyenTheoTinhId(provinceId);
+  const huyenOpt = timTheoTenGanDung(dsHuyen, huyen);
+  const districtId = huyenOpt?.code;
+  if (!districtId) return null;
+
+  const dsXa = await layPhuongXaTheoHuyenId(districtId);
+  const xaOpt = timTheoTenGanDung(dsXa, xa);
+  const wardCode = xaOpt?.code ? String(xaOpt.code).trim() : "";
+  if (!wardCode) return null;
+
+  return { toDistrictId: Number(districtId), toWardCode: wardCode };
+}
+
+async function getToDistrictWardForShipAsync() {
+  try {
+    if (!isCounter.value) return null;
+
+    // 1) KH có địa chỉ (selectedDiaChi)
+    if (kh.selectedKh.value && kh.selectedDiaChi.value) {
+      const dc = kh.selectedDiaChi.value;
+
+      // Nếu DB có lưu sẵn mã GHN, ưu tiên dùng luôn
+      const directDistrictId = Number(
+        pickString(dc, ["toDistrictId", "districtId", "ghnDistrictId", "maQuanHuyenGhn", "district_id"])
+      );
+      const directWardCode = pickString(dc, ["toWardCode", "wardCode", "ghnWardCode", "maPhuongXaGhn", "ward_code"]);
+      if (Number.isFinite(directDistrictId) && directDistrictId > 0 && directWardCode) {
+        return { toDistrictId: directDistrictId, toWardCode: directWardCode };
+      }
+
+      // ✅ ưu tiên tách từ địa chỉ HIỂN THỊ (đã full)
+      const textFull = getDiaChiGiaoHangHienThi();
+      const parsedFull = tachTinhHuyenXaTuChuoiDiaChi(textFull);
+      if (parsedFull.tinh && parsedFull.huyen && parsedFull.xa) {
+        return await resolveToDistrictWardByTenDiaChi(parsedFull);
+      }
+
+      // fallback theo field rời
+      const tinh = pickString(dc, ["tinhThanh", "tinh", "tenTinh", "provinceName"]);
+      const huyen = pickString(dc, ["huyenQuan", "quanHuyen", "tenHuyen", "districtName"]);
+      const xa = pickString(dc, ["xaPhuong", "phuongXa", "tenXa", "wardName"]);
+      if (tinh && huyen && xa) {
+        return await resolveToDistrictWardByTenDiaChi({ tinh, huyen, xa });
+      }
+
+      return null;
+    }
+
+    // 2) KH vãng lai (guest)
+    const tinhName = String(kh.guest.tinhThanh || "").trim();
+    const huyenName = String(kh.guest.huyenQuan || "").trim();
+    const xaName = String(kh.guest.xaPhuong || "").trim();
+
+    if (!tinhName || !huyenName || !xaName) return null;
+
+    return await resolveToDistrictWardByTenDiaChi({
+      tinh: tinhName,
+      huyen: huyenName,
+      xa: xaName,
+    });
+  } catch (e) {
+    return null;
+  }
+}
+
+async function tinhPhiVanChuyenTuGhn(forceToast = false) {
+  try {
+    shipErr.value = "";
+
+    if (!isCounter.value) {
+      setPhiVanChuyenNum(0);
+      return true;
+    }
+    if (!Array.isArray(cartItems.value) || cartItems.value.length === 0) {
+      setPhiVanChuyenNum(0);
+      shipErr.value = "Chưa có sản phẩm để tính phí GHN.";
+      return false;
+    }
+
+    shipLoading.value = true;
+
+    const to = await getToDistrictWardForShipAsync();
+    if (!to?.toDistrictId || !to?.toWardCode) {
+      setPhiVanChuyenNum(0);
+      shipErr.value = "Chưa đủ địa chỉ để tính phí GHN.";
+      if (forceToast) showToast(shipErr.value, "info");
+      shipLoading.value = false;
+      return false;
+    }
+
+    const body = {
+      toDistrictId: Number(to.toDistrictId),
+      toWardCode: String(to.toWardCode),
+      tongGiaTriHang: Math.max(0, Math.round(Number(tongTienHang.value || 0))),
+      tongCanNang: 1200,
+      dai: 30,
+      rong: 20,
+      cao: 10,
+    };
+
+    const res = await apiClient.post(`${GHN_API_PREFIX}/tinh-phi-van-chuyen`, body);
+    const data = res?.data || {};
+    const fee = Number(data?.total ?? data?.phiVanChuyen ?? 0);
+
+    if (!Number.isFinite(fee) || fee < 0) {
+      setPhiVanChuyenNum(0);
+      shipErr.value = "Không lấy được phí vận chuyển từ GHN.";
+      if (forceToast) showToast(shipErr.value, "error");
+      shipLoading.value = false;
+      return false;
+    }
+
+    setPhiVanChuyenNum(fee);
+    shipErr.value = "";
+    shipLoading.value = false;
+    return true;
+  } catch (e) {
+    setPhiVanChuyenNum(0);
+
+    const msg =
+      e?.response?.data?.message ||
+      e?.message ||
+      "Không tính được phí vận chuyển GHN. Vui lòng thử lại.";
+
+    shipErr.value = String(msg);
+    if (forceToast) showToast(shipErr.value, "error");
+
+    shipLoading.value = false;
+    return false;
+  }
+}
+
+function scheduleShipFee(ms = 450) {
+  try {
+    clearTimeout(shipTimer);
+    shipTimer = setTimeout(() => {
+      tinhPhiVanChuyenTuGhn(false);
+    }, ms);
+  } catch (e) {}
+}
+
+function refreshShipFee() {
+  tinhPhiVanChuyenTuGhn(true);
+}
+
+/* =========================
    TABS + AUTO CLEAR
 ========================= */
 function dongTatCaModal() {
@@ -1201,7 +1632,6 @@ function dongTatCaModal() {
   pay.showPayModal.value = false;
   hd.showSubmitConfirmModal.value = false;
 
-  // ✅ đóng modal voucher mới tốt hơn (nếu có)
   try {
     if (pay?.showBetterVoucherModal?.value) {
       if (typeof pay?.boQuaVoucherMoiTotHon === "function") pay.boQuaVoucherMoiTotHon();
@@ -1313,7 +1743,7 @@ const submitting = hd.submitting;
 const qr = useBanHangQr({
   ctspList: sp.ctspList,
   loadCtspForPos: sp.loadCtspForPos,
-  pickCtsp: sp.pickCtsp,
+  pickCtsp: pickCtspTheoGia,
   getAvailableQtyByCtspId: tonKho.getAvailableQtyByCtspId,
   blurActive: tienIch.blurActive,
 });
@@ -1328,7 +1758,6 @@ const nguoiBanTen = computed(() => {
 
 const hasOrders = computed(() => Array.isArray(tabs.value) && tabs.value.length > 0);
 
-/* ✅ validate: giao hàng (khách lẻ) chỉ bắt buộc SĐT + địa chỉ cụ thể */
 const canSubmit = computed(() => {
   if (!hasOrders.value) return false;
   if (cartItems.value.length === 0) return false;
@@ -1383,12 +1812,10 @@ watch(anyModalOpen, (val) => {
   } catch (e) {}
 });
 
-/* =========================
-   WATCH (khôi phục đúng hành vi file cũ + không làm mất voucher)
-========================= */
 watch(tongTienHang, () => {
   scheduleAutoVoucher();
   persistActiveTab();
+  if (isCounter.value) scheduleShipFee();
 });
 
 watch(
@@ -1407,12 +1834,23 @@ watch(kh.selectedKh, async () => {
     ensureGuestDefaultName();
     await syncGuestAddrFromStrings();
   }
+
+  if (isCounter.value) scheduleShipFee(200);
 });
 
 watch(kh.selectedDiaChi, () => {
   scheduleAutoVoucher();
   persistActiveTab();
+  if (isCounter.value) scheduleShipFee(200);
 });
+
+watch(
+  () => [kh.guest.tinhThanh, kh.guest.huyenQuan, kh.guest.xaPhuong],
+  () => {
+    if (isCounter.value && !kh.selectedKh.value) scheduleShipFee(200);
+  },
+  { deep: true },
+);
 
 watch(pay.khachThanhToan, () => {
   persistActiveTab();
@@ -1427,6 +1865,8 @@ watch(activeTab, async () => {
     ensureGuestDefaultName();
     await syncGuestAddrFromStrings();
   }
+
+  if (isCounter.value) scheduleShipFee(250);
 });
 
 watch(isCounter, async (val) => {
@@ -1444,32 +1884,32 @@ watch(isCounter, async (val) => {
       ensureGuestDefaultName();
       await syncGuestAddrFromStrings();
     }
+
+    scheduleShipFee(200);
   } else {
     kh.selectedDiaChi.value = null;
     kh.diaChiList.value = [];
-    pay.phiVanChuyen.value = 0;
-    pay.phiVanChuyenText.value = "0";
+    shipErr.value = "";
+    shipLoading.value = false;
+    setPhiVanChuyenNum(0);
   }
 
   persistActiveTab();
   scheduleSyncHoaDon();
 });
 
-/* ✅ FIX: giữ voucher cũ (voucherPinned) phải theo tab -> mirror sang voucherManual có cờ __pinnedPos */
 watch(
   () => pay?.voucherPinned?.value,
   (v) => {
     try {
       if (!v) return;
 
-      // nếu đang có voucherManual (user nhập) thì không ghi đè
       if (!pay.voucherManual.value) {
         pay.voucherManual.value = { ...v, __pinnedPos: true };
 
         const code = String(v.maPhieuGiamGia || v.ma || v.code || "").trim();
         if (code) pay.voucherCode.value = code;
 
-        // clear pinned để tránh "dính" qua tab khác
         pay.voucherPinned.value = null;
 
         persistActiveTab();
@@ -1533,6 +1973,8 @@ onMounted(async () => {
   scheduleAutoVoucher();
 
   if (hasOrders.value) scheduleSyncHoaDon();
+
+  if (isCounter.value) scheduleShipFee(250);
 });
 
 onBeforeUnmount(() => {
@@ -1541,6 +1983,9 @@ onBeforeUnmount(() => {
   } catch (e) {}
   try {
     document.body.style.overflow = "";
+  } catch (e) {}
+  try {
+    clearTimeout(shipTimer);
   } catch (e) {}
 });
 
@@ -1609,8 +2054,6 @@ const ctspMauSacOptions = sp.ctspMauSacOptions;
 const ctspKichCoOptions = sp.ctspKichCoOptions;
 const ctspSanPhamOptions = sp.ctspSanPhamOptions;
 
-const ctspPickQty = sp.ctspPickQty;
-
 const resolveImage = sp.resolveImage;
 const onImgErr = sp.onImgErr;
 
@@ -1628,8 +2071,7 @@ const onQtyInput = sp.onQtyInput;
 const onQtyBlur = sp.onQtyBlur;
 const removeItem = sp.removeItem;
 
-const onCtspPickQtyInput = sp.onCtspPickQtyInput;
-const pickCtsp = sp.pickCtsp;
+const pickCtsp = quyenCaLam.guard((row, qty = 1) => pickCtspTheoGia(row, qty));
 const resetCtspFilter = sp.resetCtspFilter;
 
 const showQrModal = qr.showQrModal;
@@ -1677,10 +2119,8 @@ const effectiveVoucher = pay.effectiveVoucher;
 const voucherValueText = pay.voucherValueText;
 const giamGia = pay.giamGia;
 
-// ✅ mới: gợi ý voucher
 const voucherSuggest = pay.voucherSuggest;
 
-// ✅ mới: modal voucher tốt hơn
 const showBetterVoucherModal = pay.showBetterVoucherModal;
 const betterVoucherCandidate = pay.betterVoucherCandidate;
 const betterVoucherCurrentDiscount = pay.betterVoucherCurrentDiscount;
@@ -1688,13 +2128,11 @@ const betterVoucherNewDiscount = pay.betterVoucherNewDiscount;
 const apDungVoucherMoiTotHon = pay.apDungVoucherMoiTotHon;
 const boQuaVoucherMoiTotHon = pay.boQuaVoucherMoiTotHon;
 
-// ✅ mới: text modal (đúng yêu cầu)
 const betterVoucherModalTitleText = pay.betterVoucherModalTitleText;
 const betterVoucherQuestionText = pay.betterVoucherQuestionText;
 
 const phiVanChuyenText = pay.phiVanChuyenText;
 const phiVanChuyenNum = pay.phiVanChuyenNum;
-const onShipFeeInput = pay.onShipFeeInput;
 
 const tongPhaiTra = pay.tongPhaiTra;
 const khachThanhToan = pay.khachThanhToan;
@@ -1725,11 +2163,22 @@ const onPayChuyenKhoanInput = pay.onPayChuyenKhoanInput;
 const fillPayConLai = pay.fillPayConLai;
 
 const showSubmitConfirmModal = hd.showSubmitConfirmModal;
-const openSubmitConfirm = quyenCaLam.guard(() => {
+
+const openSubmitConfirm = quyenCaLam.guard(async () => {
+  if (isCounter.value) {
+    const ok = await tinhPhiVanChuyenTuGhn(true);
+    if (!ok) return;
+  }
   hd.openSubmitConfirm(canSubmit);
 });
+
 const closeSubmitConfirm = hd.closeSubmitConfirm;
+
 const confirmSubmitOrder = quyenCaLam.guard(async () => {
+  if (isCounter.value) {
+    const ok = await tinhPhiVanChuyenTuGhn(true);
+    if (!ok) return;
+  }
   await hd.confirmSubmitOrder(() => hd.submitOrder(canSubmit, pay));
 });
 </script>
@@ -1739,24 +2188,17 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
 .ss-pos {
   padding-bottom: 18px;
 }
-
-/* Dập chữ in đậm nếu có */
 .ss-pos :deep(b),
 .ss-pos :deep(strong) {
   font-weight: 400 !important;
 }
-
-/* ✅ tất cả input chữ nhật (không bo góc) */
 .ss-pos :deep(.form-control),
 .ss-pos :deep(.form-select),
 .ss-pos :deep(.ss-input),
 .ss-pos :deep(.ss-qty-input),
-.ss-pos :deep(.ss-pick-qty),
 .ss-pos :deep(.ss-kh-search) {
   border-radius: 0 !important;
 }
-
-/* ✅ vue-select chữ nhật */
 .ss-pos :deep(.vs__dropdown-toggle) {
   min-height: 40px !important;
   border-radius: 0 !important;
@@ -1770,7 +2212,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   box-shadow: 0 18px 50px rgba(17, 24, 39, 0.1) !important;
 }
 
-/* ======= Badge giảm giá (đồng bộ) ======= */
 .thumb-wrap {
   position: relative;
   display: inline-block;
@@ -2177,7 +2618,7 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   padding-top: 6px;
 }
 .ss-ghn-big img {
-  width: min(520px, 92%);
+  width: min(260px, 78%);
   height: auto;
   object-fit: contain;
 }
@@ -2245,6 +2686,47 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   border-radius: 14px;
 }
 
+/* ship fee input */
+.ss-ship-fee {
+  max-width: 140px;
+  text-align: right;
+}
+.ss-currency {
+  font-size: 13px;
+  color: rgba(17, 24, 39, 0.62);
+}
+.ss-ship-refresh {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ss-ship-refresh:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.ss-ship-refresh .material-icons-outlined {
+  font-size: 20px;
+  color: rgba(17, 24, 39, 0.82);
+}
+.ss-ship-note {
+  margin-top: 8px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.16);
+  color: rgba(17, 24, 39, 0.72);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+.ss-ship-note.err {
+  background: rgba(153, 27, 27, 0.06);
+  border-color: rgba(153, 27, 27, 0.14);
+}
+
 /* Voucher */
 .ss-voucher-row {
   display: grid;
@@ -2288,8 +2770,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   background: rgba(153, 27, 27, 0.06);
   color: rgba(153, 27, 27, 0.92);
 }
-
-/* ✅ Gợi ý mua thêm */
 .ss-voucher-suggest {
   margin-top: 10px;
   background: rgba(245, 158, 11, 0.12);
@@ -2484,18 +2964,12 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   margin: 0 auto;
 }
 
-/* pick qty input */
+/* pick wrap */
 .ss-pick-wrap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-}
-.ss-pick-qty {
-  width: 70px;
-  height: 32px;
-  text-align: center;
-  font-size: 12px;
 }
 
 /* Pagination */
@@ -2587,163 +3061,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   margin-top: 6px;
 }
 
-/* ship fee input */
-.ss-ship-fee {
-  max-width: 140px;
-  text-align: right;
-}
-.ss-currency {
-  font-size: 13px;
-  color: rgba(17, 24, 39, 0.62);
-}
-
-/* Pay modal */
-.ss-paybox {
-  border: 1px solid rgba(17, 24, 39, 0.1);
-  border-radius: 14px;
-  padding: 12px;
-  background: rgba(17, 24, 39, 0.02);
-}
-.ss-paybox-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  padding: 6px 0;
-}
-.ss-paybox-red {
-  color: rgba(153, 27, 27, 0.92);
-  font-weight: 500;
-}
-.ss-paygrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 10px;
-}
-.ss-label {
-  font-size: 12px;
-  color: rgba(17, 24, 39, 0.62);
-}
-.ss-label-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.ss-link {
-  border: none;
-  background: transparent;
-  font-size: 12px;
-  color: rgba(153, 27, 27, 0.92);
-  padding: 0;
-  cursor: pointer;
-}
-.ss-link:hover {
-  text-decoration: underline;
-}
-.ss-mt-8 {
-  margin-top: 8px;
-}
-.ss-pay-note {
-  margin-top: 10px;
-  font-size: 12px;
-  color: rgba(17, 24, 39, 0.6);
-}
-.ss-pay-note-line {
-  padding-top: 2px;
-}
-
-/* Modal KH */
-.ss-modal-kh {
-  max-width: 900px;
-}
-.ss-kh-body {
-  padding: 20px;
-}
-.ss-kh-top {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-.ss-kh-search {
-  flex: 1;
-  height: 36px;
-  font-size: 13px;
-}
-.ss-kh-reload {
-  height: 36px;
-  border-radius: 4px;
-  font-size: 13px;
-  padding: 0 12px;
-  border: 1px solid rgba(17, 24, 39, 0.18);
-  background: #fff;
-  color: rgba(17, 24, 39, 0.82);
-}
-.ss-kh-tablewrap {
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  border-radius: 4px;
-  overflow: hidden;
-  max-height: 420px;
-  overflow-y: auto;
-}
-.ss-kh-table {
-  width: 100%;
-  font-size: 13px;
-}
-.ss-kh-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: rgba(17, 24, 39, 0.03);
-  border-bottom: 1px solid rgba(17, 24, 39, 0.12);
-  font-weight: 500;
-}
-.ss-kh-table td,
-.ss-kh-table th {
-  vertical-align: middle;
-  padding: 10px 12px;
-}
-.kh-col-stt {
-  width: 48px;
-  text-align: center;
-}
-.kh-col-name {
-  width: 180px;
-}
-.kh-col-phone {
-  width: 140px;
-}
-.kh-col-act {
-  width: 120px;
-  text-align: center;
-}
-.ss-kh-pick {
-  height: 28px;
-  min-width: 64px;
-  border-radius: 4px;
-  font-size: 12px;
-  padding: 0 10px;
-  border: none;
-  background: rgba(153, 27, 27, 0.92);
-  color: #fff;
-  font-weight: 400;
-}
-.ss-kh-foot {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
-}
-.ss-kh-close {
-  height: 32px;
-  border-radius: 4px;
-  font-size: 13px;
-  padding: 0 14px;
-  border: 1px solid rgba(17, 24, 39, 0.18);
-  background: #fff;
-  color: rgba(17, 24, 39, 0.82);
-}
-
 /* Responsive */
 @media (max-width: 1100px) {
   .ss-bottom-grid {
@@ -2765,19 +3082,14 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
     grid-template-columns: 1fr;
   }
 }
-
-/* EMPTY: CHƯA CÓ ĐƠN HÀNG -> cho to ra như cũ */
 .ss-empty-card {
   min-height: 360px;
   display: grid;
   place-items: center;
 }
-
 .ss-empty-card .ss-empty-wrap {
   min-height: auto;
 }
-
-/* ✅ FIX: Header "Sản phẩm" (title trái - nút phải, không bị tụt dòng) */
 .ss-section-head {
   display: flex;
   align-items: center;
@@ -2785,20 +3097,16 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   gap: 12px;
   margin-bottom: 10px;
 }
-
 .ss-section-title {
   font-size: 14px;
   font-weight: 500;
 }
-
 .ss-section-actions {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   margin-left: auto;
 }
-
-/* ✅ FIX: Empty state trong giỏ hàng (Không có dữ liệu) căn giữa đẹp */
 .ss-empty-wrap {
   width: 100%;
   min-height: 260px;
@@ -2807,23 +3115,133 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   text-align: center;
   gap: 10px;
 }
-
 .ss-empty-cart {
   min-height: 260px;
 }
-
 .ss-empty-icon {
   opacity: 0.95;
 }
-
 .ss-empty-text {
   font-size: 14px;
   color: rgba(17, 24, 39, 0.62);
   font-weight: 500;
 }
-
 .ss-empty-eng {
   font-weight: 400;
   color: rgba(17, 24, 39, 0.55);
+}
+
+/* =========================
+   MODAL CHỌN KHÁCH HÀNG (khôi phục giao diện)
+========================= */
+.ss-modal-kh {
+  max-width: 920px;
+}
+
+.ss-kh-head {
+  background: #fff;
+}
+
+.ss-kh-body {
+  padding: 18px 20px 16px;
+}
+
+.ss-kh-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ss-kh-search {
+  flex: 1;
+  height: 38px;
+  font-size: 13px;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: #fff;
+}
+
+.ss-kh-reload {
+  height: 38px;
+  border-radius: 12px;
+  font-size: 13px;
+  padding: 0 14px;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: #fff;
+  color: rgba(17, 24, 39, 0.82);
+}
+
+.ss-kh-tablewrap {
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.ss-kh-table {
+  width: 100%;
+  font-size: 13px;
+}
+
+.ss-kh-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(17, 24, 39, 0.03);
+  border-bottom: 1px solid rgba(17, 24, 39, 0.12);
+  font-weight: 500;
+}
+
+.ss-kh-table td,
+.ss-kh-table th {
+  vertical-align: middle;
+  padding: 10px 12px;
+}
+
+.kh-col-stt {
+  width: 56px;
+  text-align: center;
+}
+
+.kh-col-name {
+  width: 200px;
+}
+
+.kh-col-phone {
+  width: 160px;
+}
+
+.kh-col-act {
+  width: 140px;
+  text-align: center;
+}
+
+.ss-kh-pick {
+  height: 30px;
+  min-width: 72px;
+  border-radius: 12px;
+  font-size: 12px;
+  padding: 0 12px;
+  border: none;
+  background: rgba(153, 27, 27, 0.92);
+  color: #fff;
+  font-weight: 400;
+}
+
+.ss-kh-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.ss-kh-close {
+  height: 36px;
+  border-radius: 12px;
+  font-size: 13px;
+  padding: 0 14px;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: #fff;
+  color: rgba(17, 24, 39, 0.82);
 }
 </style>

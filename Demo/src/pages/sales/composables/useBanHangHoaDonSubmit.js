@@ -212,6 +212,7 @@ export function useBanHangHoaDonSubmit(deps) {
     return id;
   }
 
+  // ✅ KHÔNG cộng phí vận chuyển vào doanh thu: tongTien/tongTienSauGiam chỉ tính TIỀN HÀNG
   function buildThongTinHoaDonPayload() {
     const isShipping = isCounter.value === true;
     const loaiDon = isShipping ? 1 : 0;
@@ -236,11 +237,18 @@ export function useBanHangHoaDonSubmit(deps) {
     if (isShipping) {
       if (selectedKh.value) diaChi = selectedDiaChi.value ? deps.renderDiaChi(selectedDiaChi.value) : "";
       else {
-        const parts = [guest.diaChiCuThe, guest.xaPhuong, guest.huyenQuan, guest.tinhThanh].filter((x) => String(x || "").trim());
+        const parts = [guest.diaChiCuThe, guest.xaPhuong, guest.huyenQuan, guest.tinhThanh].filter((x) =>
+          String(x || "").trim(),
+        );
         diaChi = parts.join(", ");
       }
       diaChi = diaChi || "Chờ cập nhật";
     }
+
+    const ship = Math.round(isShipping ? Number(phiVanChuyenNum.value || 0) : 0);
+    const tongHang = Math.round(Number(tongTienHang.value || 0));
+    const tongTra = Math.round(Number(tongPhaiTra.value || 0));
+    const tongSauGiamKhongShip = Math.max(0, tongTra - ship);
 
     return {
       idKhachHang: selectedKh.value?.id || null,
@@ -250,10 +258,11 @@ export function useBanHangHoaDonSubmit(deps) {
       idPhieuGiamGiaCaNhan: effectiveVoucher.value?.__pggcnId || null,
 
       loaiDon,
-      phiVanChuyen: Math.round(isShipping ? phiVanChuyenNum.value : 0),
+      phiVanChuyen: ship,
 
-      tongTien: Math.round(tongTienHang.value + (isShipping ? phiVanChuyenNum.value : 0)),
-      tongTienSauGiam: Math.round(tongPhaiTra.value),
+      // ✅ doanh thu chỉ tính tiền hàng
+      tongTien: tongHang,
+      tongTienSauGiam: tongSauGiamKhongShip,
 
       tenKhachHang: tenKh,
       soDienThoaiKhachHang: soDienThoai,
@@ -273,12 +282,16 @@ export function useBanHangHoaDonSubmit(deps) {
         idHoaDon,
         idChiTietSanPham: it.id,
         soLuong: Number(it.qty || 1),
-        donGia,   // ✅ thêm
-        giaGoc,   // ✅ thêm (nếu BE cần)
+        donGia,
+        giaGoc,
         ghiChu: null,
         xoaMem: false,
       };
     });
+  }
+
+  function taoRowId() {
+    return `row_${Date.now()}_${Math.random().toString(16).slice(2)}`;
   }
 
   async function reloadCartFromDb(idHoaDon) {
@@ -290,21 +303,20 @@ export function useBanHangHoaDonSubmit(deps) {
       const out = list
         .map((x) => {
           const ctspId = x?.idChiTietSanPham ?? null;
-          const found =
-            ctspId != null ? ctspList.value.find((k) => Number(k?.id) === Number(ctspId)) : null;
+          const found = ctspId != null ? ctspList.value.find((k) => Number(k?.id) === Number(ctspId)) : null;
 
           const donGia = Math.round(Number(x?.donGia || 0) || 0);
           const giaChot = donGia > 0 ? donGia : Math.round(Number(found?.giaBan || 0) || 0);
           const giaGocChot = Math.round(Number(found?.giaGoc || 0) || 0);
 
           return {
+            __rowId: taoRowId(), // ✅ để FE có thể có nhiều dòng cùng CTSP (record khác nhau)
             id: ctspId,
             maCtsp: x?.maChiTietSanPham || found?.maCtsp || "",
             tenSanPham: x?.tenSanPham || found?.tenSanPham || "",
             mauSac: x?.mauSac || found?.mauSac || "",
             kichCo: x?.kichCo || found?.kichCo || "",
 
-            // ✅ dùng đúng giá trong DB (donGia) và KHÓA
             giaGoc: giaGocChot > 0 ? giaGocChot : 0,
             giaBan: giaChot > 0 ? giaChot : 0,
 
@@ -331,7 +343,6 @@ export function useBanHangHoaDonSubmit(deps) {
       cartItems.value = out;
 
       await ensureBaseQtyIfCartHasItems();
-      // capNhatDotGiamGiaChoGioHang sẽ tự bỏ qua item đã khóa giá
       await capNhatDotGiamGiaChoGioHang();
       scheduleAutoVoucher();
       persistActiveTab();
@@ -401,7 +412,6 @@ export function useBanHangHoaDonSubmit(deps) {
   }
 
   function scheduleSyncHoaDon() {
-    // ✅ FIX: đang submit thì không schedule sync nữa (tránh snapshot rỗng sau confirm)
     if (submitting.value) return;
 
     if (syncHdTimer.value) clearTimeout(syncHdTimer.value);
@@ -476,6 +486,64 @@ export function useBanHangHoaDonSubmit(deps) {
     };
   }
 
+  async function layPhiVanChuyenTuGhnTheoHoaDonId(idHoaDon) {
+    const tries = [
+      `/api/admin/hoa-don/${idHoaDon}/ghn/phi-van-chuyen`,
+      `/api/hoa-don/${idHoaDon}/ghn/phi-van-chuyen`,
+      `/api/admin/ghn/phi-van-chuyen?idHoaDon=${idHoaDon}`,
+      `/api/ghn/phi-van-chuyen?idHoaDon=${idHoaDon}`,
+    ];
+
+    let lastErr = null;
+    for (const url of tries) {
+      try {
+        const res = await apiClient.get(url, { meta: { silent: true } });
+        const data = res?.data;
+
+        const n =
+          typeof data === "number"
+            ? data
+            : Number(
+                data?.phiVanChuyen ??
+                  data?.fee ??
+                  data?.shipFee ??
+                  data?.total ??
+                  data?.data?.phiVanChuyen ??
+                  0,
+              );
+
+        if (Number.isFinite(n) && n >= 0) return Math.round(n);
+      } catch (e) {
+        lastErr = e;
+        const status = e?.response?.status;
+        if (status === 404 || status === 405 || status === 401 || status === 403) continue;
+        continue;
+      }
+    }
+
+    if (lastErr) console.warn("Không lấy được phí GHN (fallback giữ phí hiện tại).", lastErr);
+    return null;
+  }
+
+  async function capNhatPhiVanChuyenTheoGhnNeuCo(idHoaDon, pay) {
+    try {
+      if (!isCounter.value) return;
+      if (!idHoaDon) return;
+      if (!pay?.phiVanChuyen || !pay?.phiVanChuyenText) return;
+
+      const fee = await layPhiVanChuyenTuGhnTheoHoaDonId(idHoaDon);
+      if (fee == null) return;
+
+      const old = Math.round(Number(pay.phiVanChuyen.value || 0));
+      if (fee === old) return;
+
+      pay.phiVanChuyen.value = fee;
+      pay.phiVanChuyenText.value = fee > 0 ? fee.toLocaleString("vi-VN") : "0";
+
+      showToast("Đã cập nhật phí vận chuyển theo GHN.", "info");
+    } catch (e) {}
+  }
+
   async function submitOrder(canSubmit, pay) {
     if (!canSubmit.value) return;
 
@@ -498,7 +566,19 @@ export function useBanHangHoaDonSubmit(deps) {
 
     submitting.value = true;
     try {
+      // ✅ realtime voucher ngay trước khi chốt
+      try {
+        if (typeof pay?.refreshVoucherRealtimeTruocKhiXacNhan === "function") {
+          await pay.refreshVoucherRealtimeTruocKhiXacNhan();
+        }
+      } catch (e) {}
+
       const idHoaDon = await ensureHoaDonChoTab();
+
+      // ✅ GHN: thử lấy phí thực tế theo hóa đơn (nếu BE có endpoint)
+      await capNhatPhiVanChuyenTheoGhnNeuCo(idHoaDon, pay);
+
+      // ✅ sync lại thông tin (voucher/ship có thể vừa đổi)
       await syncHoaDonToDb({ silent: false });
 
       // =====================

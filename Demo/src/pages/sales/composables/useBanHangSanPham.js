@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, reactive, ref } from "vue";
 
 export function useBanHangSanPham(deps) {
   const {
@@ -34,7 +34,37 @@ export function useBanHangSanPham(deps) {
   const ctspPage = ref(1);
   const ctspPageSize = ref(5);
 
-  const ctspPickQty = ref({});
+  // ✅ để tránh cache giá cũ: poll nhẹ (chỉ khi đang có giỏ / đang mở modal)
+  const ctspLoadedAt = ref(0);
+  const pollTimer = ref(null);
+  const CTSP_POLL_MS = 12000; // 12s
+
+  function startPollCtsp() {
+    if (pollTimer.value) return;
+    pollTimer.value = setInterval(() => {
+      try {
+        if (document.visibilityState !== "visible") return;
+        const need =
+          showCtspModal.value ||
+          (Array.isArray(cartItems.value) && cartItems.value.length > 0);
+        if (!need) return;
+
+        loadCtspForPos({ silent: true, keepPage: true }).catch(() => {});
+      } catch (e) {}
+    }, CTSP_POLL_MS);
+  }
+
+  function stopPollCtsp() {
+    if (!pollTimer.value) return;
+    clearInterval(pollTimer.value);
+    pollTimer.value = null;
+  }
+
+  onBeforeUnmount(() => {
+    try {
+      stopPollCtsp();
+    } catch (e) {}
+  });
 
   const filteredCtsp = computed(() => {
     const kw = (ctspFilter.keyword || "").toLowerCase();
@@ -69,13 +99,25 @@ export function useBanHangSanPham(deps) {
     if (e?.target) e.target.style.display = "none";
   }
 
-  // ======= KHÓA GIÁ THEO DÒNG (ĐỂ GIÁ KHÔNG BỊ ĐỔI SAU KHI ADMIN SỬA CTSP) =======
+  function taoRowId() {
+    return `row_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  function ensureRowId(it) {
+    if (!it) return null;
+    if (!it.__rowId) it.__rowId = taoRowId();
+    return it.__rowId;
+  }
+
+  // ======= KHÓA GIÁ THEO DÒNG =======
   function isGiaDaKhoa(it) {
     return it?.__khoaGia === true || it?.khoaGia === true;
   }
 
   function khoaGiaChoItemNeuCan(it) {
     if (!it || it.id == null) return;
+
+    ensureRowId(it);
 
     if (!it.__giaBanChot) {
       const gb = Math.round(toNumberSafe(it.giaBan ?? 0));
@@ -99,7 +141,36 @@ export function useBanHangSanPham(deps) {
   function khoaGiaToanBoGioHangNeuChuaKhoa() {
     const arr = Array.isArray(cartItems.value) ? cartItems.value : [];
     for (const it of arr) {
+      ensureRowId(it);
       if (!isGiaDaKhoa(it)) khoaGiaChoItemNeuCan(it);
+    }
+  }
+
+  // ✅ Detect “giá đã đổi trên server” để CHẶN tăng số lượng dòng cũ (chỉ cho giảm/xóa)
+  function isGiaDaThayDoiSoVoiServer(it) {
+    try {
+      if (!it || it.id == null) return false;
+      if (!isGiaDaKhoa(it)) return false;
+
+      const now = (ctspList.value || []).find((x) => Number(x?.id) === Number(it.id)) || null;
+      if (!now) return false;
+
+      const giaNow = Math.round(toNumberSafe(now.giaBan ?? 0));
+      const giaOld = Math.round(toNumberSafe(it.__giaBanChot ?? it.giaBan ?? 0));
+
+      if (giaNow > 0 && giaOld > 0 && giaNow !== giaOld) return true;
+
+      const pctNow = normalizePercent(now.phanTramGiam ?? now.phanTramKhuyenMai ?? 0);
+      const pctOld = normalizePercent(it.__phanTramGiamChot ?? it.phanTramGiam ?? it.phanTramKhuyenMai ?? 0);
+      if (pctNow !== pctOld) return true;
+
+      const dotNow = now.idDotGiamGia ?? null;
+      const dotOld = it.__idDotGiamGiaChot ?? it.idDotGiamGia ?? null;
+      if (String(dotNow ?? "") !== String(dotOld ?? "")) return true;
+
+      return false;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -270,7 +341,6 @@ export function useBanHangSanPham(deps) {
     for (const sp of list) {
       if (!sp || sp.id == null) continue;
 
-      // ✅ nếu là item trong giỏ đã khóa giá thì KHÔNG cập nhật lại
       if (isGiaDaKhoa(sp)) continue;
 
       const best = map.get(Number(sp.id));
@@ -327,16 +397,12 @@ export function useBanHangSanPham(deps) {
   async function capNhatDotGiamGiaChoGioHang() {
     if (!Array.isArray(cartItems.value) || cartItems.value.length === 0) return;
 
-    // cập nhật đợt giảm giá cho những item CHƯA khóa giá
     await ganDotGiamGiaChoDanhSachCtsp(cartItems.value);
-
-    // sau khi đã có giá/giảm đúng, khóa giá lại để không bị đổi về sau
     khoaGiaToanBoGioHangNeuChuaKhoa();
   }
 
   function normalizeCtspRow(x) {
     if (!x || typeof x !== "object") return x;
-    // giữ nguyên dữ liệu + đảm bảo số
     return {
       ...x,
       giaGoc: Math.round(toNumberSafe(x.giaGoc ?? 0)),
@@ -345,9 +411,15 @@ export function useBanHangSanPham(deps) {
     };
   }
 
-  async function loadCtspForPos() {
-    ctspLoading.value = true;
-    ctspErr.value = "";
+  async function loadCtspForPos(opts = {}) {
+    const silent = !!opts.silent;
+    const keepPage = !!opts.keepPage;
+
+    if (!silent) {
+      ctspLoading.value = true;
+      ctspErr.value = "";
+    }
+
     try {
       const data = await SalesService.getCtspBanHang();
       const rawList = Array.isArray(data) ? data : [];
@@ -356,18 +428,21 @@ export function useBanHangSanPham(deps) {
       await ganDotGiamGiaChoDanhSachCtsp(list);
 
       ctspList.value = list;
+      ctspLoadedAt.value = Date.now();
 
-      // ✅ đồng bộ tồn local: MIN(current, api)
       dongBoTonKhoTuApi(list);
       persistCtspBaseQtyMap();
 
       await capNhatDotGiamGiaChoGioHang();
-      ctspPage.value = 1;
+
+      if (!keepPage) ctspPage.value = 1;
     } catch (e) {
-      ctspErr.value = "Không tải được danh sách biến thể (API đang lỗi).";
-      ctspList.value = [];
+      if (!silent) {
+        ctspErr.value = "Không tải được danh sách biến thể (API đang lỗi).";
+        ctspList.value = [];
+      }
     } finally {
-      ctspLoading.value = false;
+      if (!silent) ctspLoading.value = false;
     }
   }
 
@@ -375,8 +450,8 @@ export function useBanHangSanPham(deps) {
     const hasCart = Array.isArray(cartItems.value) && cartItems.value.length > 0;
     if (!hasCart) return;
 
-    // nếu giỏ có item cũ từ local (chưa có flag), khóa lại để ổn định
     khoaGiaToanBoGioHangNeuChuaKhoa();
+    startPollCtsp();
 
     if (Array.isArray(ctspList.value) && ctspList.value.length > 0) return;
 
@@ -388,12 +463,17 @@ export function useBanHangSanPham(deps) {
   // ======= GIỎ HÀNG =======
   function getMaxQtyForItem(it) {
     const id = it?.id;
-    const conLai = getBaseQtyByCtspId(id);
     const cur = Math.max(0, Number(it?.qty || 0));
+    const conLai = Math.max(0, Number(getAvailableQtyByCtspId(id) || 0));
     return Math.max(0, cur + conLai);
   }
 
   function incQty(it) {
+    if (isGiaDaThayDoiSoVoiServer(it)) {
+      showToast("Giá sản phẩm đã thay đổi. Dòng cũ chỉ được giảm hoặc xóa. Nếu muốn thêm theo giá mới, hãy thêm dòng mới.", "info");
+      return;
+    }
+
     const old = Number(it.qty || 1);
     const conLai = getAvailableQtyByCtspId(it?.id);
     if (conLai <= 0) {
@@ -424,7 +504,13 @@ export function useBanHangSanPham(deps) {
     const max = getMaxQtyForItem(it);
 
     const vuotTon = digits && n > max;
-    const next = clampInt(n, 1, Math.max(1, max));
+    let next = clampInt(n, 1, Math.max(1, max));
+
+    // ✅ nếu giá đã đổi: không cho tăng (chỉ cho giảm)
+    if (next > old && isGiaDaThayDoiSoVoiServer(it)) {
+      showToast("Giá sản phẩm đã thay đổi. Dòng cũ chỉ được giảm hoặc xóa.", "info");
+      next = old;
+    }
 
     if (vuotTon) showToast("Số lượng mua không được vượt tồn kho.", "error");
     if (next === old) return;
@@ -446,6 +532,11 @@ export function useBanHangSanPham(deps) {
     if (!Number.isFinite(next) || next < 1) next = 1;
     if (next > max) next = Math.max(1, max);
 
+    if (next > old && isGiaDaThayDoiSoVoiServer(it)) {
+      showToast("Giá sản phẩm đã thay đổi. Dòng cũ chỉ được giảm hoặc xóa.", "info");
+      next = old;
+    }
+
     if (next !== old) {
       const delta = next - old;
       it.qty = next;
@@ -460,36 +551,52 @@ export function useBanHangSanPham(deps) {
     scheduleSyncHoaDon();
   }
 
-  function removeItem(id) {
-    const it = cartItems.value.find((x) => x.id === id);
-    const qty = Math.max(0, Number(it?.qty || 0));
-    if (qty > 0) capNhatTonLocal(id, qty);
+  function removeItem(rowKeyOrId) {
+    const key = String(rowKeyOrId ?? "");
 
-    cartItems.value = cartItems.value.filter((x) => x.id !== id);
+    const arr = Array.isArray(cartItems.value) ? [...cartItems.value] : [];
+    let idx = arr.findIndex((x) => String(x?.__rowId ?? "") === key);
+
+    // fallback (data cũ chưa có __rowId)
+    if (idx < 0) {
+      const idNum = Number(rowKeyOrId);
+      if (Number.isFinite(idNum)) idx = arr.findIndex((x) => Number(x?.id) === idNum);
+    }
+
+    if (idx < 0) return;
+
+    const it = arr[idx];
+    const qty = Math.max(0, Number(it?.qty || 0));
+    if (qty > 0) capNhatTonLocal(it?.id, qty);
+
+    arr.splice(idx, 1);
+    cartItems.value = arr;
+
     scheduleAutoVoucher();
     scheduleSyncHoaDon();
   }
 
-  function onCtspPickQtyInput(row, e) {
-    const id = row?.id;
-    if (id == null) return;
-
-    const raw = String(e?.target?.value || "");
-    const digits = raw.replace(/\D/g, "");
-    const n = digits ? Number(digits) : 0;
-
-    const max = Math.max(0, Number(row.__available || 0));
-    const next = clampInt(n, 1, Math.max(1, max));
-
-    ctspPickQty.value = { ...ctspPickQty.value, [id]: next };
+  async function ensureCtspFreshIfStale() {
+    try {
+      const now = Date.now();
+      if (ctspLoadedAt.value && now - ctspLoadedAt.value < 8000) return;
+      await loadCtspForPos({ silent: true, keepPage: true });
+    } catch (e) {}
   }
 
-  function pickCtsp(row, qtyToAdd = 1) {
+  // ✅ GĐ3: nếu giá đã đổi -> KHÔNG cộng vào dòng cũ, mà tạo DÒNG MỚI
+  async function pickCtsp(row, qtyToAdd = 1) {
     if (!row) return;
 
-    const nx = normalizeCtspRow(row);
-    const id = nx?.id;
+    startPollCtsp();
+    await ensureCtspFreshIfStale();
+
+    const nx0 = normalizeCtspRow(row);
+    const id = nx0?.id;
     if (id == null) return;
+
+    const latest = (ctspList.value || []).find((x) => Number(x?.id) === Number(id)) || nx0;
+    const nx = normalizeCtspRow(latest);
 
     const available = getAvailableQtyByCtspId(id);
     if (available <= 0) {
@@ -498,14 +605,30 @@ export function useBanHangSanPham(deps) {
     }
 
     const want = clampInt(qtyToAdd, 1, Math.max(1, available));
-    const exist = cartItems.value.find((x) => x.id === id);
 
-    if (exist) {
-      // ✅ đã có trong giỏ => KHÔNG cập nhật giá nữa (giữ nguyên giá đã khóa)
-      khoaGiaChoItemNeuCan(exist);
+    const giaGocLock = Math.round(toNumberSafe(nx.giaGoc ?? nx.giaBan ?? 0));
+    const giaBanLock = Math.round(toNumberSafe(nx.giaBan ?? 0));
+    const pctLock = normalizePercent(nx.phanTramGiam ?? 0);
+    const dotIdLock = nx.idDotGiamGia ?? null;
 
-      const old = Number(exist.qty || 1);
-      const max = getMaxQtyForItem(exist);
+    // tìm dòng cùng CTSP và cùng “giá chốt” -> mới được cộng
+    const existSamePrice = (cartItems.value || []).find((x) => {
+      if (!x) return false;
+      if (Number(x.id) !== Number(id)) return false;
+
+      const g = Math.round(toNumberSafe(x.__giaBanChot ?? x.giaBan ?? 0));
+      const p = normalizePercent(x.__phanTramGiamChot ?? x.phanTramGiam ?? x.phanTramKhuyenMai ?? 0);
+      const d = x.__idDotGiamGiaChot ?? x.idDotGiamGia ?? null;
+
+      return g === giaBanLock && p === pctLock && String(d ?? "") === String(dotIdLock ?? "");
+    });
+
+    if (existSamePrice) {
+      // ✅ được cộng vì cùng “bản ghi giá”
+      khoaGiaChoItemNeuCan(existSamePrice);
+
+      const old = Number(existSamePrice.qty || 1);
+      const max = getMaxQtyForItem(existSamePrice);
       const newQty = Math.min(max, old + want);
 
       const delta = newQty - old;
@@ -514,25 +637,22 @@ export function useBanHangSanPham(deps) {
         return;
       }
 
-      exist.qty = newQty;
-      exist.checked = true;
+      existSamePrice.qty = newQty;
+      existSamePrice.checked = true;
 
       capNhatTonLocal(id, -delta);
     } else {
+      // ✅ giá/đợt giảm đã đổi -> tạo DÒNG MỚI (record mới), không sửa dòng cũ
       const addQty = Math.min(want, available);
 
-      const giaGocLock = Math.round(toNumberSafe(nx.giaGoc ?? nx.giaBan ?? 0));
-      const giaBanLock = Math.round(toNumberSafe(nx.giaBan ?? 0));
-      const pctLock = normalizePercent(nx.phanTramGiam ?? 0);
-
       const item = {
+        __rowId: taoRowId(), // ✅ key dòng
         id: nx.id,
         maCtsp: nx.maCtsp,
         tenSanPham: nx.tenSanPham,
         mauSac: nx.mauSac,
         kichCo: nx.kichCo,
 
-        // hiển thị giá = giá tại thời điểm thêm
         giaGoc: giaGocLock > 0 ? giaGocLock : 0,
         giaBan: giaBanLock > 0 ? giaBanLock : 0,
 
@@ -541,7 +661,6 @@ export function useBanHangSanPham(deps) {
         maDotGiamGia: nx.maDotGiamGia ?? null,
         tenDotGiamGia: nx.tenDotGiamGia ?? null,
 
-        // ✅ khóa giá theo dòng
         __khoaGia: true,
         __giaGocChot: giaGocLock > 0 ? giaGocLock : 0,
         __giaBanChot: giaBanLock > 0 ? giaBanLock : 0,
@@ -557,11 +676,9 @@ export function useBanHangSanPham(deps) {
       };
 
       cartItems.value.unshift(item);
-
       capNhatTonLocal(id, -addQty);
     }
 
-    ctspPickQty.value = { ...ctspPickQty.value, [id]: 1 };
     scheduleAutoVoucher();
     scheduleSyncHoaDon();
   }
@@ -570,7 +687,7 @@ export function useBanHangSanPham(deps) {
   async function openCtspModal() {
     showCtspModal.value = true;
     ctspPage.value = 1;
-    ctspPickQty.value = {};
+    startPollCtsp();
     await loadCtspForPos();
   }
 
@@ -596,7 +713,6 @@ export function useBanHangSanPham(deps) {
     ctspFilter,
     ctspPage,
     ctspPageSize,
-    ctspPickQty,
 
     // computed
     filteredCtsp,
@@ -615,6 +731,9 @@ export function useBanHangSanPham(deps) {
     getPhanTramGiamDisplay,
     getGiamGiaTitle,
 
+    // ✅ expose để SalesPage disable nút "+"
+    isGiaDaThayDoiSoVoiServer,
+
     // cart
     getMaxQtyForItem,
     incQty,
@@ -624,7 +743,6 @@ export function useBanHangSanPham(deps) {
     removeItem,
 
     // pick
-    onCtspPickQtyInput,
     pickCtsp,
 
     // modal
