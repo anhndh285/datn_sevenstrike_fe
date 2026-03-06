@@ -64,20 +64,15 @@
     </div>
 
     <!-- Import Excel Modal Component -->
-    <ImportExcelModal
-      ref="excelModalRef"
-      :listNhanVien="listNhanVien"
-      :listCa="listCa"
-      @close="closeExcelModal"
-      @import-success="loadData"
-    />
+    <ImportExcelModal ref="excelModalRef" :listNhanVien="listNhanVien" :listCa="listCa" @close="closeExcelModal"
+      @import-success="loadData" />
 
     <div class="card-box mt-20">
       <div class="table-header-row">
         <h3>
           <i :class="viewMode === 'table'
-              ? 'fa-solid fa-table'
-              : 'fa-solid fa-calendar'
+            ? 'fa-solid fa-table'
+            : 'fa-solid fa-calendar'
             "></i>
           {{
             viewMode === "table"
@@ -158,8 +153,7 @@
 
           <div class="nav-right">
             <div class="btn-toggle-group">
-              <button class="btn-toggle" :class="{ active: viewMode === 'day' }" 
-              @click="viewMode = 'day'">
+              <button class="btn-toggle" :class="{ active: viewMode === 'day' }" @click="viewMode = 'day'">
                 Ngày
               </button>
               <button class="btn-toggle" :class="{ active: viewMode === 'week' }" @click="viewMode = 'week'">
@@ -188,12 +182,12 @@
           <div v-for="day in daysInMonth" :key="'day-' + day" class="cal-cell" :class="{ 'is-today': isToday(day) }">
             <div class="cal-date-num">{{ day }}</div>
             <div class="cal-events-container">
-              <div v-for="nv in getEventsForDay(day)" :key="nv.id" class="event-item" @click="openModal(nv)">
+              <div v-for="nv in getEventsForDayGrouped(day)" :key="nv.id" class="event-item" @click="openModal(nv)">
                 <div class="avatar-circle">
                   <img v-if="isImg(nv.nhanVien?.anhNhanVien)" :src="nv.nhanVien?.anhNhanVien" />
                   <span v-else class="initial">{{
                     getAvatarLabel(nv.tenNhanVien)
-                    }}</span>
+                  }}</span>
                 </div>
                 <span class="event-name">{{ nv.nhanVien?.tenTaiKhoan }}</span>
               </div>
@@ -214,13 +208,13 @@
             <div class="cal-date-num">{{ wd.day }}/{{ wd.month + 1 }}</div>
 
             <div class="cal-events-container">
-              <div v-for="nv in getEventsForSpecificDay(wd.day, wd.month, wd.year)" :key="nv.id" class="event-item"
-                @click="openModal(nv)">
+              <div v-for="nv in getEventsForSpecificDayGrouped(wd.day, wd.month, wd.year)" :key="nv.id"
+                class="event-item" @click="openModal(nv)">
                 <div class="avatar-circle">
                   <img v-if="isImg(nv.nhanVien?.anhNhanVien)" :src="nv.nhanVien?.anhNhanVien" />
                   <span v-else class="initial">{{
                     getAvatarLabel(nv.tenNhanVien)
-                    }}</span>
+                  }}</span>
                 </div>
                 <span class="event-name">{{ nv.nhanVien?.tenTaiKhoan }}</span>
               </div>
@@ -266,7 +260,7 @@
                     <div class="avatar-circle">
                       <img v-if="isImg(nv.nhanVien?.anhNhanVien)" :src="nv.nhanVien?.anhNhanVien" />
                       <span v-else class="initial">{{ getAvatarLabel(nv.tenNhanVien || nv.nhanVien?.tenTaiKhoan)
-                        }}</span>
+                      }}</span>
                     </div>
                     <div class="emp-info">
                       <div class="emp-name">{{ nv.tenNhanVien || nv.nhanVien?.tenTaiKhoan }}</div>
@@ -338,20 +332,26 @@
 
           <div class="form-group">
             <label>Ca làm việc <span class="req">*</span></label>
+
+            <div class="selected-tags" v-if="selectedCas.length > 0">
+              <div v-for="(ca, index) in selectedCas" :key="ca.id" class="tag-item">
+                <span>{{ ca.tenCa }}</span>
+                <i class="fa-solid fa-xmark remove-tag" @click="removeSelectedCa(index)"></i>
+              </div>
+            </div>
+
             <div class="combobox-wrapper">
-              <input type="text" class="form-control" placeholder="Tìm ca làm việc..." v-model="searchCaModal"
+              <input type="text" class="form-control" placeholder="Tìm và chọn ca làm việc..." v-model="searchCaModal"
                 @focus="showCaModalDropdown = true" @blur="handleBlurCaModal" />
+
               <ul v-if="showCaModalDropdown" class="combobox-dropdown">
-                <li v-for="ca in filteredCaModal" :key="ca.id" @click="selectCaModal(ca)"
-                  :class="{ active: ca.id === form.idCaLam }">
+                <li v-for="ca in filteredCaModal" :key="ca.id" @click="selectCaMulti(ca)"
+                  :class="{ active: isCaSelected(ca.id) }">
                   <span class="fw-bold">{{ ca.tenCa }}</span>
-                  <small>
-                    ({{ formatTime(ca.gioBatDau) }} -
-                    {{ formatTime(ca.gioKetThuc) }})</small>
+                  <small> - ({{ formatTime(ca.gioBatDau) }} - {{ formatTime(ca.gioKetThuc) }})</small>
+                  <i v-if="isCaSelected(ca.id)" class="fa-solid fa-check float-right"></i>
                 </li>
-                <li v-if="filteredCaModal.length === 0" class="no-result">
-                  Không tìm thấy
-                </li>
+                <li v-if="filteredCaModal.length === 0" class="no-result">Không tìm thấy</li>
               </ul>
             </div>
           </div>
@@ -361,6 +361,9 @@
             <div class="input-with-icon">
               <input type="date" v-model="form.ngayLam" class="btn-date" />
             </div>
+          </div>
+
+          <div v-if="isEditing && form.danhSachCa && form.danhSachCa.length > 0" class="assigned-shifts-section">
           </div>
         </div>
         <div class="modal-footer">
@@ -399,11 +402,7 @@ const openExcelModal = () => {
 };
 
 const closeExcelModal = () => {
-  
-};
 
-const handleFileUpload = (event) => {
-  selectedFile.value = event.target.files[0];
 };
 
 const getUser = () => {
@@ -451,6 +450,8 @@ const currentMonth = ref(today.getMonth());
 const currentYear = ref(today.getFullYear());
 const currentDate = ref(new Date());
 
+const selectedCas = ref([]);
+
 const form = reactive({
   idLichLamViec: null,
   idNhanVien: null,
@@ -493,6 +494,22 @@ const selectNvSingle = (nv) => {
   form.idNhanVien = nv.id;
   searchNvModal.value = nv.tenNhanVien;
   showNvModalDropdown.value = false;
+};
+
+const isCaSelected = (id) => {
+  return selectedCas.value.some((ca) => ca.id === id);
+};
+
+const selectCaMulti = (ca) => {
+  if (!isCaSelected(ca.id)) {
+    selectedCas.value.push(ca);
+  }
+  searchCaModal.value = ""; // Xóa text tìm kiếm sau khi chọn
+  // showCaModalDropdown.value = false; // Mở comment nếu muốn đóng dropdown ngay
+};
+
+const removeSelectedCa = (index) => {
+  selectedCas.value.splice(index, 1);
 };
 
 const daysInMonth = computed(() => {
@@ -540,34 +557,28 @@ const getDayName = (d) => {
 
 const getEventsForShiftAndDate = (idCa, d) => {
   if (!lichNhanVienList.value || lichNhanVienList.value.length === 0) return [];
-  
+
   const year = d.getFullYear();
   const m = d.getMonth() + 1;
   const day = d.getDate();
   const dateString = `${year}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
   return lichNhanVienList.value.filter((l) => {
-    // 1. LẤY ID CA LÀM (Dựa theo cấu trúc Object bạn gửi)
-    // Ưu tiên lấy từ l.lichLamViec.idCaLam.id hoặc l.lichLamViec.idCaLam
     let shiftId = null;
     if (l.lichLamViec && l.lichLamViec.idCaLam) {
-      // Nếu idCaLam là object {id: ...} thì lấy .id, nếu không thì lấy chính nó
-      shiftId = typeof l.lichLamViec.idCaLam === 'object' 
-                ? l.lichLamViec.idCaLam.id 
-                : l.lichLamViec.idCaLam;
+      shiftId = typeof l.lichLamViec.idCaLam === 'object'
+        ? l.lichLamViec.idCaLam.id
+        : l.lichLamViec.idCaLam;
     } else {
-      shiftId = l.idCaLam; // Phòng hờ API trả về phẳng
+      shiftId = l.idCaLam;
     }
 
-    // So sánh ID ca làm (ép về String cho chắc)
     if (String(shiftId) !== String(idCa)) return false;
 
-    // 2. KIỂM TRA NGÀY LÀM
-    // Dữ liệu mẫu của bạn là "2026-03-05" (String)
     if (typeof l.ngayLam === "string") {
       return l.ngayLam.startsWith(dateString);
     }
-    
+
     if (Array.isArray(l.ngayLam)) {
       return l.ngayLam[0] === year && l.ngayLam[1] === m && l.ngayLam[2] === day;
     }
@@ -575,7 +586,7 @@ const getEventsForShiftAndDate = (idCa, d) => {
     return false;
   });
 };
-// Hàm mở Modal kết hợp Ngày và Ca chỉ định
+
 const openModalVoiNgayCa = (dateObj, idCa) => {
   isEditing.value = false;
   currentId.value = null;
@@ -640,7 +651,6 @@ const changePeriod = (step) => {
     currentMonth.value = newDate.getMonth();
     currentYear.value = newDate.getFullYear();
   } else if (viewMode.value === "day") {
-    // Thêm đoạn này để chuyển qua lại các ngày
     const newDate = new Date(currentDate.value);
     newDate.setDate(newDate.getDate() + step);
     currentDate.value = newDate;
@@ -666,6 +676,11 @@ const getEventsForSpecificDay = (day, month, year) => {
   });
 };
 
+const getEventsForSpecificDayGrouped = (day, month, year) => {
+  const events = getEventsForSpecificDay(day, month, year);
+  return groupShiftsByNhanVien(events);
+};
+
 const getEventsForDay = (day) => {
   if (!lichNhanVienList.value) return [];
   const m = currentMonth.value + 1;
@@ -686,6 +701,32 @@ const getEventsForDay = (day) => {
     }
     return false;
   });
+};
+
+const getEventsForDayGrouped = (day) => {
+  const events = getEventsForDay(day); // Hàm cũ của bạn lấy list phẳng
+  return groupShiftsByNhanVien(events);
+};
+
+const groupShiftsByNhanVien = (events) => {
+  const grouped = {};
+  events.forEach((item) => {
+    const nvId = item.nhanVien?.id;
+    if (!grouped[nvId]) {
+      grouped[nvId] = {
+        ...item,
+        danhSachCa: [] // Lưu tất cả các ca của nhân viên trong ngày này
+      };
+    }
+    grouped[nvId].danhSachCa.push({
+      idPhanCong: item.id,
+      idCa: item.idCaLam || item.caLam?.id,
+      tenCa: item.tenCa || item.caLam?.tenCa,
+      gioBatDau: item.gioBatDau,
+      gioKetThuc: item.gioKetThuc
+    });
+  });
+  return Object.values(grouped);
 };
 
 const filteredNhanVienList = computed(() => {
@@ -790,34 +831,24 @@ const openModal = (item) => {
   if (item) {
     isEditing.value = true;
     currentId.value = item.id;
-
-    const idNv = item.nhanVien?.id;
-    const idCa = item.idCaLam || (item.caLam ? item.caLam.id : null);
-    form.idNhanVien = idNv;
-    form.idCaLam = idCa;
-    form.idLichLamViec = item.lichLamViec
-      ? item.lichLamViec.id
-      : item.idLichLamViec;
+    form.idNhanVien = item.nhanVien?.id;
     form.ngayLam = convertArrayDateToString(item.ngayLam);
-    form.ghiChu = item.ghiChu || "";
 
-    const nv = listNhanVien.value.find((n) => n.id === idNv);
+    // Đổ các ca đang có vào danh sách Tag
+    selectedCas.value = (item.danhSachCa || []).map(ca => ({
+      id: ca.idCa || ca.id,
+      tenCa: ca.tenCa
+    }));
+
+    const nv = listNhanVien.value.find((n) => n.id === form.idNhanVien);
     searchNvModal.value = nv ? nv.tenNhanVien : "";
-    selectedNhanViens.value = [];
-
-    const ca = listCa.value.find((c) => c.id === idCa);
-    searchCaModal.value = ca
-      ? `${ca.tenCa} (${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)})`
-      : "";
+    searchCaModal.value = "";
   } else {
+    // Reset khi thêm mới
     isEditing.value = false;
-    currentId.value = null;
-    form.idLichLamViec = null;
-    form.idNhanVien = null;
     selectedNhanViens.value = [];
-    form.idCaLam = null;
+    selectedCas.value = []; // Reset ca làm việc
     form.ngayLam = new Date().toISOString().split("T")[0];
-    form.ghiChu = "";
     searchNvModal.value = "";
     searchCaModal.value = "";
   }
@@ -831,14 +862,18 @@ const closeModal = () => {
 };
 
 const handleSubmit = async () => {
+  // 1. Kiểm tra tính hợp lệ của dữ liệu đầu vào
   if (!form.ngayLam) {
     alert("Vui lòng chọn ngày làm việc!");
     return;
   }
-  if (!form.idCaLam) {
-    alert("Vui lòng chọn ca làm việc!");
+
+  if (selectedCas.value.length === 0) {
+    alert("Vui lòng chọn ít nhất một ca làm việc!");
     return;
   }
+
+  // Nếu thêm mới thì phải chọn nhân viên, nếu sửa thì đã có form.idNhanVien
   if (!isEditing.value && selectedNhanViens.value.length === 0) {
     alert("Vui lòng chọn ít nhất một nhân viên!");
     return;
@@ -846,55 +881,68 @@ const handleSubmit = async () => {
 
   try {
     loading.value = true;
-    if (!isEditing.value) {
+    const currentUser = getUser();
+    const idNguoiTao = currentUser?.id || 1; // Lấy ID người dùng đang đăng nhập
+
+    // Xác định danh sách nhân viên cần xử lý
+    const targetNvs = isEditing.value
+      ? [{ id: form.idNhanVien }]
+      : selectedNhanViens.value;
+
+    // 2. Vòng lặp xử lý qua từng CA LÀM VIỆC đã chọn
+    for (const ca of selectedCas.value) {
+
+      // A. Kiểm tra xem ca làm việc này trong ngày này đã có bản ghi "Lịch tổng" chưa
       const existingLich = await checkLichLamViec({
-        ca: form.idCaLam,
+        ca: ca.id,
         ngay: form.ngayLam,
       });
 
-      if (existingLich && existingLich.length > 0) {
-        const selectedIds = selectedNhanViens.value.map((nv) => nv.id);
-        const promises = selectedIds.map((nvId) =>
-          createPhanCong({
-            idLichLamViec: existingLich[0].id,
-            idNhanVien: nvId,
-            nguoiTao: 1,
-          }),
-        );
-        await Promise.all(promises);
-        alert(`Đã thêm ${selectedIds.length} nhân viên vào lịch làm việc.`);
-      } else {
-        const newLichData = {
-          idCaLam: form.idCaLam,
-          ngayLam: form.ngayLam,
-          ghiChu: form.ghiChu || "",
-          nguoiTao: 1,
-        };
-        const resLich = await createLich(newLichData);
+      let idLichHienTai = null;
 
-        const idLichMoi = Array.isArray(resLich) ? resLich[0]?.id : resLich?.id;
-        const selectedIds = selectedNhanViens.value.map((nv) => nv.id);
-        const promises = selectedIds.map((nvId) =>
-          createPhanCong({
-            idLichLamViec: idLichMoi,
-            idNhanVien: nvId,
-            nguoiTao: 1,
-          }),
-        );
-        await Promise.all(promises);
-        alert(`Đã thêm ${selectedIds.length} nhân viên vào lịch làm việc.`);
+      // checkLichLamViec thường trả về một mảng hoặc object
+      if (existingLich && (Array.isArray(existingLich) ? existingLich.length > 0 : existingLich.id)) {
+        idLichHienTai = Array.isArray(existingLich) ? existingLich[0].id : existingLich.id;
+      } else {
+        // B. Chưa có lịch tổng cho ca này -> Tạo mới bản ghi Lịch (Master record)
+        const resLich = await createLich({
+          idCaLam: ca.id,
+          ngayLam: form.ngayLam,
+          ghiChu: "",
+          nguoiTao: idNguoiTao,
+        });
+        // Lấy ID vừa tạo (tùy vào cấu trúc API trả về)
+        idLichHienTai = resLich?.data?.id || resLich?.id || (Array.isArray(resLich) ? resLich[0]?.id : null);
       }
-    } else {
-      alert("Tính năng cập nhật đang được xử lý.");
+
+      // C. Phân công từng NHÂN VIÊN vào ID Lịch hiện tại
+      if (idLichHienTai) {
+        // Sử dụng Promise.all để gửi yêu cầu phân công các nhân viên song song (tối ưu tốc độ)
+        const phanCongPromises = targetNvs.map((nv) =>
+          createPhanCong({
+            idLichLamViec: idLichHienTai,
+            idNhanVien: nv.id,
+            nguoiTao: idNguoiTao,
+          })
+        );
+
+        await Promise.all(phanCongPromises);
+      }
     }
 
+    // 3. Thông báo và làm mới dữ liệu
+    alert(isEditing.value
+      ? "Cập nhật lịch làm việc thành công!"
+      : `Đã phân công thành công cho ${targetNvs.length} nhân viên vào ${selectedCas.value.length} ca.`);
+
     closeModal();
-    loadData();
-  } catch (e) {
-    const errorMsg = e.message.includes("Unexpected token")
-      ? "Lỗi phản hồi từ Server (JSON error)"
-      : e.message;
-    alert("Không thể hoàn thành: " + errorMsg);
+    if (typeof loadData === "function") {
+      loadData(); // Gọi hàm tải lại danh sách ngoài trang chính
+    }
+
+  } catch (error) {
+    console.error("Lỗi khi lưu lịch làm việc:", error);
+    alert("Có lỗi xảy ra: " + (error.response?.data?.message || "Không thể lưu dữ liệu"));
   } finally {
     loading.value = false;
   }
@@ -905,9 +953,9 @@ const loadData = async () => {
     const res = await getAllPhanCong();
     const data = Array.isArray(res) ? res : res.content || [];
     lichNhanVienList.value = data;
-    
+
     // Dòng debug: Mở F12 -> Console để xem
-    console.log("Dữ liệu 1 bản ghi mẫu:", data[0]); 
+    console.log("Dữ liệu 1 bản ghi mẫu:", data[0]);
   } catch (e) {
     console.error(e);
   }
@@ -1084,13 +1132,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .btn-import {
-  background: #10b981;
+  background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
   color: white;
-}
-
-.btn-import:hover {
-  background: #10b981;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 6px rgba(255, 77, 79, 0.2);
+  color: white;
 }
 
 .btn-download {

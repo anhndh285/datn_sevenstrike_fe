@@ -227,8 +227,6 @@ public class LichLamViecService {
                                 assignReq.setIdNhanVien(nv.getId());
                                 assignReq.setNguoiTao(1);
 
-                                // Gọi sang service NhanVien để lưu bản ghi phân công
-                                // Hàm create của LichLamViecNhanVienService đã có logic check trùng
                                 lichLamViecNhanVienService.create(assignReq);
                             }
                         } catch (BadRequestEx ex) {
@@ -302,15 +300,12 @@ public class LichLamViecService {
     private NhanVien findNhanVienByNameOrCode(String input) {
         if (input.isEmpty()) return null;
         
-        // Try to parse as ID
         try {
             Integer id = Integer.parseInt(input.trim());
             return nhanVienRepo.findById(id).orElse(null);
         } catch (NumberFormatException e) {
-            // Not a number, search by name or code
         }
         
-        // Search by name or code
         List<NhanVien> allNv = nhanVienRepo.findAll();
         String searchTerm = input.toLowerCase().trim();
         
@@ -324,8 +319,6 @@ public class LichLamViecService {
         return null;
     }
 
-    // --- CÁC HÀM BỔ TRỢ (HELPER METHODS) ---
-
     // Kiểm tra xem dòng có trống trơn không
     private boolean isRowEmpty(Row row) {
         if (row == null) return true;
@@ -337,7 +330,6 @@ public class LichLamViecService {
         return true;
     }
 
-    // Lấy số nguyên an toàn
     private Integer getSafeInt(Cell cell, String fieldName) {
         if (cell == null || cell.getCellType() == CellType.BLANK) {
             throw new BadRequestEx(fieldName + " không được để trống");
@@ -389,7 +381,7 @@ private LocalDate getSafeDate(Cell cell) {
     throw new BadRequestEx("Định dạng ngày không được hỗ trợ");
 }
 
-    // Lấy chuỗi an toàn (trả về rỗng nếu null)
+    //Lấy chuỗi an toàn (trả về rỗng nếu null)
     private String getSafeString(Cell cell) {
         if (cell == null || cell.getCellType() == CellType.BLANK) {
             return "";

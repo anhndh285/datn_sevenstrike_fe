@@ -628,6 +628,7 @@ defineExpose({
 
 .btn-primary {
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
+  color: white;
   box-shadow: 0 4px 6px rgba(255, 77, 79, 0.2);
 }
 
