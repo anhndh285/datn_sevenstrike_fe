@@ -3,6 +3,7 @@ package com.example.datn_sevenstrike.controller;
 import com.example.datn_sevenstrike.dto.request.LichLamViecNhanVienRequest;
 import com.example.datn_sevenstrike.dto.response.LichLamViecNhanVienResponse;
 import com.example.datn_sevenstrike.service.LichLamViecNhanVienService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;

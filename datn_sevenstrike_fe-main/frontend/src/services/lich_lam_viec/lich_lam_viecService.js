@@ -8,8 +8,8 @@ const unwrapJson = async (res) => {
 
 export const checkLichLamViec = async (data) => {
   const params = new URLSearchParams({
-    ca: data.ca,
-    ngay: data.ngay
+    ca: data.idCaLam,
+    ngay: data.ngayLam
   }).toString();
 
   const res = await fetch(`${API_LICH}/check?${params}`);

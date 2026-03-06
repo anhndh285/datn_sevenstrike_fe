@@ -256,7 +256,7 @@
                     <i class="fa-solid fa-plus"></i>
                   </button>
                   <div v-for="(nv, index) in getEventsForShiftAndDate(ca.id, currentDate)" :key="nv.id"
-                    class="employee-card large" :class="['border-color-' + (index % 4)]" @click="openModal(nv)">
+                    class="employee-card large" :class="['border-color-4']" @click="openModal(nv)">
                     <div class="avatar-circle">
                       <img v-if="isImg(nv.nhanVien?.anhNhanVien)" :src="nv.nhanVien?.anhNhanVien" />
                       <span v-else class="initial">{{ getAvatarLabel(nv.tenNhanVien || nv.nhanVien?.tenTaiKhoan)
@@ -380,6 +380,7 @@
 import { ref, onMounted, reactive, computed } from "vue";
 import {
   createPhanCong,
+  updatePhanCong,
   removePhanCong,
   getAllPhanCong,
 } from "@/services/lich_lam_viec/lich_lam_viec_nhan_vienService";
@@ -449,6 +450,8 @@ const today = new Date();
 const currentMonth = ref(today.getMonth());
 const currentYear = ref(today.getFullYear());
 const currentDate = ref(new Date());
+
+const editingItem = ref(null);
 
 const selectedCas = ref([]);
 
@@ -757,7 +760,13 @@ const filteredNvModal = computed(() => {
 
 const filteredCaModal = computed(() => {
   const q = searchCaModal.value.toLowerCase();
-  return listCa.value.filter((ca) => ca.tenCa.toLowerCase().includes(q));
+  return listCa.value.filter((ca) => {
+    // Lọc theo tên ca
+    const matchesSearch = ca.tenCa.toLowerCase().includes(q);
+    // Loại bỏ ca đã được chọn
+    const notSelected = !isCaSelected(ca.id);
+    return matchesSearch && notSelected;
+  });
 });
 
 const selectNhanVien = (nv) => {
@@ -830,15 +839,32 @@ const openModalVoiNgay = (day, month = null, year = null) => {
 const openModal = (item) => {
   if (item) {
     isEditing.value = true;
+    editingItem.value = item;
     currentId.value = item.id;
     form.idNhanVien = item.nhanVien?.id;
     form.ngayLam = convertArrayDateToString(item.ngayLam);
 
     // Đổ các ca đang có vào danh sách Tag
-    selectedCas.value = (item.danhSachCa || []).map(ca => ({
-      id: ca.idCa || ca.id,
-      tenCa: ca.tenCa
-    }));
+    if (item.danhSachCa) {
+      // Grouped from calendar
+      const uniqueCas = {};
+      (item.danhSachCa || []).forEach(ca => {
+        const caId = ca.idCa || ca.id;
+        if (!uniqueCas[caId]) {
+          uniqueCas[caId] = {
+            id: caId,
+            tenCa: ca.tenCa
+          };
+        }
+      });
+      selectedCas.value = Object.values(uniqueCas);
+    } else {
+      // Single from table
+      selectedCas.value = [{
+        id: item.idCaLam || item.caLam?.id,
+        tenCa: item.tenCa || item.caLam?.tenCa
+      }];
+    }
 
     const nv = listNhanVien.value.find((n) => n.id === form.idNhanVien);
     searchNvModal.value = nv ? nv.tenNhanVien : "";
@@ -846,6 +872,7 @@ const openModal = (item) => {
   } else {
     // Reset khi thêm mới
     isEditing.value = false;
+    editingItem.value = null;
     selectedNhanViens.value = [];
     selectedCas.value = []; // Reset ca làm việc
     form.ngayLam = new Date().toISOString().split("T")[0];
@@ -858,6 +885,7 @@ const openModal = (item) => {
 const closeModal = () => {
   showModal.value = false;
   isEditing.value = false;
+  editingItem.value = null;
   currentId.value = null;
 };
 
@@ -883,6 +911,25 @@ const handleSubmit = async () => {
     const currentUser = getUser();
     const idNguoiTao = currentUser?.id || 1; // Lấy ID người dùng đang đăng nhập
 
+    // Nếu đang chỉnh sửa, xóa các phân công cũ
+    if (isEditing.value && editingItem.value) {
+      let oldPhanCongIds = [];
+      if (editingItem.value.danhSachCa) {
+        // Grouped
+        oldPhanCongIds = editingItem.value.danhSachCa.map(ca => ca.idPhanCong).filter(id => id);
+      } else {
+        // Single
+        oldPhanCongIds = [editingItem.value.id].filter(id => id);
+      }
+      for (const id of oldPhanCongIds) {
+        try {
+          await removePhanCong(id);
+        } catch (e) {
+          console.error('Failed to remove old assignment', id, e);
+        }
+      }
+    }
+
     const targetNvs = isEditing.value
       ? [{ id: form.idNhanVien }]
       : selectedNhanViens.value;
@@ -890,8 +937,8 @@ const handleSubmit = async () => {
     for (const ca of selectedCas.value) {
 
       const existingLich = await checkLichLamViec({
-        ca: ca.id,
-        ngay: form.ngayLam,
+        idCaLam: ca.id,
+        ngayLam: form.ngayLam,
       });
 
       let idLichHienTai = null;
@@ -972,13 +1019,12 @@ const filterLichList = computed(() => {
   return data;
 });
 
-const deletePhanCong = async (id) => {
-  if (!confirm("Gỡ nhân viên này khỏi lịch?")) return;
+const updatePhanCongData = async (id, data) => {
   try {
-    await removePhanCong(id);
+    await updatePhanCong(id, data);
     loadData();
   } catch (e) {
-    alert("Thất bại: " + e.message);
+    alert("Cập nhật phân công thất bại: " + e.message);
   }
 };
 
