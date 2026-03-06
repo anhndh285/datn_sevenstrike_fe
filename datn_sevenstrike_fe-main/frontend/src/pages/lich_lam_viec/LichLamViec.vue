@@ -870,7 +870,6 @@ const openModal = (item) => {
     searchNvModal.value = nv ? nv.tenNhanVien : "";
     searchCaModal.value = "";
   } else {
-    // Reset khi thêm mới
     isEditing.value = false;
     editingItem.value = null;
     selectedNhanViens.value = [];
