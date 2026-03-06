@@ -55,6 +55,8 @@ import ThongKePage from "@/pages/thong_ke/ThongKePage.vue";
 import LichLamViecPage from "@/pages/lich_lam_viec/LichLamViec.vue";
 import GiaoCaPage from "@/pages/lich_lam_viec/GiaoCa.vue";
 import LichCaLamPage from "@/pages/lich_lam_viec/LichCaLam.vue";
+// ✅ ĐÃ THÊM IMPORT TRANG LỊCH SỬ HOẠT ĐỘNG
+import LichSuHoatDongPage from "@/pages/lich_lam_viec/LichSuHoatDong.vue";
 
 // ======================= AUTH HELPERS =======================
 const normalizeRole = (role) => {
@@ -208,6 +210,13 @@ const routes = [
         name: "admin-giao-ca",
         component: GiaoCaPage,
         meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+      // ✅ ĐÃ THÊM ROUTE LỊCH SỬ HOẠT ĐỘNG (CHỈ CÓ ADMIN MỚI VÀO ĐƯỢC)
+      {
+        path: "lich-su-hoat-dong",
+        name: "admin-lich-su-hoat-dong",
+        component: LichSuHoatDongPage,
+        meta: { roles: ["ADMIN"] },
       },
 
       // =========================================================

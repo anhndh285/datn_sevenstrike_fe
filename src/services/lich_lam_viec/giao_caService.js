@@ -1,4 +1,5 @@
-const API_GIAO_CA = "http://localhost:8080/api/giao-ca";
+// ✅ SỬA ĐƯỜNG DẪN Ở ĐÂY: Thêm chữ /admin vào
+const API_GIAO_CA = "http://localhost:8080/api/admin/giao-ca";
 
 const unwrapJson = async (res) => {
   if (res.status === 204) return null; // No content
@@ -47,7 +48,6 @@ export const xacNhanTienDauCa = async (idGiaoCa, tienDauCaNhap) => {
 };
 
 export const batDauCa = async (payload) => {
-    // Payload mong đợi: { idNhanVien, tienDauCaNhap, idLichLamViec }
     const response = await fetch(`${API_GIAO_CA}/bat-dau`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -57,11 +57,15 @@ export const batDauCa = async (payload) => {
 };
 
 export const ketThucCa = async (idGiaoCa, payload) => {
-    // Payload mong đợi: { ghiChu, ... }
     const response = await fetch(`${API_GIAO_CA}/ket-thuc/${idGiaoCa}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
     });
+    return handleResponse(response);
+};
+
+export const getLichSuGiaoCa = async (pageNo = 0, pageSize = 100) => {
+    const response = await fetch(`${API_GIAO_CA}/page?pageNo=${pageNo}&pageSize=${pageSize}`);
     return handleResponse(response);
 };
