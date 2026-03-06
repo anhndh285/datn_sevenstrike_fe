@@ -55,6 +55,51 @@ export function useBanHangHoaDonSubmit(deps) {
     return Number(getHttpStatus(err)) === 404;
   }
 
+  function getBackendMessage(err) {
+    return (
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      err?.response?.data?.detail ||
+      err?.message ||
+      ""
+    );
+  }
+
+  function isVoucherRelatedError(err) {
+    const msg = String(getBackendMessage(err) || "").trim().toLowerCase();
+    if (!msg) return false;
+
+    return (
+      msg.includes("phiếu") ||
+      msg.includes("phieu") ||
+      msg.includes("voucher") ||
+      msg.includes("mã giảm giá") ||
+      msg.includes("ma giam gia") ||
+      msg.includes("giảm giá") ||
+      msg.includes("giam gia") ||
+      msg.includes("không còn hợp lệ") ||
+      msg.includes("khong con hop le") ||
+      msg.includes("ngừng hoạt động") ||
+      msg.includes("ngung hoat dong") ||
+      msg.includes("đã kết thúc") ||
+      msg.includes("da ket thuc") ||
+      msg.includes("hết lượt") ||
+      msg.includes("het luot") ||
+      msg.includes("hết số lượng") ||
+      msg.includes("het so luong") ||
+      msg.includes("không đủ điều kiện") ||
+      msg.includes("khong du dieu kien")
+    );
+  }
+
+  function getVoucherRealtimeErrorMessage(err) {
+    const raw = String(getBackendMessage(err) || "").trim();
+    if (raw && isVoucherRelatedError(err)) {
+      return `${raw} Hệ thống đã kiểm tra lại theo thời gian thực, vui lòng kiểm tra lại ưu đãi trước khi xác nhận.`;
+    }
+    return "Phiếu giảm giá vừa thay đổi trạng thái. Hệ thống đã kiểm tra lại theo thời gian thực, vui lòng kiểm tra lại ưu đãi trước khi xác nhận.";
+  }
+
   function resetHoaDonIdTrongTabDangChon(reason = "") {
     const t = getActiveTabObj();
     if (!t) return false;
@@ -96,7 +141,6 @@ export function useBanHangHoaDonSubmit(deps) {
     };
   }
 
-  // ✅ FIX: xác nhận xong => ẨN TAB (remove khỏi tabs + localStorage)
   function anTabDaHoanTatSauSubmit() {
     try {
       const idx = Number(activeTab.value || 0);
@@ -212,7 +256,6 @@ export function useBanHangHoaDonSubmit(deps) {
     return id;
   }
 
-  // ✅ KHÔNG cộng phí vận chuyển vào doanh thu: tongTien/tongTienSauGiam chỉ tính TIỀN HÀNG
   function buildThongTinHoaDonPayload() {
     const isShipping = isCounter.value === true;
     const loaiDon = isShipping ? 1 : 0;
@@ -260,7 +303,6 @@ export function useBanHangHoaDonSubmit(deps) {
       loaiDon,
       phiVanChuyen: ship,
 
-      // ✅ doanh thu chỉ tính tiền hàng
       tongTien: tongHang,
       tongTienSauGiam: tongSauGiamKhongShip,
 
@@ -272,7 +314,6 @@ export function useBanHangHoaDonSubmit(deps) {
     };
   }
 
-  // ✅ gửi thêm donGia để BE có thể lưu theo giá “đã chốt”
   function buildChiTietSnapshotPayload(idHoaDon) {
     return (cartItems.value || []).map((it) => {
       const donGia = Math.round(Number(it?.__giaBanChot ?? it?.giaBan ?? 0) || 0);
@@ -307,10 +348,13 @@ export function useBanHangHoaDonSubmit(deps) {
 
           const donGia = Math.round(Number(x?.donGia || 0) || 0);
           const giaChot = donGia > 0 ? donGia : Math.round(Number(found?.giaBan || 0) || 0);
-          const giaGocChot = Math.round(Number(found?.giaGoc || 0) || 0);
+
+          const giaGocDb = Math.round(Number(x?.giaGoc || 0) || 0);
+          const giaGocApi = Math.round(Number(found?.giaGoc || 0) || 0);
+          const giaGocChot = giaGocDb > 0 ? giaGocDb : giaGocApi;
 
           return {
-            __rowId: taoRowId(), // ✅ để FE có thể có nhiều dòng cùng CTSP (record khác nhau)
+            __rowId: taoRowId(),
             id: ctspId,
             maCtsp: x?.maChiTietSanPham || found?.maCtsp || "",
             tenSanPham: x?.tenSanPham || found?.tenSanPham || "",
@@ -380,7 +424,9 @@ export function useBanHangHoaDonSubmit(deps) {
             return true;
           } catch (eRetry) {
             if (!silent) {
-              const msg = eRetry?.response?.data?.message || "Không đồng bộ được hoá đơn với DB.";
+              const msg = isVoucherRelatedError(eRetry)
+                ? getVoucherRealtimeErrorMessage(eRetry)
+                : getBackendMessage(eRetry) || "Không đồng bộ được hoá đơn với DB.";
               showToast(msg, "error");
             }
             if (!silent) throw eRetry;
@@ -392,14 +438,16 @@ export function useBanHangHoaDonSubmit(deps) {
       }
 
       if (!silent) {
-        const msg = e?.response?.data?.message || "Không đồng bộ được hoá đơn với DB.";
+        const msg = isVoucherRelatedError(e)
+          ? getVoucherRealtimeErrorMessage(e)
+          : getBackendMessage(e) || "Không đồng bộ được hoá đơn với DB.";
         showToast(msg, "error");
       }
 
       try {
         const idHoaDon = t?.hoaDonId;
         if (idHoaDon) {
-          await loadCtspForPos();
+          await loadCtspForPos({ silent: true, keepPage: true });
           await reloadCartFromDb(idHoaDon);
         }
       } catch (e2) {}
@@ -544,46 +592,69 @@ export function useBanHangHoaDonSubmit(deps) {
     } catch (e) {}
   }
 
+  async function refreshDuLieuRealtimeTruocKhiSubmit(pay) {
+    try {
+      await loadCtspForPos({ silent: true, keepPage: true });
+    } catch (e) {
+      try {
+        await loadCtspForPos();
+      } catch (e2) {}
+    }
+
+    try {
+      await ensureBaseQtyIfCartHasItems();
+    } catch (e) {}
+
+    try {
+      await capNhatDotGiamGiaChoGioHang();
+    } catch (e) {}
+
+    try {
+      if (typeof pay?.refreshVoucherRealtimeTruocKhiXacNhan === "function") {
+        const voucherResult = await pay.refreshVoucherRealtimeTruocKhiXacNhan();
+        if (voucherResult?.ok === false) return voucherResult;
+      }
+    } catch (e) {}
+
+    return { ok: true };
+  }
+
   async function submitOrder(canSubmit, pay) {
     if (!canSubmit.value) return;
 
     if (syncHdTimer.value) clearTimeout(syncHdTimer.value);
 
-    for (const it of cartItems.value) {
-      const qty = Number(it.qty || 0);
-      if (!Number.isFinite(qty) || qty < 1) {
-        showToast("Số lượng mua không hợp lệ.", "error");
-        return;
-      }
-
-      const max = deps.getMaxQtyForItem(it);
-      if (qty > max) {
-        showToast(`Sản phẩm ${it.maCtsp || ""} vượt tồn kho.`, "error");
-        it.qty = Math.max(1, max);
-        return;
-      }
-    }
-
     submitting.value = true;
     try {
-      // ✅ realtime voucher ngay trước khi chốt
-      try {
-        if (typeof pay?.refreshVoucherRealtimeTruocKhiXacNhan === "function") {
-          await pay.refreshVoucherRealtimeTruocKhiXacNhan();
+      const realtimeResult = await refreshDuLieuRealtimeTruocKhiSubmit(pay);
+      if (realtimeResult?.ok === false) {
+        if (realtimeResult?.reason === "BETTER_VOUCHER_FOUND") {
+          showToast("Phiếu giảm giá vừa thay đổi. Vui lòng chọn lại ưu đãi trước khi xác nhận.", "info");
         }
-      } catch (e) {}
+        return;
+      }
+
+      for (const it of cartItems.value) {
+        const qty = Number(it.qty || 0);
+        if (!Number.isFinite(qty) || qty < 1) {
+          showToast("Số lượng mua không hợp lệ.", "error");
+          return;
+        }
+
+        const max = deps.getMaxQtyForItem(it);
+        if (qty > max) {
+          showToast(`Sản phẩm ${it.maCtsp || ""} vượt tồn kho.`, "error");
+          it.qty = Math.max(1, max);
+          return;
+        }
+      }
 
       const idHoaDon = await ensureHoaDonChoTab();
 
-      // ✅ GHN: thử lấy phí thực tế theo hóa đơn (nếu BE có endpoint)
       await capNhatPhiVanChuyenTheoGhnNeuCo(idHoaDon, pay);
 
-      // ✅ sync lại thông tin (voucher/ship có thể vừa đổi)
       await syncHoaDonToDb({ silent: false });
 
-      // =====================
-      // TẠI QUẦY
-      // =====================
       if (!isCounter.value) {
         const noteBase = "Chốt đơn tại quầy";
 
@@ -654,9 +725,6 @@ export function useBanHangHoaDonSubmit(deps) {
         return;
       }
 
-      // =====================
-      // GIAO HÀNG
-      // =====================
       const payNum = Number(pay.khachThanhToan.value || 0);
       const total = Number(tongPhaiTra.value || 0);
 
@@ -697,7 +765,9 @@ export function useBanHangHoaDonSubmit(deps) {
       if (syncHdTimer.value) clearTimeout(syncHdTimer.value);
       anTabDaHoanTatSauSubmit();
     } catch (e) {
-      const msg = e?.response?.data?.message || "Xác nhận đơn thất bại. Vui lòng kiểm tra lại.";
+      const msg = isVoucherRelatedError(e)
+        ? getVoucherRealtimeErrorMessage(e)
+        : getBackendMessage(e) || "Xác nhận đơn thất bại. Vui lòng kiểm tra lại.";
       showToast(msg, "error");
     } finally {
       submitting.value = false;

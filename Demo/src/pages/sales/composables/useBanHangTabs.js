@@ -54,8 +54,108 @@ export function useBanHangTabs(deps) {
   const midnightInterval = ref(null);
   const lastDayKey = ref("");
 
+  function safeParse(str, fallback) {
+    try {
+      return JSON.parse(str);
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function clonePlain(v, fallback = null) {
+    if (v == null) return fallback;
+    if (typeof v !== "object") return v;
+    try {
+      return JSON.parse(JSON.stringify(v));
+    } catch (e) {
+      return Array.isArray(v) ? [...v] : { ...v };
+    }
+  }
+
+  function taoRowId() {
+    return `row_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  function ensureRowId(item) {
+    if (!item || typeof item !== "object") return item;
+    if (!item.__rowId) item.__rowId = taoRowId();
+    return item;
+  }
+
+  function normalizeCartItemsForTab(items) {
+    const list = Array.isArray(items) ? items : [];
+    return list.map((x) => {
+      const out = clonePlain(x, {});
+      ensureRowId(out);
+      out.qty = Math.max(1, Number(out.qty || 1));
+      return out;
+    });
+  }
+
+  function buildEmptyGuest() {
+    return {
+      tenKhachHang: "",
+      soDienThoai: "",
+      diaChiCuThe: "",
+      tinhThanh: "",
+      huyenQuan: "",
+      xaPhuong: "",
+    };
+  }
+
+  function normalizeGuestState(x) {
+    if (!x || typeof x !== "object") return buildEmptyGuest();
+    return {
+      tenKhachHang: x.tenKhachHang || "",
+      soDienThoai: x.soDienThoai || "",
+      diaChiCuThe: x.diaChiCuThe || "",
+      tinhThanh: x.tinhThanh || "",
+      huyenQuan: x.huyenQuan || "",
+      xaPhuong: x.xaPhuong || "",
+    };
+  }
+
+  function normalizeTab(t, idx = 0) {
+    const orderNo = Number(t?.orderNo || idx + 1) || idx + 1;
+    const hdCode = String(t?.hdCode || "").trim() || "000";
+
+    return {
+      id: t?.id ?? Date.now() + Math.random(),
+      orderNo,
+      hdCode,
+      name: t?.name || `Đơn hàng ${orderNo} - HD-${hdCode}`,
+      hoaDonId: t?.hoaDonId ?? null,
+
+      isCounter: !!t?.isCounter,
+      cartItems: normalizeCartItemsForTab(t?.cartItems),
+
+      selectedKh: clonePlain(t?.selectedKh, null),
+      diaChiList: Array.isArray(t?.diaChiList) ? t.diaChiList.map((x) => clonePlain(x, {})) : [],
+      selectedDiaChi: clonePlain(t?.selectedDiaChi, null),
+
+      autoVoucher: clonePlain(t?.autoVoucher, null),
+      voucherManual: clonePlain(t?.voucherManual, null),
+      voucherCode: String(t?.voucherCode || ""),
+
+      khachThanhToan: Number(t?.khachThanhToan || 0) || 0,
+
+      payMethod: t?.payMethod || "TIEN_MAT",
+      payTienMat: Number(t?.payTienMat || 0) || 0,
+      payChuyenKhoan: Number(t?.payChuyenKhoan || 0) || 0,
+      payMaThamChieu: String(t?.payMaThamChieu || "").trim(),
+      payTienMatText: String(t?.payTienMatText || ""),
+      payChuyenKhoanText: String(t?.payChuyenKhoanText || ""),
+
+      guest: normalizeGuestState(t?.guest),
+
+      phiVanChuyen: Number(t?.phiVanChuyen || 0) || 0,
+      phiVanChuyenText: String(t?.phiVanChuyenText || "0"),
+    };
+  }
+
   function persistTabs() {
-    localStorage.setItem("ss_pos_tabs", JSON.stringify(tabs.value || []));
+    const out = Array.isArray(tabs.value) ? tabs.value.map((t, i) => normalizeTab(t, i)) : [];
+    localStorage.setItem("ss_pos_tabs", JSON.stringify(out));
     localStorage.setItem("ss_pos_active_tab", String(activeTab.value));
   }
 
@@ -63,69 +163,88 @@ export function useBanHangTabs(deps) {
     const t = tabs.value?.[activeTab.value];
     if (!t) return;
 
-    t.isCounter = isCounter.value;
-    t.cartItems = Array.isArray(cartItems.value) ? cartItems.value.map((x) => ({ ...x })) : [];
-    t.selectedKh = selectedKh.value;
-    t.diaChiList = Array.isArray(diaChiList.value) ? diaChiList.value.map((x) => ({ ...x })) : [];
-    t.selectedDiaChi = selectedDiaChi.value;
+    t.isCounter = !!isCounter.value;
+    t.cartItems = normalizeCartItemsForTab(cartItems.value);
 
-    t.autoVoucher = autoVoucher.value;
-    t.voucherManual = voucherManual.value;
-    t.voucherCode = voucherCode.value;
+    t.selectedKh = clonePlain(selectedKh.value, null);
+    t.diaChiList = Array.isArray(diaChiList.value) ? diaChiList.value.map((x) => clonePlain(x, {})) : [];
+    t.selectedDiaChi = clonePlain(selectedDiaChi.value, null);
 
-    t.khachThanhToan = khachThanhToan.value;
-    t.payMethod = payMethod.value;
-    t.payTienMat = payTienMat.value;
-    t.payChuyenKhoan = payChuyenKhoan.value;
-    t.payMaThamChieu = payMaThamChieu.value;
+    t.autoVoucher = clonePlain(autoVoucher.value, null);
+    t.voucherManual = clonePlain(voucherManual.value, null);
+    t.voucherCode = String(voucherCode.value || "");
 
-    t.guest = { ...(guest || {}) };
-    t.phiVanChuyen = phiVanChuyen.value;
-    t.phiVanChuyenText = phiVanChuyenText.value;
+    t.khachThanhToan = Number(khachThanhToan.value || 0) || 0;
+    t.payMethod = payMethod.value || "TIEN_MAT";
+    t.payTienMat = Number(payTienMat.value || 0) || 0;
+    t.payChuyenKhoan = Number(payChuyenKhoan.value || 0) || 0;
+    t.payMaThamChieu = String(payMaThamChieu.value || "").trim();
+    t.payTienMatText = String(payTienMatText.value || "");
+    t.payChuyenKhoanText = String(payChuyenKhoanText.value || "");
+
+    t.guest = normalizeGuestState(guest);
+    t.phiVanChuyen = Number(phiVanChuyen.value || 0) || 0;
+    t.phiVanChuyenText = String(phiVanChuyenText.value || "0");
 
     persistTabs();
   }
 
   function applyTabState(t) {
-    isCounter.value = !!t.isCounter;
-    cartItems.value = Array.isArray(t.cartItems) ? t.cartItems.map((x) => ({ ...x })) : [];
-    selectedKh.value = t.selectedKh || null;
+    const tab = normalizeTab(t, activeTab.value);
 
-    diaChiList.value = Array.isArray(t.diaChiList) ? t.diaChiList.map((x) => ({ ...x })) : [];
-    selectedDiaChi.value = t.selectedDiaChi || null;
+    isCounter.value = !!tab.isCounter;
+    cartItems.value = normalizeCartItemsForTab(tab.cartItems);
 
-    autoVoucher.value = t.autoVoucher || null;
-    voucherManual.value = t.voucherManual || null;
-    voucherCode.value = t.voucherCode || "";
+    selectedKh.value = clonePlain(tab.selectedKh, null);
+    diaChiList.value = Array.isArray(tab.diaChiList) ? tab.diaChiList.map((x) => clonePlain(x, {})) : [];
+    selectedDiaChi.value = clonePlain(tab.selectedDiaChi, null);
 
-    khachThanhToan.value = Number(t.khachThanhToan || 0) || 0;
-    payMethod.value = t.payMethod || "TIEN_MAT";
-    payTienMat.value = Number(t.payTienMat || 0) || 0;
-    payChuyenKhoan.value = Number(t.payChuyenKhoan || 0) || 0;
-    payMaThamChieu.value = (t.payMaThamChieu || "").trim();
+    autoVoucher.value = clonePlain(tab.autoVoucher, null);
+    voucherManual.value = clonePlain(tab.voucherManual, null);
+    voucherCode.value = String(tab.voucherCode || "");
 
-    payTienMatText.value = deps.formatNumberText(payTienMat.value);
-    payChuyenKhoanText.value = deps.formatNumberText(payChuyenKhoan.value);
+    khachThanhToan.value = Number(tab.khachThanhToan || 0) || 0;
+    payMethod.value = tab.payMethod || "TIEN_MAT";
+    payTienMat.value = Number(tab.payTienMat || 0) || 0;
+    payChuyenKhoan.value = Number(tab.payChuyenKhoan || 0) || 0;
+    payMaThamChieu.value = String(tab.payMaThamChieu || "").trim();
 
-    if (t.guest && typeof t.guest === "object") {
-      Object.assign(guest, t.guest);
-    } else {
-      Object.assign(guest, {
-        tenKhachHang: "",
-        soDienThoai: "",
-        diaChiCuThe: "",
-        tinhThanh: "",
-        huyenQuan: "",
-        xaPhuong: "",
-      });
-    }
+    payTienMatText.value =
+      String(tab.payTienMatText || "").trim() !== ""
+        ? String(tab.payTienMatText)
+        : deps.formatNumberText(payTienMat.value || 0);
 
-    phiVanChuyen.value = Number(t.phiVanChuyen || 0) || 0;
-    phiVanChuyenText.value = String(t.phiVanChuyenText || "0");
+    payChuyenKhoanText.value =
+      String(tab.payChuyenKhoanText || "").trim() !== ""
+        ? String(tab.payChuyenKhoanText)
+        : deps.formatNumberText(payChuyenKhoan.value || 0);
+
+    Object.assign(guest, normalizeGuestState(tab.guest));
+
+    phiVanChuyen.value = Number(tab.phiVanChuyen || 0) || 0;
+    phiVanChuyenText.value = String(tab.phiVanChuyenText || "0");
 
     if (isCounter.value && selectedKh.value?.id && diaChiList.value.length === 0) {
       loadDiaChiAndPickDefault(selectedKh.value.id);
     }
+  }
+
+  async function refreshTabSauKhiApply() {
+    try {
+      await ensureBaseQtyIfCartHasItems();
+    } catch (e) {}
+
+    try {
+      await capNhatDotGiamGiaChoGioHang();
+    } catch (e) {}
+
+    try {
+      scheduleAutoVoucher();
+    } catch (e) {}
+
+    try {
+      scheduleSyncHoaDon();
+    } catch (e) {}
   }
 
   function pad3(n) {
@@ -166,15 +285,10 @@ export function useBanHangTabs(deps) {
       payTienMat: 0,
       payChuyenKhoan: 0,
       payMaThamChieu: "",
+      payTienMatText: "",
+      payChuyenKhoanText: "",
 
-      guest: {
-        tenKhachHang: "",
-        soDienThoai: "",
-        diaChiCuThe: "",
-        tinhThanh: "",
-        huyenQuan: "",
-        xaPhuong: "",
-      },
+      guest: buildEmptyGuest(),
 
       phiVanChuyen: 0,
       phiVanChuyenText: "0",
@@ -204,14 +318,7 @@ export function useBanHangTabs(deps) {
     payTienMatText.value = "";
     payChuyenKhoanText.value = "";
 
-    Object.assign(guest, {
-      tenKhachHang: "",
-      soDienThoai: "",
-      diaChiCuThe: "",
-      tinhThanh: "",
-      huyenQuan: "",
-      xaPhuong: "",
-    });
+    Object.assign(guest, buildEmptyGuest());
 
     phiVanChuyen.value = 0;
     phiVanChuyenText.value = "0";
@@ -226,14 +333,15 @@ export function useBanHangTabs(deps) {
     if (idx === activeTab.value) return;
     persistActiveTab();
 
+    try {
+      blurActive?.();
+    } catch (e) {}
+
     activeTab.value = idx;
     applyTabState(tabs.value[idx]);
     persistTabs();
 
-    await ensureBaseQtyIfCartHasItems();
-    await capNhatDotGiamGiaChoGioHang();
-    scheduleAutoVoucher();
-    scheduleSyncHoaDon();
+    await refreshTabSauKhiApply();
   }
 
   function createOrderTab() {
@@ -243,6 +351,10 @@ export function useBanHangTabs(deps) {
     }
 
     persistActiveTab();
+
+    try {
+      blurActive?.();
+    } catch (e) {}
 
     const n = tabs.value.length + 1;
     const hdCode = nextHdCode();
@@ -262,7 +374,7 @@ export function useBanHangTabs(deps) {
   async function closeTab(idx) {
     persistActiveTab();
 
-    const tab = tabs.value[idx];
+    const tab = normalizeTab(tabs.value[idx], idx);
     const hasItems = Array.isArray(tab?.cartItems) && tab.cartItems.length > 0;
 
     if (hasItems) {
@@ -293,7 +405,7 @@ export function useBanHangTabs(deps) {
     tabs.value.splice(idx, 1);
 
     tabs.value = tabs.value.map((t, i) => ({
-      ...t,
+      ...normalizeTab(t, i),
       orderNo: i + 1,
       name: `Đơn hàng ${i + 1} - HD-${t.hdCode}`,
     }));
@@ -311,8 +423,7 @@ export function useBanHangTabs(deps) {
 
     applyTabState(tabs.value[activeTab.value]);
     persistTabs();
-    scheduleAutoVoucher();
-    scheduleSyncHoaDon();
+    await refreshTabSauKhiApply();
   }
 
   // ======= AUTO CLEAR 0H + STORAGE SYNC =======
@@ -324,6 +435,17 @@ export function useBanHangTabs(deps) {
     return `${y}-${m}-${day}`;
   }
 
+  function xoaVoucherFingerprintLocal() {
+    try {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("ss_pos_voucher_fp_")) keys.push(k);
+      }
+      keys.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {}
+  }
+
   function clearPosTabsLocal(reason = "") {
     try {
       localStorage.removeItem("ss_pos_tabs");
@@ -332,11 +454,19 @@ export function useBanHangTabs(deps) {
     } catch (e) {}
 
     try {
+      xoaVoucherFingerprintLocal();
+    } catch (e) {}
+
+    try {
       xoaTonKhoLocal();
     } catch (e) {}
 
     resetPageState();
     persistTabs();
+
+    try {
+      blurActive?.();
+    } catch (e) {}
 
     // đóng modal nếu đang mở
     dongTatCaModal();
@@ -393,10 +523,11 @@ export function useBanHangTabs(deps) {
 
       const savedTabs = safeParse(localStorage.getItem("ss_pos_tabs") || "[]", []);
       if (Array.isArray(savedTabs) && savedTabs.length > 0) {
-        tabs.value = savedTabs;
+        tabs.value = savedTabs.map((t, i) => normalizeTab(t, i));
         activeTab.value = Number(localStorage.getItem("ss_pos_active_tab") || "0");
         if (activeTab.value < 0 || activeTab.value >= tabs.value.length) activeTab.value = 0;
         applyTabState(tabs.value[activeTab.value]);
+        refreshTabSauKhiApply().catch?.(() => {});
       } else {
         resetPageState();
         persistTabs();
@@ -404,21 +535,14 @@ export function useBanHangTabs(deps) {
     }
   }
 
-  function safeParse(str, fallback) {
-    try {
-      return JSON.parse(str);
-    } catch (e) {
-      return fallback;
-    }
-  }
-
   function khoiPhucTabsTuLocal() {
     const savedTabs = safeParse(localStorage.getItem("ss_pos_tabs") || "[]", []);
     if (Array.isArray(savedTabs) && savedTabs.length > 0) {
-      tabs.value = savedTabs;
+      tabs.value = savedTabs.map((t, i) => normalizeTab(t, i));
       activeTab.value = Number(localStorage.getItem("ss_pos_active_tab") || "0");
       if (activeTab.value < 0 || activeTab.value >= tabs.value.length) activeTab.value = 0;
       applyTabState(tabs.value[activeTab.value]);
+      refreshTabSauKhiApply().catch?.(() => {});
     } else {
       resetPageState();
       persistTabs();

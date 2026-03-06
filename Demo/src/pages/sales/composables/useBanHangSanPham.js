@@ -34,10 +34,10 @@ export function useBanHangSanPham(deps) {
   const ctspPage = ref(1);
   const ctspPageSize = ref(5);
 
-  // ✅ để tránh cache giá cũ: poll nhẹ (chỉ khi đang có giỏ / đang mở modal)
+  // ✅ để tránh cache giá cũ: poll nhẹ khi đang mở modal / có giỏ hàng
   const ctspLoadedAt = ref(0);
   const pollTimer = ref(null);
-  const CTSP_POLL_MS = 12000; // 12s
+  const CTSP_POLL_MS = 5000;
 
   function startPollCtsp() {
     if (pollTimer.value) return;
@@ -397,8 +397,9 @@ export function useBanHangSanPham(deps) {
   async function capNhatDotGiamGiaChoGioHang() {
     if (!Array.isArray(cartItems.value) || cartItems.value.length === 0) return;
 
-    await ganDotGiamGiaChoDanhSachCtsp(cartItems.value);
+    // ✅ khóa trước để không làm trôi giá cũ của các dòng đã có trong giỏ
     khoaGiaToanBoGioHangNeuChuaKhoa();
+    await ganDotGiamGiaChoDanhSachCtsp(cartItems.value);
   }
 
   function normalizeCtspRow(x) {
@@ -421,6 +422,9 @@ export function useBanHangSanPham(deps) {
     }
 
     try {
+      // ✅ khóa giỏ hiện tại trước khi nạp dữ liệu mới để tránh ghi đè giá chốt cũ
+      khoaGiaToanBoGioHangNeuChuaKhoa();
+
       const data = await SalesService.getCtspBanHang();
       const rawList = Array.isArray(data) ? data : [];
 
@@ -572,6 +576,10 @@ export function useBanHangSanPham(deps) {
     arr.splice(idx, 1);
     cartItems.value = arr;
 
+    if (!showCtspModal.value && (!Array.isArray(cartItems.value) || cartItems.value.length === 0)) {
+      stopPollCtsp();
+    }
+
     scheduleAutoVoucher();
     scheduleSyncHoaDon();
   }
@@ -579,9 +587,17 @@ export function useBanHangSanPham(deps) {
   async function ensureCtspFreshIfStale() {
     try {
       const now = Date.now();
-      if (ctspLoadedAt.value && now - ctspLoadedAt.value < 8000) return;
+      if (ctspLoadedAt.value && now - ctspLoadedAt.value < 1500) return;
       await loadCtspForPos({ silent: true, keepPage: true });
     } catch (e) {}
+  }
+
+  async function refreshCtspRealtimeTruocKhiThem() {
+    try {
+      await loadCtspForPos({ silent: true, keepPage: true });
+    } catch (e) {
+      await ensureCtspFreshIfStale();
+    }
   }
 
   // ✅ GĐ3: nếu giá đã đổi -> KHÔNG cộng vào dòng cũ, mà tạo DÒNG MỚI
@@ -589,7 +605,7 @@ export function useBanHangSanPham(deps) {
     if (!row) return;
 
     startPollCtsp();
-    await ensureCtspFreshIfStale();
+    await refreshCtspRealtimeTruocKhiThem();
 
     const nx0 = normalizeCtspRow(row);
     const id = nx0?.id;
@@ -646,7 +662,7 @@ export function useBanHangSanPham(deps) {
       const addQty = Math.min(want, available);
 
       const item = {
-        __rowId: taoRowId(), // ✅ key dòng
+        __rowId: taoRowId(),
         id: nx.id,
         maCtsp: nx.maCtsp,
         tenSanPham: nx.tenSanPham,
@@ -694,6 +710,10 @@ export function useBanHangSanPham(deps) {
   function closeCtspModal() {
     deps.blurActive();
     showCtspModal.value = false;
+
+    if (!Array.isArray(cartItems.value) || cartItems.value.length === 0) {
+      stopPollCtsp();
+    }
   }
 
   function resetCtspFilter() {

@@ -48,6 +48,31 @@
     </div>
 
     <div class="card-box mt-20">
+      <div class="toolbar-header">
+        <h3><i class="fa-regular fa-file-excel"></i> Nhập Dữ Liệu Từ Excel</h3>
+      </div>
+      <div class="import-body">
+        <p class="import-description">
+          Nhập lịch làm việc từ file Excel. Chọn file chứa danh sách nhân viên, ca làm và ngày làm việc.
+        </p>
+        <div class="import-actions">
+          <button class="btn-import" @click="openExcelModal" v-if="hasPermission">
+            <i class="fa-solid fa-upload"></i> Import Excel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import Excel Modal Component -->
+    <ImportExcelModal
+      ref="excelModalRef"
+      :listNhanVien="listNhanVien"
+      :listCa="listCa"
+      @close="closeExcelModal"
+      @import-success="loadData"
+    />
+
+    <div class="card-box mt-20">
       <div class="table-header-row">
         <h3>
           <i :class="viewMode === 'table'
@@ -79,6 +104,7 @@
           <thead>
             <tr>
               <th>STT</th>
+              <th>MÃ NHÂN VIÊN</th>
               <th>NHÂN VIÊN</th>
               <th>CA LÀM</th>
               <th>THỜI GIAN</th>
@@ -89,6 +115,7 @@
           <tbody>
             <tr v-for="(l, index) in filterLichList" :key="l.id">
               <td>{{ index + 1 }}</td>
+              <td>{{ l.maNhanVien }}</td>
               <td>{{ l.tenNhanVien }}</td>
               <td>{{ l.tenCa }}</td>
               <td>
@@ -131,7 +158,8 @@
 
           <div class="nav-right">
             <div class="btn-toggle-group">
-              <button class="btn-toggle" :class="{ active: viewMode === 'day' }" @click="viewMode = 'day'">
+              <button class="btn-toggle" :class="{ active: viewMode === 'day' }" 
+              @click="viewMode = 'day'">
                 Ngày
               </button>
               <button class="btn-toggle" :class="{ active: viewMode === 'week' }" @click="viewMode = 'week'">
@@ -359,6 +387,24 @@ import {
   createLich,
   checkLichLamViec,
 } from "@/services/lich_lam_viec/lich_lam_viecService";
+import ImportExcelModal from "./ImportExcelModal.vue";
+
+const excelModalRef = ref(null);
+const selectedFile = ref(null);
+
+const openExcelModal = () => {
+  if (excelModalRef.value) {
+    excelModalRef.value.openModal();
+  }
+};
+
+const closeExcelModal = () => {
+  
+};
+
+const handleFileUpload = (event) => {
+  selectedFile.value = event.target.files[0];
+};
 
 const getUser = () => {
   const raw = localStorage.getItem("user") || sessionStorage.getItem("user") ||
@@ -493,30 +539,42 @@ const getDayName = (d) => {
 };
 
 const getEventsForShiftAndDate = (idCa, d) => {
-  if (!filterLichList.value) return [];
+  if (!lichNhanVienList.value || lichNhanVienList.value.length === 0) return [];
+  
   const year = d.getFullYear();
   const m = d.getMonth() + 1;
   const day = d.getDate();
-  const mStr = m < 10 ? `0${m}` : m;
-  const dStr = day < 10 ? `0${day}` : day;
-  const dateString = `${year}-${mStr}-${dStr}`;
+  const dateString = `${year}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-  return filterLichList.value.filter((l) => {
-    const idCaItem = l.idCaLam || (l.caLam ? l.caLam.id : null);
-    if (idCaItem !== idCa) return false;
-
-    if (Array.isArray(l.ngayLam)) {
-      return (
-        l.ngayLam[0] === year && l.ngayLam[1] === m && l.ngayLam[2] === day
-      );
+  return lichNhanVienList.value.filter((l) => {
+    // 1. LẤY ID CA LÀM (Dựa theo cấu trúc Object bạn gửi)
+    // Ưu tiên lấy từ l.lichLamViec.idCaLam.id hoặc l.lichLamViec.idCaLam
+    let shiftId = null;
+    if (l.lichLamViec && l.lichLamViec.idCaLam) {
+      // Nếu idCaLam là object {id: ...} thì lấy .id, nếu không thì lấy chính nó
+      shiftId = typeof l.lichLamViec.idCaLam === 'object' 
+                ? l.lichLamViec.idCaLam.id 
+                : l.lichLamViec.idCaLam;
+    } else {
+      shiftId = l.idCaLam; // Phòng hờ API trả về phẳng
     }
+
+    // So sánh ID ca làm (ép về String cho chắc)
+    if (String(shiftId) !== String(idCa)) return false;
+
+    // 2. KIỂM TRA NGÀY LÀM
+    // Dữ liệu mẫu của bạn là "2026-03-05" (String)
     if (typeof l.ngayLam === "string") {
-      return l.ngayLam === dateString || l.ngayLam.startsWith(dateString);
+      return l.ngayLam.startsWith(dateString);
     }
+    
+    if (Array.isArray(l.ngayLam)) {
+      return l.ngayLam[0] === year && l.ngayLam[1] === m && l.ngayLam[2] === day;
+    }
+
     return false;
   });
 };
-
 // Hàm mở Modal kết hợp Ngày và Ca chỉ định
 const openModalVoiNgayCa = (dateObj, idCa) => {
   isEditing.value = false;
@@ -845,7 +903,11 @@ const handleSubmit = async () => {
 const loadData = async () => {
   try {
     const res = await getAllPhanCong();
-    lichNhanVienList.value = Array.isArray(res) ? res : res.content || [];
+    const data = Array.isArray(res) ? res : res.content || [];
+    lichNhanVienList.value = data;
+    
+    // Dòng debug: Mở F12 -> Console để xem
+    console.log("Dữ liệu 1 bản ghi mẫu:", data[0]); 
   } catch (e) {
     console.error(e);
   }
@@ -884,7 +946,6 @@ const deletePhanCong = async (id) => {
 
 onMounted(() => {
   loadData();
-  // loadLichMaster removed - data not used
   loadthemLich();
 });
 </script>
@@ -969,15 +1030,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 14px;
 }
 
-.btn-import {
-  background: #10b981;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
 .filters-bar {
   display: flex;
   gap: 20px;
@@ -997,8 +1049,64 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .import-body {
   margin-top: 15px;
   background: #f9fafb;
-  padding: 15px;
+  padding: 20px;
   border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.import-description {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.import-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-import,
+.btn-download {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-import {
+  background: #10b981;
+  color: white;
+}
+
+.btn-import:hover {
+  background: #10b981;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-download {
+  background: white;
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
+}
+
+.btn-download:hover {
+  background: #eff6ff;
+}
+
+.file-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .input-group {
