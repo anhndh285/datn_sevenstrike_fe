@@ -33,7 +33,6 @@ export const getAllPhanCong = async (data) => {
 //   return await unwrapJson(res);
 // };
 
-
 export const createPhanCong = async (data) => {
   const res = await fetch(API_PHAN_CONG, {
     method: "POST",
