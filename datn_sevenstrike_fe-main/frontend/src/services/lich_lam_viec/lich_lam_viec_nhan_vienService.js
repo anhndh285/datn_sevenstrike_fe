@@ -47,6 +47,20 @@ export const createPhanCong = async (data) => {
   return await unwrapJson(res);
 };
 
+export const updatePhanCong = async (id, data) => {
+  const res = await fetch(`${API_PHAN_CONG}/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error("Cập nhật thất bại: " + err);
+  }
+  return await unwrapJson(res);
+};
+
 export const removePhanCong = async (id) => {
   const res = await fetch(`${API_PHAN_CONG}/${id}`, { method: "DELETE" });
   if (!res.ok) {

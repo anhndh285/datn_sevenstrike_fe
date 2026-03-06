@@ -34,6 +34,11 @@ public class LichLamViecNhanVienController {
         return service.create(req);
     }
 
+    @PutMapping("/{id:\\d+}")
+    public LichLamViecNhanVienResponse update(@PathVariable("id") Integer id, @Valid @RequestBody LichLamViecNhanVienRequest req) {
+        return service.update(id, req);
+    }
+
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Integer id) {
         service.delete(id);

@@ -393,7 +393,6 @@ import {
 import ImportExcelModal from "./ImportExcelModal.vue";
 
 const excelModalRef = ref(null);
-const selectedFile = ref(null);
 
 const openExcelModal = () => {
   if (excelModalRef.value) {
@@ -429,6 +428,7 @@ const listNhanVien = ref([]);
 const listCa = ref([]);
 const loading = ref(false);
 const filterNv = ref(null);
+const filterCaLam = ref(null);
 const filterDate = ref(null);
 
 const selectedNhanViens = ref([]);
@@ -504,8 +504,8 @@ const selectCaMulti = (ca) => {
   if (!isCaSelected(ca.id)) {
     selectedCas.value.push(ca);
   }
-  searchCaModal.value = ""; // Xóa text tìm kiếm sau khi chọn
-  // showCaModalDropdown.value = false; // Mở comment nếu muốn đóng dropdown ngay
+  searchCaModal.value = ""; 
+  showCaModalDropdown.value = false; // Mở comment dòng này
 };
 
 const removeSelectedCa = (index) => {
@@ -873,7 +873,6 @@ const handleSubmit = async () => {
     return;
   }
 
-  // Nếu thêm mới thì phải chọn nhân viên, nếu sửa thì đã có form.idNhanVien
   if (!isEditing.value && selectedNhanViens.value.length === 0) {
     alert("Vui lòng chọn ít nhất một nhân viên!");
     return;
@@ -884,15 +883,12 @@ const handleSubmit = async () => {
     const currentUser = getUser();
     const idNguoiTao = currentUser?.id || 1; // Lấy ID người dùng đang đăng nhập
 
-    // Xác định danh sách nhân viên cần xử lý
     const targetNvs = isEditing.value
       ? [{ id: form.idNhanVien }]
       : selectedNhanViens.value;
 
-    // 2. Vòng lặp xử lý qua từng CA LÀM VIỆC đã chọn
     for (const ca of selectedCas.value) {
 
-      // A. Kiểm tra xem ca làm việc này trong ngày này đã có bản ghi "Lịch tổng" chưa
       const existingLich = await checkLichLamViec({
         ca: ca.id,
         ngay: form.ngayLam,
@@ -900,24 +896,19 @@ const handleSubmit = async () => {
 
       let idLichHienTai = null;
 
-      // checkLichLamViec thường trả về một mảng hoặc object
       if (existingLich && (Array.isArray(existingLich) ? existingLich.length > 0 : existingLich.id)) {
         idLichHienTai = Array.isArray(existingLich) ? existingLich[0].id : existingLich.id;
       } else {
-        // B. Chưa có lịch tổng cho ca này -> Tạo mới bản ghi Lịch (Master record)
         const resLich = await createLich({
           idCaLam: ca.id,
           ngayLam: form.ngayLam,
           ghiChu: "",
           nguoiTao: idNguoiTao,
         });
-        // Lấy ID vừa tạo (tùy vào cấu trúc API trả về)
         idLichHienTai = resLich?.data?.id || resLich?.id || (Array.isArray(resLich) ? resLich[0]?.id : null);
       }
 
-      // C. Phân công từng NHÂN VIÊN vào ID Lịch hiện tại
       if (idLichHienTai) {
-        // Sử dụng Promise.all để gửi yêu cầu phân công các nhân viên song song (tối ưu tốc độ)
         const phanCongPromises = targetNvs.map((nv) =>
           createPhanCong({
             idLichLamViec: idLichHienTai,
@@ -930,7 +921,6 @@ const handleSubmit = async () => {
       }
     }
 
-    // 3. Thông báo và làm mới dữ liệu
     alert(isEditing.value
       ? "Cập nhật lịch làm việc thành công!"
       : `Đã phân công thành công cho ${targetNvs.length} nhân viên vào ${selectedCas.value.length} ca.`);
