@@ -409,9 +409,9 @@ const closeExcelModal = () => {
 
 };
 
-const downloadTemplateExcel = () => {
+const downloadTemplateExcel = async () => {
   try {
-    downloadScheduleTemplate();
+    await downloadScheduleTemplate(listCa.value);
   } catch (error) {
     alert("Lỗi khi tải template: " + error.message);
   }

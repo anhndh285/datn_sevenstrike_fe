@@ -1,88 +1,75 @@
 import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 /**
- * Tạo template Excel cho import lịch làm việc
- * @returns {void}
+ * Tạo template Excel cho import lịch làm việc với combobox Ca Làm
+ * @param {Array} listCa - Danh sách ca làm từ database [{id, tenCa, ...}]
+ * @returns {Promise<void>}
  */
-export const downloadScheduleTemplate = () => {
-  const data = [
-    {
-      "STT": 1,
-      "Ca Làm": "Ca sáng",
-      "Ngày Làm": "2026-03-05",
-      "Nhân Viên 1": "Nguyễn Văn A",
-      "Nhân Viên 2": "Trần Thị B",
-      "Ghi Chú": "Lưu ý gì nếu có"
-    },
-    {
-      "STT": 2,
-      "Ca Làm": "Ca chiều",
-      "Ngày Làm": "2026-03-05",
-      "Nhân Viên 1": "Lê Văn C",
-      "Nhân Viên 2": "",
-      "Ghi Chú": ""
-    },
-    {
-      "STT": 3,
-      "Ca Làm": "Ca tối",
-      "Ngày Làm": "2026-03-06",
-      "Nhân Viên 1": "Phạm Văn D, Hoàng Thị E",
-      "Nhân Viên 2": "",
-      "Ghi Chú": "Có thể viết nhiều nhân viên cách nhau bằng dấu phẩy"
+export const downloadScheduleTemplate = async (listCa = []) => {
+  const workbook = new ExcelJS.Workbook();
+
+  // Sheet ẩn chứa danh sách ca làm (nguồn cho combobox)
+  const caLamSheet = workbook.addWorksheet("CaLam_Data");
+  caLamSheet.state = "veryHidden";
+  const shiftNames = listCa.map((ca) => ca.tenCa || "").filter(Boolean);
+  shiftNames.forEach((name, idx) => {
+    caLamSheet.getCell(`A${idx + 1}`).value = name;
+  });
+
+  // Sheet chính
+  const ws = workbook.addWorksheet("Lịch Làm Việc");
+  ws.columns = [
+    { header: "STT", key: "stt", width: 5 },
+    { header: "Ca Làm", key: "caLam", width: 18 },
+    { header: "Ngày Làm", key: "ngayLam", width: 15 },
+    { header: "Nhân Viên 1", key: "nv1", width: 22 },
+    { header: "Nhân Viên 2", key: "nv2", width: 22 },
+    { header: "Ghi Chú", key: "ghiChu", width: 32 },
+  ];
+
+  // Dòng mẫu
+  const firstShift = shiftNames[0] || "Ca sáng";
+  const secondShift = shiftNames[1] || "Ca chiều";
+  const thirdShift = shiftNames[2] || "Ca tối";
+  ws.addRow([1, firstShift, "2026-03-05", "Nguyễn Văn A", "Trần Thị B", "Lưu ý gì nếu có"]);
+  ws.addRow([2, secondShift, "2026-03-05", "Lê Văn C", "", ""]);
+  ws.addRow([3, thirdShift, "2026-03-06", "Phạm Văn D, Hoàng Thị E", "", "Có thể viết nhiều nhân viên cách nhau bằng dấu phẩy"]);
+
+  // Thêm data validation combobox cho cột Ca Làm (B2:B200)
+  if (shiftNames.length > 0) {
+    const formulae = [`CaLam_Data!$A$1:$A$${shiftNames.length}`];
+    for (let row = 2; row <= 200; row++) {
+      ws.getCell(`B${row}`).dataValidation = {
+        type: "list",
+        allowBlank: false,
+        showDropDown: false,
+        formulae,
+      };
     }
-  ];
+  }
 
-  const ws = XLSX.utils.json_to_sheet(data);
-  
-  // Đặt độ rộng cho các cột
-  ws['!cols'] = [
-    { wch: 5 },   // STT
-    { wch: 15 },  // Ca Làm
-    { wch: 15 },  // Ngày Làm
-    { wch: 20 },  // Nhân Viên 1
-    { wch: 20 },  // Nhân Viên 2
-    { wch: 30 }   // Ghi Chú
-  ];
+  // Sheet hướng dẫn
+  const wsInstructions = workbook.addWorksheet("Hướng Dẫn");
+  wsInstructions.columns = [{ header: "Hướng Dẫn", key: "huongDan", width: 100 }];
+  [
+    "Hướng dẫn import lịch làm việc",
+    "",
+    "1. Ca Làm: Chọn từ danh sách dropdown (combobox) trong ô",
+    "2. Ngày Làm: Nhập ngày dạng YYYY-MM-DD (ví dụ: 2026-03-05)",
+    "3. Nhân Viên: Nhập tên hoặc mã nhân viên",
+    "   - Có thể nhập nhiều nhân viên trong một ô, cách nhau bằng dấu phẩy (,) hoặc dấu chấm phẩy (;)",
+    "   - Hoặc nhập từng nhân viên vào các ô riêng (Nhân Viên 1, Nhân Viên 2, ...)",
+    "4. Ngày Làm chỉ được nhập một lần per dòng (một lịch làm việc)",
+    "5. Nếu ca làm đó đã có lịch vào ngày đó, sẽ nhập thất bại",
+  ].forEach((text) => wsInstructions.addRow([text]));
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Lịch Làm Việc");
-  
-  // Tạo instruction sheet
-  const instructions = [
-    {
-      "Hướng Dẫn": "Hướng dẫn import lịch làm việc"
-    },
-    {
-      "Hướng Dẫn": ""
-    },
-    {
-      "Hướng Dẫn": "1. Ca Làm: Nhập tên ca làm (ví dụ: Ca sáng, Ca chiều, Ca tối) hoặc ID của ca"
-    },
-    {
-      "Hướng Dẫn": "2. Ngày Làm: Nhập ngày dạng YYYY-MM-DD (ví dụ: 2026-03-05)"
-    },
-    {
-      "Hướng Dẫn": "3. Nhân Viên: Nhập tên hoặc mã nhân viên"
-    },
-    {
-      "Hướng Dẫn": "   - Có thể nhập nhiều nhân viên trong một ô, cách nhau bằng dấu phẩy (,) hoặc dấu chấm phẩy (;)"
-    },
-    {
-      "Hướng Dẫn": "   - Hoặc nhập từng nhân viên vào các ô riêng (Nhân Viên 1, Nhân Viên 2, ...)"
-    },
-    {
-      "Hướng Dẫn": "4. Ngày Làm chỉ được nhập một lần per dòng (một lịch làm việc)"
-    },
-    {
-      "Hướng Dẫn": "5. Nếu ca làm đó đã có lịch vào ngày đó, sẽ nhập thất bại"
-    }
-  ];
-
-  const wsInstructions = XLSX.utils.json_to_sheet(instructions);
-  wsInstructions['!cols'] = [{ wch: 100 }];
-  XLSX.utils.book_append_sheet(wb, wsInstructions, "Hướng Dẫn");
-
-  XLSX.writeFile(wb, `lich_lam_viec_template_${new Date().getTime()}.xlsx`);
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  saveAs(blob, `lich_lam_viec_template_${new Date().getTime()}.xlsx`);
 };
 
 /**
