@@ -19,9 +19,7 @@
           <div class="ss-schedule-box">
             <div class="ss-schedule-label">LỊCH CỦA BẠN</div>
             <div class="ss-schedule-info">
-              <span class="ss-shift-name">{{
-                lichHomNay?.tenCa || "Chưa có lịch"
-                }}</span>
+              <span class="ss-shift-name">{{ lichHomNay?.tenCa || "Chưa có lịch" }}</span>
               <span class="ss-shift-time" v-if="lichHomNay">
                 {{ lichHomNay.gioBatDau }} - {{ lichHomNay.gioKetThuc }}
               </span>
@@ -31,9 +29,7 @@
           <div class="ss-user-row">
             <div class="ss-user-info">
               <i class="fa-solid fa-circle-user" style="color: #9ca3af; font-size: 1.2rem"></i>
-              <strong>{{
-                currentUser?.tenNhanVien || currentUser?.hoTen || "Nhân viên"
-                }}</strong>
+              <strong>{{ currentUser?.tenNhanVien || currentUser?.hoTen || "Nhân viên" }}</strong>
             </div>
             <div class="ss-current-time">{{ formattedTimeOnly }}</div>
           </div>
@@ -44,25 +40,39 @@
             </div>
             <div class="input-money-wrapper new-input-style">
               <span class="currency-prefix">₫</span>
-              <input type="text" class="form-control money-input-new" :value="formatNumber(tienBanDauInput)"
-                @input="onInputMoney($event, 'start')" placeholder="0" />
+              <input
+                type="text"
+                class="form-control money-input-new"
+                :value="tienBanDauInput !== null ? formatNumber(tienBanDauInput) : ''"
+                @input="onInputMoney($event, 'start')"
+                placeholder="Nhập số tiền..."
+              />
             </div>
           </div>
 
           <div class="form-group mt-3">
             <label class="text-label mb-2">GHI CHÚ</label>
-            <textarea v-model="ghiChuBanDau" class="form-control note-textarea" rows="2"
-              placeholder="Nhập ghi chú tại đây..."></textarea>
+            <textarea
+              v-model="ghiChuBanDau"
+              class="form-control note-textarea"
+              rows="2"
+              placeholder="Nhập ghi chú tại đây..."
+            ></textarea>
           </div>
 
           <div v-if="errorMessage" class="error-box">
-            <i class="fa-solid fa-circle-exclamation"></i> {{ errorMessage }}
+            <i class="fa-solid fa-circle-exclamation"></i>
+            {{ errorMessage }}
           </div>
         </div>
 
         <div class="ss-footer">
           <button class="btn-logout" @click="handleLogout">Đăng xuất</button>
-          <button class="btn-confirm" @click="handleBatDauCa" :disabled="isSubmitting || !lichHomNay">
+          <button
+            class="btn-confirm"
+            @click="handleBatDauCa"
+            :disabled="isSubmitting || !lichHomNay || tienBanDauInput === null"
+          >
             <i v-if="isSubmitting" class="fa-solid fa-spinner fa-spin"></i>
             <i v-else class="fa-solid fa-circle-check"></i>
             XÁC NHẬN VÀO CA
@@ -80,21 +90,16 @@
           <div class="ho-header-text">
             <h2>Phiếu Bàn Giao Ca</h2>
             <span class="ho-sub-text">
-              #{{
-                caHienTai.id
-                  ? caHienTai.id.toString().substring(0, 8)
-                  : "cccadd2e"
-              }}
+              #{{ caHienTai.id ? caHienTai.id.toString().substring(0, 8) : "cccadd2e" }}
               • {{ formattedFullTime }}
             </span>
           </div>
         </div>
+
         <div class="ho-header-right">
           <div class="ho-badge">
             <span class="ho-role">NHÂN VIÊN TRỰC</span>
-            <span class="ho-name">{{
-              currentUser?.tenNhanVien || currentUser?.hoTen || "Nhân viên"
-              }}</span>
+            <span class="ho-name">{{ currentUser?.tenNhanVien || currentUser?.hoTen || "Nhân viên" }}</span>
           </div>
         </div>
       </div>
@@ -119,81 +124,78 @@
           </div>
 
           <div class="ho-divider">
-            <i class="fa-solid fa-receipt"></i> Đã thanh toán:
+            <i class="fa-solid fa-receipt"></i>
+            Đã thanh toán:
             <strong>{{ caHienTai.soDonHangDaThanhToan || 0 }}</strong> đơn
           </div>
 
           <div class="ho-summary-box">
             <div class="ho-summary-title">TỔNG TIỀN MẶT LÝ THUYẾT</div>
-            <div class="ho-summary-value">
-              {{ formatNumber(tinhTongLyThuyet) }} ₫
-            </div>
-            <div class="ho-summary-note">
-              (Đầu ca + Doanh thu Tiền mặt - Chi phí)
-            </div>
+            <div class="ho-summary-value">{{ formatNumber(tinhTongLyThuyet) }} ₫</div>
+            <div class="ho-summary-note">(Đầu ca + Doanh thu Tiền mặt - Chi phí)</div>
           </div>
         </div>
 
         <div class="ho-card ho-right-col">
           <h3 class="ho-title">
-            <i class="fa-solid fa-clipboard-check text-success-icon"></i> Kiểm
-            kê & Xác nhận
+            <i class="fa-solid fa-clipboard-check text-success-icon"></i>
+            Kiểm kê & Xác nhận
           </h3>
 
           <div class="form-group mt-3">
             <label class="ho-input-label">NHẬP TIỀN THỰC TẾ <span class="text-danger">*</span></label>
             <div class="ho-input-wrapper">
-              <input type="text" class="ho-input-money" :value="formatNumber(tienThucTeInput)"
-                @input="onInputMoney($event, 'end')" placeholder="0" />
+              <input
+                type="text"
+                class="ho-input-money"
+                :value="tienThucTeInput !== null ? formatNumber(tienThucTeInput) : ''"
+                @input="onInputMoney($event, 'end')"
+                placeholder="Nhập thực tế..."
+              />
               <span class="ho-currency-right">₫</span>
             </div>
           </div>
 
-          <div class="ho-diff-box" :class="chenhLech >= 0
-              ? chenhLech === 0
-                ? 'bg-gray'
-                : 'bg-success-light'
-              : 'bg-danger-light'
-            ">
+          <div
+            class="ho-diff-box"
+            :class="chenhLech >= 0 ? (chenhLech === 0 ? 'bg-gray' : 'bg-success-light') : 'bg-danger-light'"
+          >
             <div class="diff-left">
               <i v-if="chenhLech < 0" class="fa-solid fa-circle-exclamation text-danger"></i>
               <i v-else-if="chenhLech > 0" class="fa-solid fa-circle-check text-success"></i>
               <i v-else class="fa-solid fa-check text-gray"></i>
-              <span class="diff-text" :class="chenhLech >= 0
-                  ? chenhLech === 0
-                    ? 'text-gray'
-                    : 'text-success'
-                  : 'text-danger'
-                ">
-                {{
-                  chenhLech < 0 ? "Thiếu hụt" : chenhLech > 0
-                    ? "Thừa tiền"
-                    : "Khớp"
-                }}
+
+              <span
+                class="diff-text"
+                :class="chenhLech >= 0 ? (chenhLech === 0 ? 'text-gray' : 'text-success') : 'text-danger'"
+              >
+                {{ chenhLech < 0 ? "Thiếu hụt" : chenhLech > 0 ? "Thừa tiền" : "Khớp" }}
               </span>
             </div>
-            <span class="diff-val" :class="chenhLech >= 0
-                ? chenhLech === 0
-                  ? 'text-gray'
-                  : 'text-success'
-                : 'text-danger'
-              ">
+
+            <span
+              class="diff-val"
+              :class="chenhLech >= 0 ? (chenhLech === 0 ? 'text-gray' : 'text-success') : 'text-danger'"
+            >
               {{ chenhLech > 0 ? "+" : "" }}{{ formatNumber(chenhLech) }} ₫
             </span>
           </div>
 
           <div class="form-group mt-4">
             <label class="ho-input-label">GHI CHÚ</label>
-            <textarea v-model="ghiChuInput" class="ho-textarea" rows="2"
-              placeholder="Nhập lý do chênh lệch tiền..."></textarea>
+            <textarea
+              v-model="ghiChuInput"
+              class="ho-textarea"
+              rows="2"
+              placeholder="Nhập lý do chênh lệch tiền..."
+            ></textarea>
           </div>
 
-          <button class="btn-submit-end" @click="submitKetThucCa" :disabled="isSubmitting">
+          <button class="btn-submit-end" @click="submitKetThucCa" :disabled="isSubmitting || tienThucTeInput === null">
             {{ isSubmitting ? "ĐANG XỬ LÝ..." : "XÁC NHẬN ĐÓNG CA" }}
           </button>
-          <div class="ho-footer-note">
-            Hệ thống sẽ tự động đăng xuất sau khi hoàn tất.
-          </div>
+
+          <div class="ho-footer-note">Hệ thống sẽ tự động đăng xuất sau khi hoàn tất.</div>
         </div>
       </div>
     </div>
@@ -217,31 +219,23 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import {
-  batDauCa,
-  checkActiveCa,
-  ketThucCa,
-} from "@/services/lich_lam_viec/giao_caService";
+import { batDauCa, checkActiveCa, ketThucCa } from "@/services/lich_lam_viec/giao_caService";
 import { getLichLamViecNhanVien } from "@/services/lich_lam_viec/lich_lam_viec_nhan_vienService";
 
 const router = useRouter();
-
-// ✅ THÊM DÒNG NÀY ĐỂ LIÊN KẾT VỚI BÊN NGOÀI
 const emit = defineEmits(["ca-started"]);
 
 const layThongTinUser = () => {
-  const storedUser =
-    localStorage.getItem("user") || sessionStorage.getItem("user");
-  if (storedUser) {
-    return JSON.parse(storedUser);
+  try {
+    const storedUser = localStorage.getItem("user") || sessionStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  } catch {
+    return null;
   }
-  return null;
 };
 
 const currentUser = layThongTinUser();
-const ID_NHAN_VIEN = currentUser
-  ? currentUser.id || currentUser.idNhanVien
-  : null;
+const ID_NHAN_VIEN = currentUser ? currentUser.id || currentUser.idNhanVien : null;
 
 if (!ID_NHAN_VIEN) {
   router.push("/login");
@@ -254,15 +248,16 @@ const lichHomNay = ref(null);
 const errorMessage = ref("");
 const showToast = ref(false);
 const toastMessage = ref("");
-let toastTimeout = null;
 
-const tienBanDauInput = ref(0);
+const tienBanDauInput = ref(null);
 const ghiChuBanDau = ref("");
-const tienThucTeInput = ref(0);
+const tienThucTeInput = ref(null);
 const ghiChuInput = ref("");
 
 const now = ref(new Date());
+
 let timer = null;
+let toastTimeout = null;
 
 const formattedFullTime = computed(() => {
   const d = now.value;
@@ -271,7 +266,9 @@ const formattedFullTime = computed(() => {
     hour: "2-digit",
     minute: "2-digit",
   });
-  const date = `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear()}`;
+  const date = `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}/${d.getFullYear()}`;
   return `${time} ${date}`;
 });
 
@@ -279,10 +276,18 @@ const formattedTimeOnly = computed(() => {
   return now.value.toLocaleTimeString("vi-VN", { hour12: false });
 });
 
+const layDuLieuThuc = (res) => {
+  return res?.data?.content || res?.data || res || null;
+};
+
 const triggerToast = (msg) => {
   toastMessage.value = msg;
   showToast.value = true;
-  if (toastTimeout) clearTimeout(toastTimeout);
+
+  if (toastTimeout) {
+    clearTimeout(toastTimeout);
+  }
+
   toastTimeout = setTimeout(() => {
     showToast.value = false;
   }, 3000);
@@ -290,55 +295,76 @@ const triggerToast = (msg) => {
 
 const tinhTongLyThuyet = computed(() => {
   if (!caHienTai.value) return 0;
-  const banDau = caHienTai.value.tienDauCaNhap || 0;
-  const doanhThu = caHienTai.value.tongTienTrongCa || 0;
+  const banDau = Number(caHienTai.value.tienDauCaNhap || 0);
+  const doanhThu = Number(caHienTai.value.tongTienTrongCa || 0);
   return banDau + doanhThu;
 });
 
 const chenhLech = computed(() => {
-  return tienThucTeInput.value - tinhTongLyThuyet.value;
+  return Number(tienThucTeInput.value || 0) - tinhTongLyThuyet.value;
 });
 
 const formatNumber = (num) => {
-  if (!num && num !== 0) return "0";
-  return new Intl.NumberFormat("vi-VN").format(num);
-};
-
-const formatCurrency = (num) => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(num || 0);
+  if (num === null || num === undefined || Number.isNaN(Number(num))) return "0";
+  return new Intl.NumberFormat("vi-VN").format(Number(num));
 };
 
 const onInputMoney = (event, type) => {
   const raw = event.target.value.replace(/\D/g, "");
-  const val = Number(raw);
-  if (type === "start") tienBanDauInput.value = val;
-  if (type === "end") tienThucTeInput.value = val;
+  const val = raw ? Number(raw) : null;
+
+  if (type === "start") {
+    tienBanDauInput.value = val;
+  }
+
+  if (type === "end") {
+    tienThucTeInput.value = val;
+  }
 };
 
 const loadData = async () => {
   loading.value = true;
   errorMessage.value = "";
+  caHienTai.value = null;
+  lichHomNay.value = null;
+
   try {
-    const res = await checkActiveCa(ID_NHAN_VIEN);
-    if (res && res.id) {
-      caHienTai.value = res;
-    } else {
-      caHienTai.value = null;
-      const today = new Date().toLocaleDateString("en-CA");
-      const lichList = await getLichLamViecNhanVien(ID_NHAN_VIEN, today);
-      if (lichList && lichList.length > 0) {
+    let activeCa = null;
+
+    try {
+      const resCa = await checkActiveCa(ID_NHAN_VIEN);
+      activeCa = layDuLieuThuc(resCa);
+    } catch (error) {
+      console.log("Nhân viên chưa có ca mở:", error?.message || error);
+    }
+
+    if (activeCa && activeCa.id) {
+      caHienTai.value = activeCa;
+      sessionStorage.setItem("ss_has_active_shift", "true");
+      return;
+    }
+
+    sessionStorage.removeItem("ss_has_active_shift");
+
+    try {
+      const d = new Date();
+      const today = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d
+        .getDate()
+        .toString()
+        .padStart(2, "0")}`;
+
+      const resLich = await getLichLamViecNhanVien(ID_NHAN_VIEN, today);
+      const lichList = layDuLieuThuc(resLich);
+
+      if (Array.isArray(lichList) && lichList.length > 0) {
         lichHomNay.value = lichList[0];
       } else {
-        errorMessage.value =
-          "Bạn không có ca làm việc nào được phân công hôm nay.";
+        errorMessage.value = "Bạn không có ca làm việc nào được phân công hôm nay.";
       }
+    } catch (error) {
+      console.error("Lỗi lấy lịch làm việc:", error);
+      errorMessage.value = "Mất kết nối máy chủ. Không thể tải lịch làm việc.";
     }
-  } catch (error) {
-    console.error("Lỗi load data:", error);
-    caHienTai.value = null;
   } finally {
     loading.value = false;
   }
@@ -346,27 +372,44 @@ const loadData = async () => {
 
 const handleBatDauCa = async () => {
   errorMessage.value = "";
-  if (tienBanDauInput.value < 0) return alert("Tiền không hợp lệ");
-  if (!lichHomNay.value) return;
+
+  if (tienBanDauInput.value === null) {
+    alert("Vui lòng nhập tiền mặt đầu ca!");
+    return;
+  }
+
+  if (tienBanDauInput.value < 0) {
+    alert("Tiền đầu ca không hợp lệ!");
+    return;
+  }
+
+  if (!lichHomNay.value) {
+    return;
+  }
 
   isSubmitting.value = true;
+
   try {
-    const idllv = lichHomNay.value.lichLamViec.id;
+    const idLichLamViec = lichHomNay.value?.lichLamViec?.id || lichHomNay.value?.idLichLamViec;
+
+    if (!idLichLamViec) {
+      throw new Error("Không tìm thấy lịch làm việc để bắt đầu ca.");
+    }
+
     await batDauCa({
       idNhanVien: ID_NHAN_VIEN,
-      idLichLamViec: idllv,
+      idLichLamViec: idLichLamViec,
       tienDauCaNhap: tienBanDauInput.value,
-      ghiChu: ghiChuBanDau.value,
+      ghiChu: ghiChuBanDau.value?.trim() || "",
     });
+
     await loadData();
     triggerToast("Bắt đầu ca làm việc thành công!");
-
-    // ✅ GỬI TÍN HIỆU TẮT MODAL
     emit("ca-started");
   } catch (error) {
-    console.log("FULL ERROR:", error);
-
+    console.error("Lỗi bắt đầu ca:", error);
     errorMessage.value =
+      error?.response?.data?.message ||
       error?.data?.message ||
       error?.message ||
       "Không thể bắt đầu ca vào lúc này.";
@@ -378,26 +421,31 @@ const handleBatDauCa = async () => {
 const submitKetThucCa = async () => {
   if (!caHienTai.value) return;
 
+  if (tienThucTeInput.value === null) {
+    alert("Vui lòng nhập tiền mặt thực tế trong két!");
+    return;
+  }
+
   if (chenhLech.value !== 0 && !ghiChuInput.value.trim()) {
     alert("Vui lòng nhập ghi chú lý do chênh lệch tiền!");
     return;
   }
 
   isSubmitting.value = true;
+
   try {
     await ketThucCa(caHienTai.value.id, {
       tienMatThucTe: tienThucTeInput.value,
-      ghiChu: ghiChuInput.value,
+      ghiChu: ghiChuInput.value.trim(),
     });
 
+    sessionStorage.removeItem("ss_has_active_shift");
     triggerToast("Kết thúc ca làm việc thành công!");
 
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
+    await new Promise((resolve) => setTimeout(resolve, 3000));
     handleLogout();
-
   } catch (error) {
-    alert("Lỗi: " + (error.response?.data?.message || error.message));
+    alert("Lỗi: " + (error?.response?.data?.message || error?.message || "Không thể kết thúc ca."));
     isSubmitting.value = false;
   }
 };
@@ -405,6 +453,7 @@ const submitKetThucCa = async () => {
 const handleLogout = () => {
   localStorage.removeItem("user");
   sessionStorage.removeItem("user");
+  sessionStorage.removeItem("ss_has_active_shift");
   router.push("/login");
 };
 
@@ -417,18 +466,16 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (timer) clearInterval(timer);
+  if (toastTimeout) clearTimeout(toastTimeout);
 });
 </script>
 
 <style scoped>
-/* --- BASE STYLES --- */
 .giao-ca-container {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color: #374151;
 }
 
@@ -641,14 +688,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   color: #9ca3af;
-}
-
-.ho-currency {
-  position: absolute;
-  left: 15px;
-  color: #9ca3af;
-  font-weight: 700;
-  font-size: 1.2rem;
 }
 
 .ho-currency-right {
@@ -994,7 +1033,6 @@ onUnmounted(() => {
   margin-bottom: 10px;
 }
 
-/* Toast */
 .toast-notification {
   position: fixed;
   top: 90px;

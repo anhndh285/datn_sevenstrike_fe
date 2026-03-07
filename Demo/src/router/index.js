@@ -48,6 +48,7 @@ import ThongKePage from "@/pages/thong_ke/ThongKePage.vue";
 import GiaoCaPage from "@/pages/lich_lam_viec/GiaoCa.vue";
 import LichCaLamPage from "@/pages/lich_lam_viec/LichCaLam.vue";
 import LichLamViecPage from "@/pages/lich_lam_viec/LichLamViec.vue";
+import LichSuHoatDongPage from "@/pages/lich_lam_viec/LichSuHoatDong.vue";
 
 import AccountLayout from "@/pages/client/account/AccountLayout.vue";
 import AddressPage from "@/pages/client/account/AddressPage.vue";
@@ -386,6 +387,12 @@ const routes = [
         component: LichLamViecPage,
         meta: { roles: ["ADMIN", "NHAN_VIEN"] },
       },
+      {
+        path: "lich-su-hoat-dong",
+        name: "admin-lich-su-hoat-dong",
+        component: LichSuHoatDongPage,
+        meta: { roles: ["ADMIN"] },
+      },
 
       {
         path: "loai-san",
@@ -568,18 +575,8 @@ router.beforeEach((to, from, next) => {
   const role = getAdminRole();
   const requiredRoles = getRequiredRoles(to);
 
-  if (to.path.startsWith("/admin/giao-ca") && role === "NHAN_VIEN" && !hasActiveShift()) {
-    Swal.fire({
-      icon: "warning",
-      title: "Chưa mở ca",
-      text: "Bạn cần có ca làm việc đang hoạt động để vào mục này.",
-      toast: true,
-      position: "top-end",
-      showConfirmButton: false,
-      timer: 3000,
-    });
-    return next(false);
-  }
+  // ✅ Không chặn /admin/giao-ca nữa.
+  // Đây là trang để nhân viên mở/đóng ca, nên phải cho vào kể cả khi chưa có ca hoạt động.
 
   if (isActionRoute(to.path) && role === "NHAN_VIEN" && !hasActiveShift()) {
     Swal.fire({

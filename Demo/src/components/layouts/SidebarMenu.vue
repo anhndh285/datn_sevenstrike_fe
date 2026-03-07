@@ -211,6 +211,15 @@
           <RouterLink v-if="isAdmin" class="ss-sub-link" to="/admin/lich-ca-lam" title="Lịch ca làm">
             <span class="ss-sub-label">Lịch ca làm</span>
           </RouterLink>
+
+          <RouterLink
+            v-if="isAdmin"
+            class="ss-sub-link"
+            to="/admin/lich-su-hoat-dong"
+            title="Lịch sử hoạt động"
+          >
+            <span class="ss-sub-label">Lịch sử hoạt động</span>
+          </RouterLink>
         </div>
       </div>
 
@@ -307,6 +316,7 @@ const workPaths = [
   "/admin/lich-lam-viec",
   "/admin/giao-ca",
   "/admin/lich-ca-lam",
+  "/admin/lich-su-hoat-dong",
 ];
 
 watch(
