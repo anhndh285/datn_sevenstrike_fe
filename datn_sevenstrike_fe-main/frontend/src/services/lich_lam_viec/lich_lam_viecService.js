@@ -42,7 +42,6 @@ export const pagingLichLamViec = async (page = 0, size = 5) => {
 
 
 export const createLich = async (data) => {
-  // data: { idNhanVien, idCaLam, ngayLam, ghiChu }
   const res = await fetch(API_LICH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

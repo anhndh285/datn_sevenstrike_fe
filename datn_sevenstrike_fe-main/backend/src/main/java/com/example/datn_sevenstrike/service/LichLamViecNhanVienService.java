@@ -123,8 +123,6 @@ public class LichLamViecNhanVienService {
 
     @Transactional
     public List<LichLamViecNhanVienResponse> importExcel(MultipartFile file) {
-        // Tương tự hàm import của LichLamViec, đọc 2 cột: ID_Lich và ID_NhanVien
-        // Sau đó gọi hàm create(request) ở trên.
         return new java.util.ArrayList<>();
     }
 }

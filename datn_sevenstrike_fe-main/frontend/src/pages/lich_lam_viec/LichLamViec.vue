@@ -59,6 +59,9 @@
           <button class="btn-import" @click="openExcelModal" v-if="hasPermission">
             <i class="fa-solid fa-upload"></i> Import Excel
           </button>
+          <button class="btn-download" @click="downloadTemplateExcel" v-if="hasPermission">
+            <i class="fa-solid fa-download"></i> Tải Template
+          </button>
         </div>
       </div>
     </div>
@@ -392,6 +395,7 @@ import {
   checkLichLamViec,
 } from "@/services/lich_lam_viec/lich_lam_viecService";
 import ImportExcelModal from "./ImportExcelModal.vue";
+import { downloadScheduleTemplate } from "@/services/lich_lam_viec/xuLyExcel";
 
 const excelModalRef = ref(null);
 
@@ -403,6 +407,14 @@ const openExcelModal = () => {
 
 const closeExcelModal = () => {
 
+};
+
+const downloadTemplateExcel = () => {
+  try {
+    downloadScheduleTemplate();
+  } catch (error) {
+    alert("Lỗi khi tải template: " + error.message);
+  }
 };
 
 const getUser = () => {
@@ -760,13 +772,7 @@ const filteredNvModal = computed(() => {
 
 const filteredCaModal = computed(() => {
   const q = searchCaModal.value.toLowerCase();
-  return listCa.value.filter((ca) => {
-    // Lọc theo tên ca
-    const matchesSearch = ca.tenCa.toLowerCase().includes(q);
-    // Loại bỏ ca đã được chọn
-    const notSelected = !isCaSelected(ca.id);
-    return matchesSearch && notSelected;
-  });
+  return listCa.value.filter((ca) => ca.tenCa.toLowerCase().includes(q));
 });
 
 const selectNhanVien = (nv) => {
@@ -1175,12 +1181,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .btn-download {
   background: white;
-  color: #3b82f6;
-  border: 1px solid #3b82f6;
+  color: #ff4d4f;
+  border: 1px solid #ff4d4f;
 }
 
 .btn-download:hover {
-  background: #eff6ff;
+  background: #fff5ef;
 }
 
 .file-input-wrapper {
