@@ -62,6 +62,39 @@ public class LichLamViecNhanVienService {
     }
 
     @Transactional
+    public LichLamViecNhanVienResponse update(Integer id, LichLamViecNhanVienRequest req) {
+        if (req == null) {
+            throw new BadRequestEx("Thiếu dữ liệu cập nhật");
+        }
+
+        LichLamViecNhanVien db = repo.findByIdAndXoaMemFalse(id)
+                .orElseThrow(() -> new NotFoundEx("Không tìm thấy bản ghi phân công ID: " + id));
+
+        if (req.getIdLichLamViec() != null) {
+            LichLamViec lich = lichRepo.findByIdAndXoaMemFalse(req.getIdLichLamViec())
+                    .orElseThrow(() -> new NotFoundEx("Không tìm thấy lịch làm việc mới ID: " + req.getIdLichLamViec()));
+            db.setLichLamViec(lich);
+        }
+
+        if (req.getIdNhanVien() != null) {
+            NhanVien nv = nvRepo.findByIdAndXoaMemFalse(req.getIdNhanVien())
+                    .orElseThrow(() -> new NotFoundEx("Không tìm thấy nhân viên mới ID: " + req.getIdNhanVien()));
+            db.setNhanVien(nv);
+        }
+
+        repo.findByLichAndNhanVien(db.getLichLamViec().getId(), db.getNhanVien().getId())
+                .filter(lnv -> !lnv.getId().equals(id))
+                .ifPresent(lnv -> {
+                    throw new BadRequestEx("Nhân viên " + db.getNhanVien().getTenNhanVien() + 
+                                         " đã được phân công vào lịch này từ trước!");
+                });
+
+        db.setNgayCapNhat(java.time.Instant.now());
+
+        return toResponse(repo.save(db));
+    }
+
+    @Transactional
     public void delete(Integer id) {
         var entity = repo.findByIdAndXoaMemFalse(id)
                 .orElseThrow(() -> new NotFoundEx("Không tìm thấy bản ghi phân công!"));
@@ -88,11 +121,8 @@ public class LichLamViecNhanVienService {
         return res;
     }
 
-    // --- Logic Import Excel tương tự như bạn đã làm ---
     @Transactional
     public List<LichLamViecNhanVienResponse> importExcel(MultipartFile file) {
-        // Tương tự hàm import của LichLamViec, đọc 2 cột: ID_Lich và ID_NhanVien
-        // Sau đó gọi hàm create(request) ở trên.
         return new java.util.ArrayList<>();
     }
 }
