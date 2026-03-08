@@ -39,7 +39,6 @@ public class LichLamViecNhanVienService {
 
     @Transactional
     public LichLamViecNhanVienResponse create(LichLamViecNhanVienRequest req) {
-        // 1. Check tồn tại
         LichLamViec lich = lichRepo.findByIdAndXoaMemFalse(req.getIdLichLamViec())
                 .orElseThrow(() -> new NotFoundEx("Không tìm thấy lịch làm việc!"));
         NhanVien nv = nvRepo.findByIdAndXoaMemFalse(req.getIdNhanVien())

@@ -163,11 +163,9 @@ export const validateScheduleData = (data, listCa, listNhanVien) => {
   return { errors, warnings };
 };
 
-/**
- * Kiểm tra xem chuỗi có phải là ngày hợp lệ không
- */
+// Kiểm tra xem chuỗi có phải là ngày hợp lệ không
+
 function isValidDate(dateString) {
-  // Kiểm tra format YYYY-MM-DD
   const regex1 = /^\d{4}-\d{2}-\d{2}$/;
   if (regex1.test(dateString)) {
     const date = new Date(dateString);

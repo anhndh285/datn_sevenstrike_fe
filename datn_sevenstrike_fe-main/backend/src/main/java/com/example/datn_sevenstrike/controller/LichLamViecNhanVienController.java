@@ -18,7 +18,7 @@ import java.util.List;
 @Validated
 public class LichLamViecNhanVienController {
 
-    private final LichLamViecNhanVienService service;
+    private final LichLamViecNhanVienService service; 
 
     @GetMapping("/nhan-vien/{idNhanVien}") 
     public List<LichLamViecNhanVienResponse> one(@PathVariable Integer idNhanVien, @RequestParam LocalDate ngayLam) {

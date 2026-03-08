@@ -412,6 +412,7 @@ const closeExcelModal = () => {
 const downloadTemplateExcel = async () => {
   try {
     await downloadScheduleTemplate(listCa.value);
+    console.log("Dữ liệu 1 bản ghi mẫu:", listCa.value);
   } catch (error) {
     alert("Lỗi khi tải template: " + error.message);
   }
@@ -995,9 +996,6 @@ const loadData = async () => {
     const res = await getAllPhanCong();
     const data = Array.isArray(res) ? res : res.content || [];
     lichNhanVienList.value = data;
-
-    // Dòng debug: Mở F12 -> Console để xem
-    console.log("Dữ liệu 1 bản ghi mẫu:", data[0]);
   } catch (e) {
     console.error(e);
   }
@@ -1006,8 +1004,8 @@ const loadData = async () => {
 const loadthemLich = async () => {
   const nv = await getAllNhanVien();
   const ca = await getAllCaLam();
-  listNhanVien.value = Array.isArray(nv) ? nv : [];
-  listCa.value = Array.isArray(ca) ? ca : [];
+  listNhanVien.value = Array.isArray(nv) ? nv.filter(nv => nv.trangThai !== false) : [];
+  listCa.value = Array.isArray(ca) ? ca.filter(ca => ca.trangThai !== false) : [];
   loadData();
 };
 
