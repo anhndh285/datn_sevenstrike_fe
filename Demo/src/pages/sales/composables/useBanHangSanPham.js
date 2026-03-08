@@ -109,6 +109,11 @@ export function useBanHangSanPham(deps) {
     return it.__rowId;
   }
 
+  function getThongBaoVuotTon(soLuong) {
+    const n = Math.max(0, Math.round(Number(soLuong || 0)));
+    return `Sản phẩm hiện chỉ còn ${n} sản phẩm trong kho.`;
+  }
+
   // ======= KHÓA GIÁ THEO DÒNG =======
   function isGiaDaKhoa(it) {
     return it?.__khoaGia === true || it?.khoaGia === true;
@@ -481,7 +486,7 @@ export function useBanHangSanPham(deps) {
     const old = Number(it.qty || 1);
     const conLai = getAvailableQtyByCtspId(it?.id);
     if (conLai <= 0) {
-      showToast("Số lượng mua không được vượt tồn kho.", "error");
+      showToast(getThongBaoVuotTon(getMaxQtyForItem(it)), "error");
       return;
     }
 
@@ -516,7 +521,7 @@ export function useBanHangSanPham(deps) {
       next = old;
     }
 
-    if (vuotTon) showToast("Số lượng mua không được vượt tồn kho.", "error");
+    if (vuotTon) showToast(getThongBaoVuotTon(max), "error");
     if (next === old) return;
 
     const delta = next - old;
@@ -532,9 +537,13 @@ export function useBanHangSanPham(deps) {
     const old = Number(it.qty || 0);
     const max = getMaxQtyForItem(it);
     let next = old;
+    let biDieuChinhDoVuotTon = false;
 
     if (!Number.isFinite(next) || next < 1) next = 1;
-    if (next > max) next = Math.max(1, max);
+    if (next > max) {
+      next = Math.max(1, max);
+      biDieuChinhDoVuotTon = true;
+    }
 
     if (next > old && isGiaDaThayDoiSoVoiServer(it)) {
       showToast("Giá sản phẩm đã thay đổi. Dòng cũ chỉ được giảm hoặc xóa.", "info");
@@ -548,7 +557,11 @@ export function useBanHangSanPham(deps) {
       if (delta > 0) capNhatTonLocal(it?.id, -delta);
       else capNhatTonLocal(it?.id, Math.abs(delta));
 
-      showToast("Số lượng mua đã được tự điều chỉnh theo tồn kho.", "info");
+      if (biDieuChinhDoVuotTon) {
+        showToast(`${getThongBaoVuotTon(max)} Hệ thống đã tự điều chỉnh số lượng.`, "info");
+      } else {
+        showToast("Số lượng mua đã được tự điều chỉnh theo tồn kho.", "info");
+      }
     }
 
     scheduleAutoVoucher();
@@ -616,7 +629,7 @@ export function useBanHangSanPham(deps) {
 
     const available = getAvailableQtyByCtspId(id);
     if (available <= 0) {
-      showToast("Sản phẩm đã hết hàng.", "error");
+      showToast(getThongBaoVuotTon(0), "error");
       return;
     }
 
@@ -649,7 +662,7 @@ export function useBanHangSanPham(deps) {
 
       const delta = newQty - old;
       if (delta <= 0) {
-        showToast("Số lượng mua không được vượt tồn kho.", "error");
+        showToast(getThongBaoVuotTon(max), "error");
         return;
       }
 
@@ -660,6 +673,11 @@ export function useBanHangSanPham(deps) {
     } else {
       // ✅ giá/đợt giảm đã đổi -> tạo DÒNG MỚI (record mới), không sửa dòng cũ
       const addQty = Math.min(want, available);
+
+      if (addQty <= 0) {
+        showToast(getThongBaoVuotTon(available), "error");
+        return;
+      }
 
       const item = {
         __rowId: taoRowId(),

@@ -146,6 +146,10 @@
                   <span class="ss-dot">•</span>
                   <span>{{ it.kichCo }}</span>
                 </div>
+
+                <div v-if="getThongBaoBienDongGia(it)" class="ss-cart-price-change">
+                  {{ getThongBaoBienDongGia(it) }}
+                </div>
               </div>
 
               <div class="ss-cart-price">
@@ -227,9 +231,10 @@
                 <button class="btn ss-btn-outline" type="button" @click="openKhModal">Chọn khách hàng</button>
 
                 <button
+                  v-if="selectedKh"
                   class="btn ss-btn-outline"
                   type="button"
-                  :disabled="!isCounter || !selectedKh"
+                  :disabled="!hasPermission"
                   @click="chonKhachVangLai"
                   title="Chuyển về khách vãng lai (không cần tạo đơn mới)"
                 >
@@ -355,11 +360,6 @@
                     </div>
                   </div>
                 </template>
-
-                <!-- Logo GHN -->
-                <div class="ss-ghn-big">
-                  <img :src="ghnLogoUrl" alt="GHN Express" />
-                </div>
               </template>
             </div>
           </div>
@@ -431,7 +431,11 @@
 
               <!-- Phí vận chuyển: chỉ hiện khi giao hàng -->
               <div v-if="isCounter" class="ss-pay-kv">
-                <div class="ss-pay-k">Phí vận chuyển</div>
+                <div class="ss-pay-k ss-pay-k-ship">
+                  <span>Phí vận chuyển</span>
+                  <img class="ss-ghn-inline-logo" :src="ghnLogoUrl" alt="GHN Express" />
+                </div>
+
                 <div class="ss-pay-v ss-pay-inline">
                   <input class="form-control ss-input ss-ship-fee" type="text" :value="phiVanChuyenText" placeholder="0" disabled />
 
@@ -1247,6 +1251,56 @@ function isGiaDaDoiTrongGio(it) {
     return !!sp.isGiaDaThayDoiSoVoiServer(it);
   } catch (e) {
     return false;
+  }
+}
+
+function getCtspIdByAny(obj) {
+  const id = Number(obj?.idCtsp ?? obj?.ctspId ?? obj?.chiTietSanPhamId ?? obj?.id ?? 0);
+  return Number.isFinite(id) ? id : 0;
+}
+
+function timCtspMoiNhatTheoItem(it) {
+  try {
+    const ctspId = getCtspIdByAny(it);
+    if (!ctspId) return null;
+
+    const list = Array.isArray(sp.ctspList?.value) ? sp.ctspList.value : [];
+    return list.find((row) => getCtspIdByAny(row) === ctspId) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function getGiaThucTeDongHienTai(it) {
+  try {
+    return Number(sp.getGiaThucTe(it) || 0);
+  } catch (e) {
+    return 0;
+  }
+}
+
+function getGiaThucTeMoiNhatTheoItem(it) {
+  try {
+    const row = timCtspMoiNhatTheoItem(it);
+    if (!row) return getGiaThucTeDongHienTai(it);
+    return Number(sp.getGiaThucTe(row) || 0);
+  } catch (e) {
+    return getGiaThucTeDongHienTai(it);
+  }
+}
+
+function getThongBaoBienDongGia(it) {
+  try {
+    if (!isGiaDaDoiTrongGio(it)) return "";
+
+    const giaCu = getGiaThucTeDongHienTai(it);
+    const giaMoi = getGiaThucTeMoiNhatTheoItem(it);
+
+    if (!Number.isFinite(giaCu) || !Number.isFinite(giaMoi) || giaCu === giaMoi) return "";
+
+    return `Giá đã thay đổi: ${tienIch.formatMoney(giaCu)} → ${tienIch.formatMoney(giaMoi)}`;
+  } catch (e) {
+    return "";
   }
 }
 
@@ -2077,6 +2131,38 @@ function getVoucherLabel(v) {
 }
 
 /* =========================
+   CHUYỂN VỀ KHÁCH VÃNG LAI
+========================= */
+async function chonKhachVangLaiNoiBo() {
+  try {
+    if (!kh.selectedKh.value) return;
+
+    kh.selectedKh.value = null;
+    kh.selectedDiaChi.value = null;
+    kh.diaChiList.value = [];
+
+    ensureGuestDefaultName();
+
+    if (isCounter.value) {
+      await syncGuestAddrFromStrings();
+      scheduleShipFee(200);
+    } else {
+      shipErr.value = "";
+      shipLoading.value = false;
+      setPhiVanChuyenNum(0);
+    }
+
+    scheduleAutoVoucher();
+    persistActiveTab();
+    scheduleSyncHoaDon();
+
+    showToast("Đã chuyển về khách vãng lai.", "success", 2200);
+  } catch (e) {
+    showToast("Không thể chuyển về khách vãng lai.", "error", 3000);
+  }
+}
+
+/* =========================
    ALIAS
 ========================= */
 const formatMoney = tienIch.formatMoney;
@@ -2149,7 +2235,7 @@ const renderDiaChi = kh.renderDiaChi;
 const renderKhDiaChi = kh.renderKhDiaChi;
 
 const onGuestPhoneInput = kh.onGuestPhoneInput;
-const chonKhachVangLai = quyenCaLam.guard(kh.chonKhachVangLai);
+const chonKhachVangLai = quyenCaLam.guard(chonKhachVangLaiNoiBo);
 
 const openKhModal = quyenCaLam.guard(kh.openKhModal);
 const closeKhModal = kh.closeKhModal;
@@ -2546,6 +2632,12 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   gap: 6px;
   margin-top: 2px;
 }
+.ss-cart-price-change {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(220, 38, 38, 0.96);
+  font-weight: 500;
+}
 .ss-dot {
   opacity: 0.5;
 }
@@ -2695,20 +2787,6 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   gap: 10px;
 }
 
-/* GHN logo */
-.ss-ghn-big {
-  margin-top: 10px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-top: 6px;
-}
-.ss-ghn-big img {
-  width: min(260px, 78%);
-  height: auto;
-  object-fit: contain;
-}
-
 /* Payment */
 .ss-pay-kv {
   display: flex;
@@ -2745,6 +2823,17 @@ const confirmSubmitOrder = quyenCaLam.guard(async () => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+.ss-pay-k-ship {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ss-ghn-inline-logo {
+  height: 18px;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 .ss-icon-btn {
   width: 36px;

@@ -46,7 +46,6 @@
             </select>
           </div>
 
-          <!-- ✅ Buttons theo style ChatLieuPage -->
           <div class="col-12 d-flex justify-content-end gap-2 mt-3 flex-wrap">
             <button class="btn ss-btn ss-btn-dark" type="button" @click="lamMoi" title="Đặt lại bộ lọc">
               <span class="material-icons-outlined ss-btn-ic">restart_alt</span>
@@ -180,7 +179,7 @@
       </div>
     </div>
 
-    <!-- ✅ PAGINATION (đồng bộ ChatLieuPage) -->
+    <!-- PAGINATION -->
     <div class="ss-pagination-bar" v-if="!loading && filteredHoaDon.length">
       <div class="ss-pagination">
         <button class="ss-pagebtn" :disabled="page <= 1" @click="page--" title="Trang trước">‹</button>
@@ -299,8 +298,8 @@ const loadHoaDon = async () => {
         const phiShip = Number(hd.phiVanChuyen ?? 0);
 
         const tongThanhToan = tongHang - giamGia + phiShip;
-
         const loaiDonCode = Number(hd.loaiDon ?? 0);
+        const ngayTaoRaw = hd.ngayTao ?? "";
 
         return {
           id: hd.id,
@@ -309,13 +308,14 @@ const loadHoaDon = async () => {
           sdtKhachHang: hd.soDienThoaiKhachHang ?? "",
           nhanVien: hd.tenNhanVien ?? "",
           tongTien: tongThanhToan,
-          ngayTao: hd.ngayTao?.substring(0, 10) ?? "",
+          ngayTaoRaw,
+          ngayTao: ngayTaoRaw ? ngayTaoRaw.substring(0, 10) : "",
           loaiDonCode,
           loaiDonLabel: toLoaiDonLabel(loaiDonCode),
           trangThaiHienTai: Number(hd.trangThaiHienTai),
         };
       })
-      .sort((a, b) => new Date(b.ngayTao) - new Date(a.ngayTao));
+      .sort((a, b) => new Date(a.ngayTaoRaw || a.ngayTao) - new Date(b.ngayTaoRaw || b.ngayTao));
 
     filteredHoaDon.value = [...hoaDonList.value];
   } finally {
@@ -385,7 +385,7 @@ const xuatFile = () => {
   XLSX.writeFile(wb, "danh_sach_hoa_don.xlsx");
 };
 
-/* ================== PAGINATION (đồng bộ ChatLieuPage) ================== */
+/* ================== PAGINATION ================== */
 const page = ref(1);
 const pageSize = ref(10);
 
@@ -440,18 +440,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Font đồng bộ như ChatLieuPage */
 .ss-font {
   font-family: inherit;
   color: rgba(17, 24, 39, 0.82);
 }
 
-/* Base */
 .ss-page {
   color: rgba(17, 24, 39, 0.82);
 }
 
-/* Title / sub */
 .ss-page-title {
   font-size: 20px;
   font-weight: 500;
@@ -466,7 +463,6 @@ onMounted(async () => {
   font-weight: 400;
 }
 
-/* Card */
 .ss-card {
   background: #fff;
   border-radius: 14px;
@@ -476,7 +472,6 @@ onMounted(async () => {
   box-shadow: 0 10px 26px rgba(17, 24, 39, 0.06);
 }
 
-/* Section title */
 .ss-section-title {
   font-size: 14px;
   font-weight: 500;
@@ -489,7 +484,6 @@ onMounted(async () => {
   color: rgba(17, 24, 39, 0.6);
 }
 
-/* Label / input */
 .ss-label {
   font-size: 13px;
   font-weight: 400;
@@ -509,7 +503,6 @@ onMounted(async () => {
   border-color: rgba(255, 77, 79, 0.55) !important;
 }
 
-/* Buttons */
 .ss-btn {
   border-radius: 10px;
   padding: 8px 12px;
@@ -549,7 +542,6 @@ onMounted(async () => {
   filter: brightness(0.98);
 }
 
-/* Icon box */
 .icon-box {
   width: 40px;
   height: 40px;
@@ -562,7 +554,6 @@ onMounted(async () => {
   font-size: 18px;
 }
 
-/* Tabs */
 .order-tabs {
   display: flex;
   gap: 8px;
@@ -592,7 +583,6 @@ onMounted(async () => {
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
 }
 
-/* Table */
 .ss-table-wrap {
   border: 1px solid rgba(17, 24, 39, 0.08);
   border-radius: 14px;
@@ -620,7 +610,6 @@ onMounted(async () => {
   background: rgba(17, 24, 39, 0.03);
 }
 
-/* Cells */
 .ss-td-index {
   color: rgba(17, 24, 39, 0.65);
   font-weight: 400;
@@ -642,7 +631,6 @@ onMounted(async () => {
   font-weight: 400;
 }
 
-/* Pills */
 .ss-pill {
   display: inline-flex;
   align-items: center;
@@ -663,28 +651,24 @@ onMounted(async () => {
   border: 1px solid rgba(17, 24, 39, 0.14);
 }
 
-/* ✅ Tại quầy: xám */
 .ss-pill-store {
   background: rgba(17, 24, 39, 0.06);
   color: rgba(17, 24, 39, 0.88);
   border-color: rgba(17, 24, 39, 0.14);
 }
 
-/* ✅ Giao hàng: đỏ (theo yêu cầu) */
 .ss-pill-ship {
   background: rgba(255, 77, 79, 0.1);
   color: #b42324;
   border-color: rgba(255, 77, 79, 0.28);
 }
 
-/* Online: giữ đỏ/đậm nhẹ (nếu phát sinh đơn online thật) */
 .ss-pill-online {
   background: rgba(255, 77, 79, 0.08);
   color: #b42324;
   border-color: rgba(255, 77, 79, 0.22);
 }
 
-/* Icon xem */
 .ss-icon-btn-view {
   width: var(--ss-icon-size, 36px);
   height: var(--ss-icon-size, 36px);
@@ -708,7 +692,6 @@ onMounted(async () => {
   border-color: var(--ss-icon-border-hover, rgba(17, 24, 39, 0.18));
 }
 
-/* Footnote */
 .ss-footnote {
   font-size: 12px;
   font-weight: 400;
@@ -719,7 +702,6 @@ onMounted(async () => {
   font-weight: 500;
 }
 
-/* ✅ Pagination (đúng style ChatLieuPage) */
 .ss-pagination-bar {
   margin-top: 14px;
   display: flex;
