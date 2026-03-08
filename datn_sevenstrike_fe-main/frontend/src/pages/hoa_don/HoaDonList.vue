@@ -28,51 +28,31 @@
 
           <div class="col-md-3">
             <label class="form-label ss-label">Ngày bắt đầu</label>
-            <input
-              type="date"
-              v-model="filterNgayBD"
-              class="form-control ss-input"
-            />
+            <input type="date" v-model="filterNgayBD" class="form-control ss-input" />
           </div>
 
           <div class="col-md-3">
             <label class="form-label ss-label">Ngày kết thúc</label>
-            <input
-              type="date"
-              v-model="filterNgayKT"
-              class="form-control ss-input"
-            />
+            <input type="date" v-model="filterNgayKT" class="form-control ss-input" />
           </div>
 
           <div class="col-md-3">
             <label class="form-label ss-label">Loại đơn</label>
             <select v-model="filterLoaiDon" class="form-select ss-input">
-              <option disabled value="">Loại đơn</option>
-              <option>Tại cửa hàng</option>
-              <option>Online</option>
+              <option value="">Tất cả</option>
+              <option value="0">Tại quầy</option>
+              <option value="1">Giao hàng</option>
+              <option value="2">Online</option>
             </select>
           </div>
 
-          <!-- ✅ Buttons theo style ChatLieuPage -->
           <div class="col-12 d-flex justify-content-end gap-2 mt-3 flex-wrap">
-            <!-- Đặt lại bộ lọc (dark + icon restart_alt) -->
-            <button
-              class="btn ss-btn ss-btn-dark"
-              type="button"
-              @click="lamMoi"
-              title="Đặt lại bộ lọc"
-            >
+            <button class="btn ss-btn ss-btn-dark" type="button" @click="lamMoi" title="Đặt lại bộ lọc">
               <span class="material-icons-outlined ss-btn-ic">restart_alt</span>
               Đặt lại bộ lọc
             </button>
 
-            <!-- Xuất Excel (lite + icon description) -->
-            <button
-              class="btn ss-btn ss-btn-lite"
-              type="button"
-              @click="xuatFile"
-              title="Xuất Excel"
-            >
+            <button class="btn ss-btn ss-btn-lite" type="button" @click="xuatFile" title="Xuất Excel">
               <span class="material-icons-outlined ss-btn-ic">description</span>
               Xuất Excel
             </button>
@@ -125,17 +105,21 @@
               </tr>
             </thead>
 
-            <tbody v-if="!filteredHoaDon?.length">
+            <tbody v-if="!loading && !pagedHoaDon.length">
               <tr>
-                <td colspan="10" class="text-center text-muted py-4">
-                  Không có dữ liệu
-                </td>
+                <td colspan="10" class="text-center text-muted py-4">Không có dữ liệu</td>
+              </tr>
+            </tbody>
+
+            <tbody v-else-if="loading">
+              <tr>
+                <td colspan="10" class="text-center text-muted py-4">Đang tải...</td>
               </tr>
             </tbody>
 
             <tbody v-else>
-              <tr v-for="(hd, index) in filteredHoaDon" :key="hd.id">
-                <td class="ss-td-index">{{ index + 1 }}</td>
+              <tr v-for="(hd, idx) in pagedHoaDon" :key="hd.id">
+                <td class="ss-td-index">{{ (page - 1) * pageSize + idx + 1 }}</td>
 
                 <td class="ss-td-code">{{ hd.maHD }}</td>
 
@@ -146,29 +130,28 @@
                 <td class="ss-td-date">{{ hd.ngayTao }}</td>
 
                 <td class="text-end ss-td-money">
-                  {{ hd.tongTien.toLocaleString("vi-VN") }}đ
+                  {{ Number(hd.tongTien || 0).toLocaleString("vi-VN") }}đ
                 </td>
 
                 <td>
                   <span
                     class="ss-pill ss-pill-type"
                     :class="
-                      hd.loaiDon === 'Online'
-                        ? 'ss-pill-online'
-                        : 'ss-pill-store'
+                      hd.loaiDonCode === 1
+                        ? 'ss-pill-ship'
+                        : hd.loaiDonCode === 2
+                          ? 'ss-pill-online'
+                          : 'ss-pill-store'
                     "
                   >
-                    {{ hd.loaiDon }}
+                    {{ hd.loaiDonLabel }}
                   </span>
                 </td>
 
                 <td class="ss-td-text">{{ hd.sdtKhachHang }}</td>
 
                 <td>
-                  <span
-                    class="ss-pill ss-pill-status"
-                    :style="getTrangThaiStyle(hd.trangThaiHienTai)"
-                  >
+                  <span class="ss-pill ss-pill-status" :style="getTrangThaiStyle(hd.trangThaiHienTai)">
                     {{ hienTrangThai(hd.trangThaiHienTai) }}
                   </span>
                 </td>
@@ -195,17 +178,42 @@
         </div>
       </div>
     </div>
+
+    <!-- PAGINATION -->
+    <div class="ss-pagination-bar" v-if="!loading && filteredHoaDon.length">
+      <div class="ss-pagination">
+        <button class="ss-pagebtn" :disabled="page <= 1" @click="page--" title="Trang trước">‹</button>
+
+        <button
+          v-for="p in pageButtons"
+          :key="`p-${p}`"
+          class="ss-pagebtn"
+          :class="{ active: p === page }"
+          :disabled="p === '...'"
+          @click="goPage(p)"
+        >
+          {{ p }}
+        </button>
+
+        <button class="ss-pagebtn" :disabled="page >= totalPages" @click="page++" title="Trang sau">›</button>
+      </div>
+
+      <div class="ss-pageinfo">
+        Trang <span>{{ page }}</span> / <span>{{ totalPages }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import axios from "axios";
 import * as XLSX from "xlsx";
 
 const API_HD = "http://localhost:8080/api/admin/hoa-don";
 
 /* ================== DATA ================== */
+const loading = ref(false);
 const hoaDonList = ref([]);
 const filteredHoaDon = ref([]);
 
@@ -233,7 +241,6 @@ const TRANG_THAI = {
   HOAN_THANH: 5,
 };
 
-/* Tabs (đúng UI anh gửi) */
 const tabList = [
   { label: "Tất cả", value: "ALL" },
   { label: "Chờ xác nhận", value: TRANG_THAI.CHO_XAC_NHAN },
@@ -243,7 +250,6 @@ const tabList = [
   { label: "Hoàn thành", value: TRANG_THAI.HOAN_THANH },
 ];
 
-/* Badge trạng thái (list) */
 const trangThaiMap = {
   1: { label: "Chờ xác nhận", bg: "#fff7ed", color: "#c2410c" },
   2: { label: "Chờ giao hàng", bg: "#eff6ff", color: "#1d4ed8" },
@@ -252,9 +258,7 @@ const trangThaiMap = {
   5: { label: "Hoàn thành", bg: "#dcfce7", color: "#15803d" },
 };
 
-const hienTrangThai = (code) => {
-  return trangThaiMap[code]?.label || "Không xác định";
-};
+const hienTrangThai = (code) => trangThaiMap[code]?.label || "Không xác định";
 
 const getTrangThaiStyle = (code) => {
   const st = trangThaiMap[code];
@@ -272,46 +276,62 @@ const getTrangThaiStyle = (code) => {
   };
 };
 
+/* ================== LOẠI ĐƠN ================== */
+function toLoaiDonLabel(code) {
+  const n = Number(code);
+  if (n === 0) return "Tại quầy";
+  if (n === 1) return "Giao hàng";
+  if (n === 2) return "Online";
+  return "Tại quầy";
+}
+
 /* ================== LOAD DATA ================== */
 const loadHoaDon = async () => {
-  const res = await axios.get(API_HD);
+  loading.value = true;
+  try {
+    const res = await axios.get(API_HD);
 
-  hoaDonList.value = res.data
-    .map((hd) => {
-      const tongHang = Number(hd.tongTien ?? 0);
-      const giamGia = Number(hd.tongTienGiam ?? 0);
-      const phiShip = Number(hd.phiVanChuyen ?? 0);
+    hoaDonList.value = (res.data || [])
+      .map((hd) => {
+        const tongHang = Number(hd.tongTien ?? 0);
+        const giamGia = Number(hd.tongTienGiam ?? 0);
+        const phiShip = Number(hd.phiVanChuyen ?? 0);
 
-      const tongThanhToan = tongHang - giamGia + phiShip;
+        const tongThanhToan = tongHang - giamGia + phiShip;
+        const loaiDonCode = Number(hd.loaiDon ?? 0);
+        const ngayTaoRaw = hd.ngayTao ?? "";
 
-      return {
-        id: hd.id,
-        maHD: hd.maHoaDon,
-        khachHang: hd.tenKhachHang ?? "",
-        sdtKhachHang: hd.soDienThoaiKhachHang ?? "",
-        nhanVien: hd.tenNhanVien ?? "",
-        tongTien: tongThanhToan, // ✅ công thức chuẩn
-        ngayTao: hd.ngayTao?.substring(0, 10) ?? "",
-        loaiDon: hd.loaiDon ? "Online" : "Tại cửa hàng",
-        trangThaiHienTai: Number(hd.trangThaiHienTai),
-      };
-    })
-    .sort((a, b) => new Date(b.ngayTao) - new Date(a.ngayTao));
+        return {
+          id: hd.id,
+          maHD: hd.maHoaDon,
+          khachHang: hd.tenKhachHang ?? "",
+          sdtKhachHang: hd.soDienThoaiKhachHang ?? "",
+          nhanVien: hd.tenNhanVien ?? "",
+          tongTien: tongThanhToan,
+          ngayTaoRaw,
+          ngayTao: ngayTaoRaw ? ngayTaoRaw.substring(0, 10) : "",
+          loaiDonCode,
+          loaiDonLabel: toLoaiDonLabel(loaiDonCode),
+          trangThaiHienTai: Number(hd.trangThaiHienTai),
+        };
+      })
+      .sort((a, b) => new Date(a.ngayTaoRaw || a.ngayTao) - new Date(b.ngayTaoRaw || b.ngayTao));
 
-  filteredHoaDon.value = [...hoaDonList.value];
+    filteredHoaDon.value = [...hoaDonList.value];
+  } finally {
+    loading.value = false;
+  }
 };
-
-
 
 /* ================== FILTER CORE ================== */
 const apDungBoLoc = () => {
   filteredHoaDon.value = hoaDonList.value.filter((hd) => {
     const ma = filterMaHD.value
-      ? hd.maHD.toLowerCase().includes(filterMaHD.value.toLowerCase())
+      ? (hd.maHD || "").toLowerCase().includes(filterMaHD.value.toLowerCase())
       : true;
 
-    const loai = filterLoaiDon.value
-      ? hd.loaiDon === filterLoaiDon.value
+    const loai = filterLoaiDon.value !== ""
+      ? Number(hd.loaiDonCode) === Number(filterLoaiDon.value)
       : true;
 
     const bd = filterNgayBD.value ? hd.ngayTao >= filterNgayBD.value : true;
@@ -320,25 +340,21 @@ const apDungBoLoc = () => {
     const trangThai =
       tabTrangThai.value === "ALL"
         ? true
-        : hd.trangThaiHienTai === tabTrangThai.value;
+        : Number(hd.trangThaiHienTai) === Number(tabTrangThai.value);
 
     return ma && loai && bd && kt && trangThai;
   });
+
+  page.value = 1;
 };
 
-/* ================== WATCH ================== */
-watch(
-  [filterMaHD, filterLoaiDon, filterNgayBD, filterNgayKT, tabTrangThai],
-  () => hoaDonList.value.length && apDungBoLoc(),
-);
+watch([filterMaHD, filterLoaiDon, filterNgayBD, filterNgayKT, tabTrangThai], () => {
+  if (hoaDonList.value.length) apDungBoLoc();
+});
 
 /* ================== ACTION ================== */
 const locTheoTrangThai = (value) => (tabTrangThai.value = value);
 
-/**
- * ✅ Đặt lại bộ lọc (đổi tên hiển thị từ "Làm mới" -> "Đặt lại bộ lọc")
- * Logic giữ nguyên: reset + reload + apply
- */
 const lamMoi = async () => {
   filterMaHD.value = "";
   filterLoaiDon.value = "";
@@ -359,7 +375,7 @@ const xuatFile = () => {
     "Nhân viên": hd.nhanVien,
     "Tổng tiền": hd.tongTien,
     "Ngày tạo": hd.ngayTao,
-    "Loại đơn": hd.loaiDon,
+    "Loại đơn": hd.loaiDonLabel,
     "Trạng thái": hienTrangThai(hd.trangThaiHienTai),
   }));
 
@@ -369,6 +385,53 @@ const xuatFile = () => {
   XLSX.writeFile(wb, "danh_sach_hoa_don.xlsx");
 };
 
+/* ================== PAGINATION ================== */
+const page = ref(1);
+const pageSize = ref(10);
+
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil((filteredHoaDon.value.length || 0) / pageSize.value))
+);
+
+const pagedHoaDon = computed(() => {
+  const start = (page.value - 1) * pageSize.value;
+  return filteredHoaDon.value.slice(start, start + pageSize.value);
+});
+
+watch(
+  () => filteredHoaDon.value.length,
+  () => {
+    if (page.value > totalPages.value) page.value = totalPages.value;
+  }
+);
+
+const pageButtons = computed(() => {
+  const tp = totalPages.value;
+  const p = page.value;
+
+  if (tp <= 7) return Array.from({ length: tp }, (_, i) => i + 1);
+
+  const arr = [];
+  const push = (x) => arr.push(x);
+
+  push(1);
+  if (p > 3) push("...");
+
+  const start = Math.max(2, p - 1);
+  const end = Math.min(tp - 1, p + 1);
+  for (let i = start; i <= end; i++) push(i);
+
+  if (p < tp - 2) push("...");
+  push(tp);
+
+  return arr;
+});
+
+function goPage(p) {
+  if (p === "..." || typeof p !== "number") return;
+  page.value = p;
+}
+
 /* ================== INIT ================== */
 onMounted(async () => {
   await loadHoaDon();
@@ -377,18 +440,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Font đồng bộ như ChatLieuPage */
 .ss-font {
   font-family: inherit;
   color: rgba(17, 24, 39, 0.82);
 }
 
-/* Base */
 .ss-page {
   color: rgba(17, 24, 39, 0.82);
 }
 
-/* Title / sub (không in đậm) */
 .ss-page-title {
   font-size: 20px;
   font-weight: 500;
@@ -403,7 +463,6 @@ onMounted(async () => {
   font-weight: 400;
 }
 
-/* Card */
 .ss-card {
   background: #fff;
   border-radius: 14px;
@@ -413,7 +472,6 @@ onMounted(async () => {
   box-shadow: 0 10px 26px rgba(17, 24, 39, 0.06);
 }
 
-/* Section title */
 .ss-section-title {
   font-size: 14px;
   font-weight: 500;
@@ -426,7 +484,6 @@ onMounted(async () => {
   color: rgba(17, 24, 39, 0.6);
 }
 
-/* Label / input (không in đậm) */
 .ss-label {
   font-size: 13px;
   font-weight: 400;
@@ -446,7 +503,6 @@ onMounted(async () => {
   border-color: rgba(255, 77, 79, 0.55) !important;
 }
 
-/* ================= Buttons: đồng bộ theo ChatLieuPage ================= */
 .ss-btn {
   border-radius: 10px;
   padding: 8px 12px;
@@ -460,8 +516,6 @@ onMounted(async () => {
   justify-content: center;
   white-space: nowrap;
 }
-
-/* Icon trong button giống ChatLieuPage */
 .ss-btn-ic {
   font-size: 18px;
   margin-right: 8px;
@@ -471,8 +525,6 @@ onMounted(async () => {
   justify-content: center;
   color: currentColor;
 }
-
-/* ✅ Xuất Excel (lite y hệt ChatLieuPage) */
 .ss-btn-lite {
   background: #f3f4f6 !important;
   color: rgba(17, 24, 39, 0.88) !important;
@@ -481,8 +533,6 @@ onMounted(async () => {
 .ss-btn-lite:hover {
   background: #eef0f3 !important;
 }
-
-/* ✅ Đặt lại bộ lọc (dark y hệt ChatLieuPage) */
 .ss-btn-dark {
   background: #4b5563 !important;
   color: #fff !important;
@@ -492,7 +542,6 @@ onMounted(async () => {
   filter: brightness(0.98);
 }
 
-/* Icon box */
 .icon-box {
   width: 40px;
   height: 40px;
@@ -505,7 +554,6 @@ onMounted(async () => {
   font-size: 18px;
 }
 
-/* Tabs (không in đậm) */
 .order-tabs {
   display: flex;
   gap: 8px;
@@ -535,14 +583,11 @@ onMounted(async () => {
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
 }
 
-/* Table wrap */
 .ss-table-wrap {
   border: 1px solid rgba(17, 24, 39, 0.08);
   border-radius: 14px;
   overflow: hidden;
 }
-
-/* Table typography (không in đậm) */
 .ss-table {
   font-size: 13px;
   color: rgba(17, 24, 39, 0.88);
@@ -565,7 +610,6 @@ onMounted(async () => {
   background: rgba(17, 24, 39, 0.03);
 }
 
-/* Cell styles (không in đậm) */
 .ss-td-index {
   color: rgba(17, 24, 39, 0.65);
   font-weight: 400;
@@ -587,7 +631,6 @@ onMounted(async () => {
   font-weight: 400;
 }
 
-/* Pills (không in đậm) */
 .ss-pill {
   display: inline-flex;
   align-items: center;
@@ -607,18 +650,25 @@ onMounted(async () => {
   min-width: 110px;
   border: 1px solid rgba(17, 24, 39, 0.14);
 }
-.ss-pill-online {
-  background: rgba(255, 77, 79, 0.1);
-  color: #b42324;
-  border-color: rgba(255, 77, 79, 0.28);
-}
+
 .ss-pill-store {
   background: rgba(17, 24, 39, 0.06);
   color: rgba(17, 24, 39, 0.88);
   border-color: rgba(17, 24, 39, 0.14);
 }
 
-/* Icon mắt chuẩn SS */
+.ss-pill-ship {
+  background: rgba(255, 77, 79, 0.1);
+  color: #b42324;
+  border-color: rgba(255, 77, 79, 0.28);
+}
+
+.ss-pill-online {
+  background: rgba(255, 77, 79, 0.08);
+  color: #b42324;
+  border-color: rgba(255, 77, 79, 0.22);
+}
+
 .ss-icon-btn-view {
   width: var(--ss-icon-size, 36px);
   height: var(--ss-icon-size, 36px);
@@ -642,7 +692,6 @@ onMounted(async () => {
   border-color: var(--ss-icon-border-hover, rgba(17, 24, 39, 0.18));
 }
 
-/* Footnote */
 .ss-footnote {
   font-size: 12px;
   font-weight: 400;
@@ -651,5 +700,51 @@ onMounted(async () => {
 .ss-footnote-strong {
   color: rgba(17, 24, 39, 0.9);
   font-weight: 500;
+}
+
+.ss-pagination-bar {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.ss-pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ss-pagebtn {
+  min-width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: #fff;
+  color: rgba(17, 24, 39, 0.85);
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s ease;
+}
+.ss-pagebtn:hover {
+  background: rgba(17, 24, 39, 0.04);
+}
+.ss-pagebtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.ss-pagebtn.active {
+  border-color: rgba(255, 77, 79, 0.35);
+  background: rgba(255, 77, 79, 0.08);
+}
+.ss-pageinfo {
+  font-size: 13px;
+  color: rgba(17, 24, 39, 0.55);
+}
+.ss-pageinfo span {
+  color: rgba(17, 24, 39, 0.9);
+  font-weight: 600;
 }
 </style>

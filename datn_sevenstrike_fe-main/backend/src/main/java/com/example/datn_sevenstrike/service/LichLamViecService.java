@@ -227,6 +227,8 @@ public class LichLamViecService {
                                 assignReq.setIdNhanVien(nv.getId());
                                 assignReq.setNguoiTao(1);
 
+                                // Gọi sang service NhanVien để lưu bản ghi phân công
+                                // Hàm create của LichLamViecNhanVienService đã có logic check trùng
                                 lichLamViecNhanVienService.create(assignReq);
                             }
                         } catch (BadRequestEx ex) {
@@ -250,12 +252,12 @@ public class LichLamViecService {
 
     private Map<String, Integer> parseHeaderRow(Row headerRow) {
         Map<String, Integer> columnMap = new HashMap<>();
-        
+
         for (int colIdx = 0; colIdx < headerRow.getLastCellNum(); colIdx++) {
             Cell cell = headerRow.getCell(colIdx);
             if (cell != null && cell.getCellType() == CellType.STRING) {
                 String headerText = cell.getStringCellValue().trim().toUpperCase();
-                
+
                 if (headerText.contains("CA")) {
                     columnMap.put("CA_LAM", colIdx);
                 } else if (headerText.contains("NGÀY") || headerText.contains("NGAY")) {
@@ -269,13 +271,13 @@ public class LichLamViecService {
                 }
             }
         }
-        
+
         return columnMap;
     }
 
     private CaLam findCaLamByNameOrId(String input) {
         if (input.isEmpty()) return null;
-        
+
         // Try to parse as ID
         try {
             Integer id = Integer.parseInt(input.trim());
@@ -283,41 +285,46 @@ public class LichLamViecService {
         } catch (NumberFormatException e) {
             // Not a number, search by name
         }
-        
+
         // Search by name (contains)
         List<CaLam> allCa = caLamRepo.findAll();
         String searchTerm = input.toLowerCase().trim();
-        
+
         for (CaLam ca : allCa) {
             if (ca.getTenCa().toLowerCase().contains(searchTerm)) {
                 return ca;
             }
         }
-        
+
         return null;
     }
 
     private NhanVien findNhanVienByNameOrCode(String input) {
         if (input.isEmpty()) return null;
-        
+
+        // Try to parse as ID
         try {
             Integer id = Integer.parseInt(input.trim());
             return nhanVienRepo.findById(id).orElse(null);
         } catch (NumberFormatException e) {
+            // Not a number, search by name or code
         }
-        
+
+        // Search by name or code
         List<NhanVien> allNv = nhanVienRepo.findAll();
         String searchTerm = input.toLowerCase().trim();
-        
+
         for (NhanVien nv : allNv) {
-            if (nv.getTenNhanVien().toLowerCase().contains(searchTerm) || 
-                (nv.getMaNhanVien() != null && nv.getMaNhanVien().toLowerCase().contains(searchTerm))) {
+            if (nv.getTenNhanVien().toLowerCase().contains(searchTerm) ||
+                    (nv.getMaNhanVien() != null && nv.getMaNhanVien().toLowerCase().contains(searchTerm))) {
                 return nv;
             }
         }
-        
+
         return null;
     }
+
+    // --- CÁC HÀM BỔ TRỢ (HELPER METHODS) ---
 
     // Kiểm tra xem dòng có trống trơn không
     private boolean isRowEmpty(Row row) {
@@ -330,6 +337,7 @@ public class LichLamViecService {
         return true;
     }
 
+    // Lấy số nguyên an toàn
     private Integer getSafeInt(Cell cell, String fieldName) {
         if (cell == null || cell.getCellType() == CellType.BLANK) {
             throw new BadRequestEx(fieldName + " không được để trống");
@@ -346,42 +354,42 @@ public class LichLamViecService {
         throw new BadRequestEx(fieldName + " định dạng không hợp lệ");
     }
 
-private LocalDate getSafeDate(Cell cell) {
-    if (cell == null || cell.getCellType() == CellType.BLANK) {
-        throw new BadRequestEx("Ngày làm không được để trống");
-    }
-
-    try {
-        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-            return cell.getLocalDateTimeCellValue().toLocalDate();
+    private LocalDate getSafeDate(Cell cell) {
+        if (cell == null || cell.getCellType() == CellType.BLANK) {
+            throw new BadRequestEx("Ngày làm không được để trống");
         }
 
-        if (cell.getCellType() == CellType.STRING) {
-            String dateStr = cell.getStringCellValue().trim();
-            if (dateStr.isEmpty()) throw new BadRequestEx("Ngày làm trống");
-
-            dateStr = dateStr.replace("/", "-");
-            
-            if (dateStr.matches("\\d{4}-\\d{2}-\\d{2}")) {
-                return LocalDate.parse(dateStr);
+        try {
+            if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+                return cell.getLocalDateTimeCellValue().toLocalDate();
             }
-            
-            java.time.format.DateTimeFormatter formatter =
-                java.time.format.DateTimeFormatter.ofPattern("d-M-yyyy");
-            return LocalDate.parse(dateStr, formatter);
-        }
-        
-        if (cell.getCellType() == CellType.NUMERIC) {
-            return DateUtil.getJavaDate(cell.getNumericCellValue())
-                       .toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        }
-    } catch (Exception e) {
-        throw new BadRequestEx("Ngày làm tại ô " + cell.getAddress() + " không hợp lệ: " + cell);
-    }
-    throw new BadRequestEx("Định dạng ngày không được hỗ trợ");
-}
 
-    //Lấy chuỗi an toàn (trả về rỗng nếu null)
+            if (cell.getCellType() == CellType.STRING) {
+                String dateStr = cell.getStringCellValue().trim();
+                if (dateStr.isEmpty()) throw new BadRequestEx("Ngày làm trống");
+
+                dateStr = dateStr.replace("/", "-");
+
+                if (dateStr.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                    return LocalDate.parse(dateStr);
+                }
+
+                java.time.format.DateTimeFormatter formatter =
+                        java.time.format.DateTimeFormatter.ofPattern("d-M-yyyy");
+                return LocalDate.parse(dateStr, formatter);
+            }
+
+            if (cell.getCellType() == CellType.NUMERIC) {
+                return DateUtil.getJavaDate(cell.getNumericCellValue())
+                        .toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            }
+        } catch (Exception e) {
+            throw new BadRequestEx("Ngày làm tại ô " + cell.getAddress() + " không hợp lệ: " + cell);
+        }
+        throw new BadRequestEx("Định dạng ngày không được hỗ trợ");
+    }
+
+    // Lấy chuỗi an toàn (trả về rỗng nếu null)
     private String getSafeString(Cell cell) {
         if (cell == null || cell.getCellType() == CellType.BLANK) {
             return "";

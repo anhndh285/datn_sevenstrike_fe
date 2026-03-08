@@ -1,3 +1,4 @@
+<!-- File: src/pages/lich_lam_viec/LichLamViec.vue -->
 <template>
   <div class="lich-page">
     <div class="header-section">
@@ -17,14 +18,25 @@
             <label>Nhân viên <span class="req">*</span></label>
 
             <div class="combobox-wrapper">
-              <input v-model="searchNv" type="text" class="form-control" placeholder="Tìm kiếm nhân viên..."
-                @focus="showNvDropdown = true" @blur="handleBlurNv" @input="
+              <input
+                v-model="searchNv"
+                type="text"
+                class="form-control"
+                placeholder="Tìm kiếm nhân viên..."
+                @focus="showNvDropdown = true"
+                @blur="handleBlurNv"
+                @input="
                   showNvDropdown = true;
-                filterNv = null;
-                " />
+                  filterNv = null;
+                "
+              />
               <ul v-if="showNvDropdown" class="combobox-dropdown">
-                <li v-for="nv in filteredNhanVienList" :key="nv.id" @click="selectNhanVien(nv)"
-                  :class="{ active: nv.id === form.idNhanVien }">
+                <li
+                  v-for="nv in filteredNhanVienList"
+                  :key="nv.id"
+                  @click="selectNhanVien(nv)"
+                  :class="{ active: nv.id === form.idNhanVien }"
+                >
                   <span class="fw-bold">{{ nv.tenNhanVien }}</span>
                   <small v-if="nv.maNhanVien"> - {{ nv.maNhanVien }}</small>
                 </li>
@@ -59,30 +71,34 @@
           <button class="btn-import" @click="openExcelModal" v-if="hasPermission">
             <i class="fa-solid fa-upload"></i> Import Excel
           </button>
-          <button class="btn-download" @click="downloadTemplateExcel" v-if="hasPermission">
-            <i class="fa-solid fa-download"></i> Tải Template
-          </button>
         </div>
       </div>
     </div>
 
-    <!-- Import Excel Modal Component -->
-    <ImportExcelModal ref="excelModalRef" :listNhanVien="listNhanVien" :listCa="listCa" @close="closeExcelModal"
-      @import-success="loadData" />
+    <ImportExcelModal
+      ref="excelModalRef"
+      :listNhanVien="listNhanVien"
+      :listCa="listCa"
+      @close="closeExcelModal"
+      @import-success="loadData"
+    />
 
     <div class="card-box mt-20">
       <div class="table-header-row">
         <h3>
-          <i :class="viewMode === 'table'
-            ? 'fa-solid fa-table'
-            : 'fa-solid fa-calendar'
-            "></i>
+          <i
+            :class="
+              viewMode === 'table'
+                ? 'fa-solid fa-table'
+                : 'fa-solid fa-calendar'
+            "
+          ></i>
           {{
             viewMode === "table"
               ? "Danh Sách Lịch Làm Việc"
               : viewMode === "week"
-                ? "Lịch Làm Việc Tuần"
-                : "Lịch Làm Việc Tháng " + (currentMonth + 1)
+              ? "Lịch Làm Việc Tuần"
+              : "Lịch Làm Việc Tháng " + (currentMonth + 1)
           }}
         </h3>
 
@@ -90,8 +106,11 @@
           <button class="mode-btn" :class="{ active: viewMode === 'table' }" @click="viewMode = 'table'">
             <i class="fa-solid fa-table"></i> Bảng
           </button>
-          <button class="mode-btn" :class="{ active: viewMode === 'calendar' || viewMode === 'week' }"
-            @click="viewMode = 'week'">
+          <button
+            class="mode-btn"
+            :class="{ active: viewMode === 'calendar' || viewMode === 'week' }"
+            @click="viewMode = 'week'"
+          >
             <i class="fa-solid fa-calendar"></i> Lịch
           </button>
         </div>
@@ -131,7 +150,7 @@
               </td>
             </tr>
             <tr v-if="filterLichList.length === 0">
-              <td colspan="5" class="text-center">Không có dữ liệu</td>
+              <td colspan="7" class="text-center">Không có dữ liệu</td>
             </tr>
           </tbody>
         </table>
@@ -162,7 +181,11 @@
               <button class="btn-toggle" :class="{ active: viewMode === 'week' }" @click="viewMode = 'week'">
                 Tuần
               </button>
-              <button class="btn-toggle" :class="{ active: viewMode === 'calendar' }" @click="viewMode = 'calendar'">
+              <button
+                class="btn-toggle"
+                :class="{ active: viewMode === 'calendar' }"
+                @click="viewMode = 'calendar'"
+              >
                 Tháng
               </button>
             </div>
@@ -188,14 +211,15 @@
               <div v-for="nv in getEventsForDayGrouped(day)" :key="nv.id" class="event-item" @click="openModal(nv)">
                 <div class="avatar-circle">
                   <img v-if="isImg(nv.nhanVien?.anhNhanVien)" :src="nv.nhanVien?.anhNhanVien" />
-                  <span v-else class="initial">{{
-                    getAvatarLabel(nv.tenNhanVien)
-                  }}</span>
+                  <span v-else class="initial">{{ getAvatarLabel(nv.tenNhanVien) }}</span>
                 </div>
                 <span class="event-name">{{ nv.nhanVien?.tenTaiKhoan }}</span>
               </div>
-              <div v-if="hasPermission" class="event-item add-new-btn"
-                @click.stop="openModalVoiNgay(day, currentMonth, currentYear)">
+              <div
+                v-if="hasPermission"
+                class="event-item add-new-btn"
+                @click.stop="openModalVoiNgay(day, currentMonth, currentYear)"
+              >
                 <div class="avatar-circle circle-add">
                   <i class="fa-solid fa-plus"></i>
                 </div>
@@ -205,25 +229,33 @@
         </div>
 
         <div v-else-if="viewMode === 'week'" class="cal-grid-body">
-          <div v-for="wd in weekDays" :key="'week-day-' + wd.dateFull.getTime()" class="cal-cell" :class="{
-            'is-today': isToday(wd.day) && currentMonth === wd.month,
-          }">
+          <div
+            v-for="wd in weekDays"
+            :key="'week-day-' + wd.dateFull.getTime()"
+            class="cal-cell"
+            :class="{ 'is-today': isToday(wd.day) && currentMonth === wd.month }"
+          >
             <div class="cal-date-num">{{ wd.day }}/{{ wd.month + 1 }}</div>
 
             <div class="cal-events-container">
-              <div v-for="nv in getEventsForSpecificDayGrouped(wd.day, wd.month, wd.year)" :key="nv.id"
-                class="event-item" @click="openModal(nv)">
+              <div
+                v-for="nv in getEventsForSpecificDayGrouped(wd.day, wd.month, wd.year)"
+                :key="nv.id"
+                class="event-item"
+                @click="openModal(nv)"
+              >
                 <div class="avatar-circle">
                   <img v-if="isImg(nv.nhanVien?.anhNhanVien)" :src="nv.nhanVien?.anhNhanVien" />
-                  <span v-else class="initial">{{
-                    getAvatarLabel(nv.tenNhanVien)
-                  }}</span>
+                  <span v-else class="initial">{{ getAvatarLabel(nv.tenNhanVien) }}</span>
                 </div>
                 <span class="event-name">{{ nv.nhanVien?.tenTaiKhoan }}</span>
               </div>
 
-              <div v-if="hasPermission" class="event-item add-new-btn"
-                @click.stop="openModalVoiNgay(wd.day, wd.month, wd.year)">
+              <div
+                v-if="hasPermission"
+                class="event-item add-new-btn"
+                @click.stop="openModalVoiNgay(wd.day, wd.month, wd.year)"
+              >
                 <div class="avatar-circle circle-add">
                   <i class="fa-solid fa-plus"></i>
                 </div>
@@ -249,21 +281,33 @@
               </div>
 
               <div class="matrix-cell day-col flex-1" :class="{ 'is-today': isTodayDate(currentDate) }">
-                <div v-if="hasPermission && getEventsForShiftAndDate(ca.id, currentDate).length === 0"
-                  class="add-full-btn" @click="openModalVoiNgayCa(currentDate, ca.id)">
+                <div
+                  v-if="hasPermission && getEventsForShiftAndDate(ca.id, currentDate).length === 0"
+                  class="add-full-btn"
+                  @click="openModalVoiNgayCa(currentDate, ca.id)"
+                >
                   + Bấm vào đây để thêm nhân viên vào ca này
                 </div>
                 <div v-else class="employee-cards row-dir">
-                  <button v-if="hasPermission" class="btn-add-mini inline"
-                    @click="openModalVoiNgayCa(currentDate, ca.id)">
+                  <button
+                    v-if="hasPermission"
+                    class="btn-add-mini inline"
+                    @click="openModalVoiNgayCa(currentDate, ca.id)"
+                  >
                     <i class="fa-solid fa-plus"></i>
                   </button>
-                  <div v-for="(nv, index) in getEventsForShiftAndDate(ca.id, currentDate)" :key="nv.id"
-                    class="employee-card large" :class="['border-color-4']" @click="openModal(nv)">
+                  <div
+                    v-for="(nv, index) in getEventsForShiftAndDate(ca.id, currentDate)"
+                    :key="nv.id"
+                    class="employee-card large"
+                    :class="['border-color-4']"
+                    @click="openModal(nv)"
+                  >
                     <div class="avatar-circle">
                       <img v-if="isImg(nv.nhanVien?.anhNhanVien)" :src="nv.nhanVien?.anhNhanVien" />
-                      <span v-else class="initial">{{ getAvatarLabel(nv.tenNhanVien || nv.nhanVien?.tenTaiKhoan)
-                      }}</span>
+                      <span v-else class="initial">
+                        {{ getAvatarLabel(nv.tenNhanVien || nv.nhanVien?.tenTaiKhoan) }}
+                      </span>
                     </div>
                     <div class="emp-info">
                       <div class="emp-name">{{ nv.tenNhanVien || nv.nhanVien?.tenTaiKhoan }}</div>
@@ -275,7 +319,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </div> 
     </div>
 
     <div v-if="showModal" class="modal-overlay">
@@ -297,12 +341,22 @@
               </div>
 
               <div class="combobox-wrapper">
-                <input type="text" class="form-control" placeholder="Tìm và chọn nhiều nhân viên..."
-                  v-model="searchNvModal" @focus="showNvModalDropdown = true" @blur="handleBlurNvModal" />
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Tìm và chọn nhiều nhân viên..."
+                  v-model="searchNvModal"
+                  @focus="showNvModalDropdown = true"
+                  @blur="handleBlurNvModal"
+                />
 
                 <ul v-if="showNvModalDropdown" class="combobox-dropdown">
-                  <li v-for="nv in filteredNvModal" :key="nv.id" @click="selectNvMulti(nv)"
-                    :class="{ active: isNvSelected(nv.id) }">
+                  <li
+                    v-for="nv in filteredNvModal"
+                    :key="nv.id"
+                    @click="selectNvMulti(nv)"
+                    :class="{ active: isNvSelected(nv.id) }"
+                  >
                     <span class="fw-bold">{{ nv.tenNhanVien }}</span>
                     <small> - {{ nv.maNhanVien }}</small>
                     <i v-if="isNvSelected(nv.id)" class="fa-solid fa-check float-right"></i>
@@ -318,11 +372,21 @@
             </div>
 
             <div v-else class="combobox-wrapper">
-              <input type="text" class="form-control" placeholder="Tìm tên hoặc mã nhân viên..." v-model="searchNvModal"
-                @focus="showNvModalDropdown = true" @blur="handleBlurNvModal" />
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Tìm tên hoặc mã nhân viên..."
+                v-model="searchNvModal"
+                @focus="showNvModalDropdown = true"
+                @blur="handleBlurNvModal"
+              />
               <ul v-if="showNvModalDropdown" class="combobox-dropdown">
-                <li v-for="nv in filteredNvModal" :key="nv.id" @click="selectNvSingle(nv)"
-                  :class="{ active: nv.id === form.idNhanVien }">
+                <li
+                  v-for="nv in filteredNvModal"
+                  :key="nv.id"
+                  @click="selectNvSingle(nv)"
+                  :class="{ active: nv.id === form.idNhanVien }"
+                >
                   <span class="fw-bold">{{ nv.tenNhanVien }}</span>
                   <small> - {{ nv.maNhanVien }}</small>
                 </li>
@@ -344,12 +408,22 @@
             </div>
 
             <div class="combobox-wrapper">
-              <input type="text" class="form-control" placeholder="Tìm và chọn ca làm việc..." v-model="searchCaModal"
-                @focus="showCaModalDropdown = true" @blur="handleBlurCaModal" />
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Tìm và chọn ca làm việc..."
+                v-model="searchCaModal"
+                @focus="showCaModalDropdown = true"
+                @blur="handleBlurCaModal"
+              />
 
               <ul v-if="showCaModalDropdown" class="combobox-dropdown">
-                <li v-for="ca in filteredCaModal" :key="ca.id" @click="selectCaMulti(ca)"
-                  :class="{ active: isCaSelected(ca.id) }">
+                <li
+                  v-for="ca in filteredCaModal"
+                  :key="ca.id"
+                  @click="selectCaMulti(ca)"
+                  :class="{ active: isCaSelected(ca.id) }"
+                >
                   <span class="fw-bold">{{ ca.tenCa }}</span>
                   <small> - ({{ formatTime(ca.gioBatDau) }} - {{ formatTime(ca.gioKetThuc) }})</small>
                   <i v-if="isCaSelected(ca.id)" class="fa-solid fa-check float-right"></i>
@@ -383,11 +457,9 @@
 import { ref, onMounted, reactive, computed } from "vue";
 import {
   createPhanCong,
-  updatePhanCong,
   removePhanCong,
   getAllPhanCong,
 } from "@/services/lich_lam_viec/lich_lam_viec_nhan_vienService";
-
 import { getAllNhanVien } from "@/services/tai_khoan/nhan_vien/nhan_vienService";
 import { getAllCaLam } from "@/services/lich_lam_viec/ca_lamService";
 import {
@@ -395,7 +467,6 @@ import {
   checkLichLamViec,
 } from "@/services/lich_lam_viec/lich_lam_viecService";
 import ImportExcelModal from "./ImportExcelModal.vue";
-import { downloadScheduleTemplate } from "@/services/lich_lam_viec/xuLyExcel";
 
 const excelModalRef = ref(null);
 
@@ -405,23 +476,22 @@ const openExcelModal = () => {
   }
 };
 
-const closeExcelModal = () => {
-
-};
-
-const downloadTemplateExcel = async () => {
-  try {
-    await downloadScheduleTemplate(listCa.value);
-  } catch (error) {
-    alert("Lỗi khi tải template: " + error.message);
-  }
-};
+const closeExcelModal = () => {};
 
 const getUser = () => {
-  const raw = localStorage.getItem("user") || sessionStorage.getItem("user") ||
-    localStorage.getItem("nguoiDung") || sessionStorage.getItem("nguoiDung");
+  const raw =
+    localStorage.getItem("user") ||
+    sessionStorage.getItem("user") ||
+    localStorage.getItem("nguoiDung") ||
+    sessionStorage.getItem("nguoiDung");
+
   if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 };
 
 const hasPermission = computed(() => {
@@ -435,7 +505,6 @@ const hasPermission = computed(() => {
   return true;
 });
 
-// removed listLichMaster; not used anywhere
 const lichNhanVienList = ref([]);
 const listNhanVien = ref([]);
 const listCa = ref([]);
@@ -464,12 +533,14 @@ const currentYear = ref(today.getFullYear());
 const currentDate = ref(new Date());
 
 const editingItem = ref(null);
-
 const selectedCas = ref([]);
 
 const form = reactive({
   idLichLamViec: null,
   idNhanVien: null,
+  idCaLam: null,
+  ngayLam: "",
+  ghiChu: "",
   nguoiTao: 1,
 });
 
@@ -483,11 +554,7 @@ const getAvatarLabel = (name) => {
 const isImg = (s) => {
   if (!s) return false;
   const v = String(s).trim();
-  return (
-    v.startsWith("data:image/") ||
-    v.startsWith("http://") ||
-    v.startsWith("https://")
-  );
+  return v.startsWith("data:image/") || v.startsWith("http://") || v.startsWith("https://");
 };
 
 const isNvSelected = (id) => {
@@ -519,8 +586,8 @@ const selectCaMulti = (ca) => {
   if (!isCaSelected(ca.id)) {
     selectedCas.value.push(ca);
   }
-  searchCaModal.value = ""; 
-  showCaModalDropdown.value = false; // Mở comment dòng này
+  searchCaModal.value = "";
+  showCaModalDropdown.value = false;
 };
 
 const removeSelectedCa = (index) => {
@@ -549,6 +616,7 @@ const isToday = (day) => {
     currentYear.value === now.getFullYear()
   );
 };
+
 const formatDateFull = (d) => {
   const day = d.getDate();
   const month = d.getMonth() + 1;
@@ -560,9 +628,11 @@ const formatDateFull = (d) => {
 
 const isTodayDate = (d) => {
   const now = new Date();
-  return d.getDate() === now.getDate() &&
+  return (
+    d.getDate() === now.getDate() &&
     d.getMonth() === now.getMonth() &&
-    d.getFullYear() === now.getFullYear();
+    d.getFullYear() === now.getFullYear()
+  );
 };
 
 const getDayName = (d) => {
@@ -576,14 +646,13 @@ const getEventsForShiftAndDate = (idCa, d) => {
   const year = d.getFullYear();
   const m = d.getMonth() + 1;
   const day = d.getDate();
-  const dateString = `${year}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const dateString = `${year}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
   return lichNhanVienList.value.filter((l) => {
     let shiftId = null;
+
     if (l.lichLamViec && l.lichLamViec.idCaLam) {
-      shiftId = typeof l.lichLamViec.idCaLam === 'object'
-        ? l.lichLamViec.idCaLam.id
-        : l.lichLamViec.idCaLam;
+      shiftId = typeof l.lichLamViec.idCaLam === "object" ? l.lichLamViec.idCaLam.id : l.lichLamViec.idCaLam;
     } else {
       shiftId = l.idCaLam;
     }
@@ -604,18 +673,18 @@ const getEventsForShiftAndDate = (idCa, d) => {
 
 const openModalVoiNgayCa = (dateObj, idCa) => {
   isEditing.value = false;
+  editingItem.value = null;
   currentId.value = null;
   form.idLichLamViec = null;
   form.idNhanVien = null;
-  selectedNhanViens.value = [];
   form.idCaLam = idCa;
   form.ghiChu = "";
+  selectedNhanViens.value = [];
   searchNvModal.value = "";
 
   const ca = listCa.value.find((c) => c.id === idCa);
-  searchCaModal.value = ca
-    ? `${ca.tenCa} (${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)})`
-    : "";
+  selectedCas.value = ca ? [ca] : [];
+  searchCaModal.value = ca ? `${ca.tenCa} (${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)})` : "";
 
   const year = dateObj.getFullYear();
   const m = dateObj.getMonth() + 1;
@@ -648,7 +717,7 @@ const weekDays = computed(() => {
 
 const changePeriod = (step) => {
   if (viewMode.value === "calendar") {
-    let newMonth = currentMonth.value + step;
+    const newMonth = currentMonth.value + step;
     if (newMonth > 11) {
       currentMonth.value = 0;
       currentYear.value++;
@@ -676,6 +745,7 @@ const changePeriod = (step) => {
 
 const getEventsForSpecificDay = (day, month, year) => {
   if (!lichNhanVienList.value) return [];
+
   const m = month + 1;
   const mStr = m < 10 ? `0${m}` : m;
   const dStr = day < 10 ? `0${day}` : day;
@@ -683,9 +753,7 @@ const getEventsForSpecificDay = (day, month, year) => {
 
   return filterLichList.value.filter((l) => {
     if (Array.isArray(l.ngayLam)) {
-      return (
-        l.ngayLam[0] === year && l.ngayLam[1] === m && l.ngayLam[2] === day
-      );
+      return l.ngayLam[0] === year && l.ngayLam[1] === m && l.ngayLam[2] === day;
     }
     return l.ngayLam === dateString;
   });
@@ -698,6 +766,7 @@ const getEventsForSpecificDayGrouped = (day, month, year) => {
 
 const getEventsForDay = (day) => {
   if (!lichNhanVienList.value) return [];
+
   const m = currentMonth.value + 1;
   const mStr = m < 10 ? `0${m}` : m;
   const dStr = day < 10 ? `0${day}` : day;
@@ -705,11 +774,7 @@ const getEventsForDay = (day) => {
 
   return filterLichList.value.filter((l) => {
     if (Array.isArray(l.ngayLam)) {
-      return (
-        l.ngayLam[0] === currentYear.value &&
-        l.ngayLam[1] === m &&
-        l.ngayLam[2] === day
-      );
+      return l.ngayLam[0] === currentYear.value && l.ngayLam[1] === m && l.ngayLam[2] === day;
     }
     if (typeof l.ngayLam === "string") {
       return l.ngayLam === dateString;
@@ -719,39 +784,42 @@ const getEventsForDay = (day) => {
 };
 
 const getEventsForDayGrouped = (day) => {
-  const events = getEventsForDay(day); // Hàm cũ của bạn lấy list phẳng
+  const events = getEventsForDay(day);
   return groupShiftsByNhanVien(events);
 };
 
 const groupShiftsByNhanVien = (events) => {
   const grouped = {};
+
   events.forEach((item) => {
     const nvId = item.nhanVien?.id;
     if (!grouped[nvId]) {
       grouped[nvId] = {
         ...item,
-        danhSachCa: [] // Lưu tất cả các ca của nhân viên trong ngày này
+        danhSachCa: [],
       };
     }
+
     grouped[nvId].danhSachCa.push({
       idPhanCong: item.id,
       idCa: item.idCaLam || item.caLam?.id,
       tenCa: item.tenCa || item.caLam?.tenCa,
       gioBatDau: item.gioBatDau,
-      gioKetThuc: item.gioKetThuc
+      gioKetThuc: item.gioKetThuc,
     });
   });
+
   return Object.values(grouped);
 };
 
 const filteredNhanVienList = computed(() => {
   if (!searchNv.value) return listNhanVien.value;
+
   return listNhanVien.value.filter((nv) => {
     const nhanVienSearch =
       !searchNv.value ||
-      nv.tenNhanVien.toLowerCase().includes(searchNv.value.toLowerCase()) ||
-      (nv.maNhanVien &&
-        nv.maNhanVien.toLowerCase().includes(searchNv.value.toLowerCase()));
+      (nv.tenNhanVien || "").toLowerCase().includes(searchNv.value.toLowerCase()) ||
+      ((nv.maNhanVien || "").toLowerCase().includes(searchNv.value.toLowerCase()));
 
     const koPhaiAdmin = nv.idQuyenHan !== 1;
     return nhanVienSearch && koPhaiAdmin;
@@ -760,10 +828,11 @@ const filteredNhanVienList = computed(() => {
 
 const filteredNvModal = computed(() => {
   const q = searchNvModal.value.toLowerCase();
+
   return listNhanVien.value.filter((nv) => {
     const nhanVienSearch =
-      nv.tenNhanVien.toLowerCase().includes(q) ||
-      nv.maNhanVien.toLowerCase().includes(q);
+      (nv.tenNhanVien || "").toLowerCase().includes(q) ||
+      (nv.maNhanVien || "").toLowerCase().includes(q);
 
     const koPhaiAdmin = nv.idQuyenHan !== 1;
     return nhanVienSearch && koPhaiAdmin;
@@ -772,7 +841,12 @@ const filteredNvModal = computed(() => {
 
 const filteredCaModal = computed(() => {
   const q = searchCaModal.value.toLowerCase();
-  return listCa.value.filter((ca) => ca.tenCa.toLowerCase().includes(q));
+
+  return listCa.value.filter((ca) => {
+    const matchesSearch = (ca.tenCa || "").toLowerCase().includes(q);
+    const notSelected = !isCaSelected(ca.id);
+    return matchesSearch && notSelected;
+  });
 });
 
 const selectNhanVien = (nv) => {
@@ -781,16 +855,8 @@ const selectNhanVien = (nv) => {
   showNvDropdown.value = false;
 };
 
-const selectCaModal = (ca) => {
-  form.idCaLam = ca.id;
-  searchCaModal.value = `${ca.tenCa} (${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)})`;
-  showCaModalDropdown.value = false;
-};
-
-const handleBlurNvModal = () =>
-  setTimeout(() => (showNvModalDropdown.value = false), 200);
-const handleBlurCaModal = () =>
-  setTimeout(() => (showCaModalDropdown.value = false), 200);
+const handleBlurNvModal = () => setTimeout(() => (showNvModalDropdown.value = false), 200);
+const handleBlurCaModal = () => setTimeout(() => (showCaModalDropdown.value = false), 200);
 
 const handleBlurNv = () => {
   setTimeout(() => {
@@ -799,11 +865,11 @@ const handleBlurNv = () => {
 };
 
 const formatTime = (arr) => {
-  if (Array.isArray(arr))
-    return `${arr[0]}:${arr[1] < 10 ? "0" + arr[1] : arr[1]}`;
+  if (Array.isArray(arr)) return `${arr[0]}:${arr[1] < 10 ? "0" + arr[1] : arr[1]}`;
   if (typeof arr === "string") return arr.substring(0, 5);
   return "";
 };
+
 const formatDate = (arr) => {
   if (Array.isArray(arr)) return `${arr[2]}/${arr[1]}/${arr[0]}`;
   return arr;
@@ -821,12 +887,14 @@ const convertArrayDateToString = (arrDate) => {
 
 const openModalVoiNgay = (day, month = null, year = null) => {
   isEditing.value = false;
+  editingItem.value = null;
   currentId.value = null;
   form.idLichLamViec = null;
   form.idNhanVien = null;
-  selectedNhanViens.value = [];
   form.idCaLam = null;
   form.ghiChu = "";
+  selectedNhanViens.value = [];
+  selectedCas.value = [];
   searchNvModal.value = "";
   searchCaModal.value = "";
 
@@ -836,9 +904,8 @@ const openModalVoiNgay = (day, month = null, year = null) => {
   const m = targetMonth + 1;
   const mStr = m < 10 ? `0${m}` : m;
   const dStr = day < 10 ? `0${day}` : day;
-  const dateString = `${targetYear}-${mStr}-${dStr}`;
+  form.ngayLam = `${targetYear}-${mStr}-${dStr}`;
 
-  form.ngayLam = dateString;
   showModal.value = true;
 };
 
@@ -850,26 +917,25 @@ const openModal = (item) => {
     form.idNhanVien = item.nhanVien?.id;
     form.ngayLam = convertArrayDateToString(item.ngayLam);
 
-    // Đổ các ca đang có vào danh sách Tag
     if (item.danhSachCa) {
-      // Grouped from calendar
       const uniqueCas = {};
-      (item.danhSachCa || []).forEach(ca => {
+      (item.danhSachCa || []).forEach((ca) => {
         const caId = ca.idCa || ca.id;
         if (!uniqueCas[caId]) {
           uniqueCas[caId] = {
             id: caId,
-            tenCa: ca.tenCa
+            tenCa: ca.tenCa,
           };
         }
       });
       selectedCas.value = Object.values(uniqueCas);
     } else {
-      // Single from table
-      selectedCas.value = [{
-        id: item.idCaLam || item.caLam?.id,
-        tenCa: item.tenCa || item.caLam?.tenCa
-      }];
+      selectedCas.value = [
+        {
+          id: item.idCaLam || item.caLam?.id,
+          tenCa: item.tenCa || item.caLam?.tenCa,
+        },
+      ];
     }
 
     const nv = listNhanVien.value.find((n) => n.id === form.idNhanVien);
@@ -878,12 +944,18 @@ const openModal = (item) => {
   } else {
     isEditing.value = false;
     editingItem.value = null;
-    selectedNhanViens.value = [];
-    selectedCas.value = []; // Reset ca làm việc
+    currentId.value = null;
+    form.idLichLamViec = null;
+    form.idNhanVien = null;
+    form.idCaLam = null;
+    form.ghiChu = "";
     form.ngayLam = new Date().toISOString().split("T")[0];
+    selectedNhanViens.value = [];
+    selectedCas.value = [];
     searchNvModal.value = "";
     searchCaModal.value = "";
   }
+
   showModal.value = true;
 };
 
@@ -892,10 +964,13 @@ const closeModal = () => {
   isEditing.value = false;
   editingItem.value = null;
   currentId.value = null;
+  selectedNhanViens.value = [];
+  selectedCas.value = [];
+  searchNvModal.value = "";
+  searchCaModal.value = "";
 };
 
 const handleSubmit = async () => {
-  // 1. Kiểm tra tính hợp lệ của dữ liệu đầu vào
   if (!form.ngayLam) {
     alert("Vui lòng chọn ngày làm việc!");
     return;
@@ -914,33 +989,29 @@ const handleSubmit = async () => {
   try {
     loading.value = true;
     const currentUser = getUser();
-    const idNguoiTao = currentUser?.id || 1; // Lấy ID người dùng đang đăng nhập
+    const idNguoiTao = currentUser?.id || 1;
 
-    // Nếu đang chỉnh sửa, xóa các phân công cũ
     if (isEditing.value && editingItem.value) {
       let oldPhanCongIds = [];
+
       if (editingItem.value.danhSachCa) {
-        // Grouped
-        oldPhanCongIds = editingItem.value.danhSachCa.map(ca => ca.idPhanCong).filter(id => id);
+        oldPhanCongIds = editingItem.value.danhSachCa.map((ca) => ca.idPhanCong).filter((id) => id);
       } else {
-        // Single
-        oldPhanCongIds = [editingItem.value.id].filter(id => id);
+        oldPhanCongIds = [editingItem.value.id].filter((id) => id);
       }
+
       for (const id of oldPhanCongIds) {
         try {
           await removePhanCong(id);
         } catch (e) {
-          console.error('Failed to remove old assignment', id, e);
+          console.error("Failed to remove old assignment", id, e);
         }
       }
     }
 
-    const targetNvs = isEditing.value
-      ? [{ id: form.idNhanVien }]
-      : selectedNhanViens.value;
+    const targetNvs = isEditing.value ? [{ id: form.idNhanVien }] : selectedNhanViens.value;
 
     for (const ca of selectedCas.value) {
-
       const existingLich = await checkLichLamViec({
         idCaLam: ca.id,
         ngayLam: form.ngayLam,
@@ -957,7 +1028,11 @@ const handleSubmit = async () => {
           ghiChu: "",
           nguoiTao: idNguoiTao,
         });
-        idLichHienTai = resLich?.data?.id || resLich?.id || (Array.isArray(resLich) ? resLich[0]?.id : null);
+
+        idLichHienTai =
+          resLich?.data?.id ||
+          resLich?.id ||
+          (Array.isArray(resLich) ? resLich[0]?.id : null);
       }
 
       if (idLichHienTai) {
@@ -966,25 +1041,24 @@ const handleSubmit = async () => {
             idLichLamViec: idLichHienTai,
             idNhanVien: nv.id,
             nguoiTao: idNguoiTao,
-          })
+          }),
         );
 
         await Promise.all(phanCongPromises);
       }
     }
 
-    alert(isEditing.value
-      ? "Cập nhật lịch làm việc thành công!"
-      : `Đã phân công thành công cho ${targetNvs.length} nhân viên vào ${selectedCas.value.length} ca.`);
+    alert(
+      isEditing.value
+        ? "Cập nhật lịch làm việc thành công!"
+        : `Đã phân công thành công cho ${targetNvs.length} nhân viên vào ${selectedCas.value.length} ca.`,
+    );
 
     closeModal();
-    if (typeof loadData === "function") {
-      loadData(); // Gọi hàm tải lại danh sách ngoài trang chính
-    }
-
+    await loadData();
   } catch (error) {
     console.error("Lỗi khi lưu lịch làm việc:", error);
-    alert("Có lỗi xảy ra: " + (error.response?.data?.message || "Không thể lưu dữ liệu"));
+    alert("Có lỗi xảy ra: " + (error?.message || "Không thể lưu dữ liệu"));
   } finally {
     loading.value = false;
   }
@@ -995,8 +1069,6 @@ const loadData = async () => {
     const res = await getAllPhanCong();
     const data = Array.isArray(res) ? res : res.content || [];
     lichNhanVienList.value = data;
-
-    // Dòng debug: Mở F12 -> Console để xem
     console.log("Dữ liệu 1 bản ghi mẫu:", data[0]);
   } catch (e) {
     console.error(e);
@@ -1008,33 +1080,37 @@ const loadthemLich = async () => {
   const ca = await getAllCaLam();
   listNhanVien.value = Array.isArray(nv) ? nv : [];
   listCa.value = Array.isArray(ca) ? ca : [];
-  loadData();
+  await loadData();
 };
 
 const filterLichList = computed(() => {
   let data = [...lichNhanVienList.value];
+
   if (filterNv.value) {
     data = data.filter((item) => item.nhanVien?.id === Number(filterNv.value));
   }
+
   if (filterDate.value) {
-    data = data.filter(
-      (l) => convertArrayDateToString(l.ngayLam) === filterDate.value,
-    );
+    data = data.filter((l) => convertArrayDateToString(l.ngayLam) === filterDate.value);
   }
+
   return data;
 });
 
-const updatePhanCongData = async (id, data) => {
+const deletePhanCong = async (id) => {
+  const confirmDelete = window.confirm("Bạn có chắc chắn muốn xóa phân công này không?");
+  if (!confirmDelete) return;
+
   try {
-    await updatePhanCong(id, data);
-    loadData();
+    await removePhanCong(id);
+    alert("Xóa phân công thành công!");
+    await loadData();
   } catch (e) {
-    alert("Cập nhật phân công thất bại: " + e.message);
+    alert("Xóa phân công thất bại: " + (e?.message || "Có lỗi xảy ra"));
   }
 };
 
 onMounted(() => {
-  loadData();
   loadthemLich();
 });
 </script>
@@ -1181,12 +1257,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .btn-download {
   background: white;
-  color: #ff4d4f;
-  border: 1px solid #ff4d4f;
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
 }
 
 .btn-download:hover {
-  background: #fff5ef;
+  background: #eff6ff;
 }
 
 .file-input-wrapper {
@@ -1784,7 +1860,6 @@ td {
   transform: translateY(0);
 }
 
-/* === CSS MA TRẬN (NGÀY) === */
 .matrix-view {
   display: flex;
   flex-direction: column;
@@ -1999,7 +2074,6 @@ td {
   flex: 1;
 }
 
-/* Các viền màu ngẫu nhiên cho Thẻ Nhân viên */
 .border-color-0 {
   border-left-color: #ef4444 !important;
 }
@@ -2021,7 +2095,6 @@ td {
     opacity: 0;
     transform: translateY(-10px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);

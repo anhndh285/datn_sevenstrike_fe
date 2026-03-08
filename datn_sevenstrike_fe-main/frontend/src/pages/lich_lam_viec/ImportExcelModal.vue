@@ -134,7 +134,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { downloadScheduleTemplate, parseExcelFile, validateScheduleData} from '@/services/lich_lam_viec/xuLyExcel';
+import { parseExcelFile, validateScheduleData} from '@/services/lich_lam_viec/xuLyExcel';
 import { importLichExcel } from '@/services/lich_lam_viec/lich_lam_viecService';
 
 const props = defineProps({

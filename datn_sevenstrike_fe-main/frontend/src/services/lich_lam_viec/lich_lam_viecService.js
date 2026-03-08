@@ -8,8 +8,8 @@ const unwrapJson = async (res) => {
 
 export const checkLichLamViec = async (data) => {
   const params = new URLSearchParams({
-    ca: data.idCaLam,
-    ngay: data.ngayLam
+    ca: data.ca,
+    ngay: data.ngay
   }).toString();
 
   const res = await fetch(`${API_LICH}/check?${params}`);
@@ -42,6 +42,7 @@ export const pagingLichLamViec = async (page = 0, size = 5) => {
 
 
 export const createLich = async (data) => {
+  // data: { idNhanVien, idCaLam, ngayLam, ghiChu }
   const res = await fetch(API_LICH, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

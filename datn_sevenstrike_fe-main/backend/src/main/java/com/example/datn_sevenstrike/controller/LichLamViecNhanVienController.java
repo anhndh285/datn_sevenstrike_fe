@@ -3,7 +3,6 @@ package com.example.datn_sevenstrike.controller;
 import com.example.datn_sevenstrike.dto.request.LichLamViecNhanVienRequest;
 import com.example.datn_sevenstrike.dto.response.LichLamViecNhanVienResponse;
 import com.example.datn_sevenstrike.service.LichLamViecNhanVienService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +19,7 @@ public class LichLamViecNhanVienController {
 
     private final LichLamViecNhanVienService service;
 
-    @GetMapping("/nhan-vien/{idNhanVien}") 
+    @GetMapping("/nhan-vien/{idNhanVien}")
     public List<LichLamViecNhanVienResponse> one(@PathVariable Integer idNhanVien, @RequestParam LocalDate ngayLam) {
         return service.getByNhanVien(idNhanVien, ngayLam);
     }
@@ -33,11 +32,6 @@ public class LichLamViecNhanVienController {
     @PostMapping
     public LichLamViecNhanVienResponse create(@RequestBody LichLamViecNhanVienRequest req) {
         return service.create(req);
-    }
-
-    @PutMapping("/{id:\\d+}")
-    public LichLamViecNhanVienResponse update(@PathVariable("id") Integer id, @Valid @RequestBody LichLamViecNhanVienRequest req) {
-        return service.update(id, req);
     }
 
     @DeleteMapping("/{id}")

@@ -7,7 +7,6 @@
       </div>
     </div>
 
-    <!-- ✅ TOAST thông báo (trang) -->
     <div v-if="pageToast.show" class="ss-page-toast" :class="pageToast.type">
       <span class="material-icons-outlined ss-page-toast-ic">
         {{ pageToast.type === "success" ? "check_circle" : pageToast.type === "error" ? "error" : "info" }}
@@ -16,7 +15,6 @@
       <button class="ss-page-toast-x" type="button" @click="hidePageToast">×</button>
     </div>
 
-    <!-- ✅ TOAST xác nhận đổi trạng thái (KHÔNG có nút x) -->
     <div v-if="confirmTrangThai.show" class="ss-confirm-toast">
       <span class="material-icons-outlined ss-confirm-ic">help_outline</span>
       <div class="ss-confirm-msg">{{ confirmTrangThai.msg }}</div>
@@ -57,13 +55,11 @@
           </div>
 
           <div class="toolbar-right">
-            <!-- ✅ Đồng bộ như Khách hàng: Material icon + ss-btn-dark -->
             <button class="btn btn-reset" @click="resetFilters" type="button">
               <span class="material-icons-outlined btn-mi">restart_alt</span>
               Đặt lại bộ lọc
             </button>
 
-            <!-- ✅ Đồng bộ như Khách hàng: Material icon + ss-btn-lite -->
             <button class="btn btn-export" @click="exportExcel" type="button">
               <span class="material-icons-outlined btn-mi">description</span>
               Xuất Excel
@@ -121,7 +117,7 @@
 
                 <td>
                   <div class="avatar">
-                    <img v-if="isImg(item.anhNhanVien)" :src="item.anhNhanVien" alt="avatar" />
+                    <img v-if="isImg(item.anhNhanVien)" :src="getImageUrl(item.anhNhanVien)" alt="avatar" />
                     <div v-else class="avatar-fallback">{{ initials(item.tenNhanVien) }}</div>
                   </div>
                 </td>
@@ -150,7 +146,6 @@
 
                 <td class="text-center">
                   <div class="action-group">
-                    <!-- ✅ Switch: bỏ v-model để không đổi ngay, chỉ đổi sau khi confirm -->
                     <label class="switch" title="Đổi trạng thái nhanh">
                       <input
                         type="checkbox"
@@ -219,6 +214,8 @@ import * as XLSX from "xlsx";
 const router = useRouter();
 const route = useRoute();
 
+const BASE_URL = "http://localhost:8080";
+
 const pageNo = ref(0);
 const pageSize = ref(5);
 const totalPages = ref(0);
@@ -234,13 +231,9 @@ const filters = ref({
 
 const roleMap = ref(new Map());
 
-// ✅ Khóa theo id khi đang cập nhật + chống out-of-order khi bấm nhanh
-const dangCapNhatTrangThai = ref(new Set()); // Set<id>
-const trangThaiSeqMap = ref(new Map()); // Map<id, seq>
+const dangCapNhatTrangThai = ref(new Set());
+const trangThaiSeqMap = ref(new Map());
 
-// =======================
-// ✅ TOAST (TRANG)
-// =======================
 const pageToast = reactive({ show: false, type: "info", msg: "" });
 let pageToastTimer = null;
 
@@ -259,9 +252,6 @@ const hidePageToast = () => {
   pageToast.show = false;
 };
 
-// =======================
-// ✅ XÁC NHẬN ĐỔI TRẠNG THÁI (TOAST)
-// =======================
 const confirmTrangThai = reactive({
   show: false,
   loading: false,
@@ -309,7 +299,6 @@ const capNhatTrangThai = async (item, newValue) => {
   const nextSeq = (trangThaiSeqMap.value.get(id) ?? 0) + 1;
   trangThaiSeqMap.value.set(id, nextSeq);
 
-  // optimistic UI
   item.trangThai = nextValue;
   reApplyFilters();
 
@@ -354,7 +343,6 @@ const okConfirmTrangThai = async () => {
   }
 };
 
-/** ✅ Map mã quyền -> text hiển thị */
 const mapTenQuyenHan = (raw) => {
   const v = String(raw ?? "").trim();
   if (!v) return v;
@@ -381,7 +369,6 @@ const loadQuyenHan = async () => {
     });
     roleMap.value = m;
   } catch {
-    // ignore
   }
 };
 
@@ -480,10 +467,17 @@ const buildDiaChi = (x) => {
   return parts.length ? parts.join(", ") : "---";
 };
 
+const getImageUrl = (imageData) => {
+  if (!imageData) return null;
+  const s = String(imageData).trim();
+  if (!s) return null;
+  if (s.startsWith("data:")) return s;
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  return s.startsWith("/") ? BASE_URL + s : `${BASE_URL}/${s}`;
+};
+
 const isImg = (s) => {
-  if (!s) return false;
-  const v = String(s).trim();
-  return v.startsWith("data:image/") || v.startsWith("http://") || v.startsWith("https://");
+  return !!getImageUrl(s);
 };
 
 const initials = (name) => {
@@ -494,7 +488,6 @@ const initials = (name) => {
   return last2.map((p) => p[0]?.toUpperCase() || "").join("");
 };
 
-// ✅ CHUYỂN TRẠNG THÁI (có xác nhận)
 const toggleStatus = async (item, e) => {
   const id = item?.id;
   if (!id) return;
@@ -509,7 +502,6 @@ const toggleStatus = async (item, e) => {
 
   if (oldValue === newValue) return;
 
-  // ✅ chưa xác nhận: trả switch về trạng thái cũ
   if (e?.target) e.target.checked = oldValue;
 
   openConfirmTrangThai(item, newValue);
@@ -600,13 +592,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* ===== SevenStrike default wrapper ===== */
 .ss-page { padding: 16px; }
 .ss-font { font-family: inherit; color: rgba(17,24,39,0.82); }
 .ss-title { font-size: 20px; font-weight: 500; color: rgba(17,24,39,0.88); }
 .ss-label { font-size: 13px; font-weight: 400; color: rgba(17,24,39,0.82); }
 
-/* ===== Layout head (nhẹ, không in đậm) ===== */
 .ss-head {
   display: flex;
   align-items: center;
@@ -616,14 +606,12 @@ onMounted(async () => {
 }
 .ss-head-left { display: flex; align-items: center; gap: 10px; }
 
-/* ===== Container ===== */
 .taikhoan-nhanvien-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* ===== Panel ===== */
 .panel {
   background: #fff;
   border-radius: 14px;
@@ -632,7 +620,6 @@ onMounted(async () => {
   box-shadow: 0 18px 50px rgba(17,24,39,0.08);
 }
 
-/* ===== Toolbar ===== */
 .toolbar {
   display: flex;
   justify-content: space-between;
@@ -644,7 +631,6 @@ onMounted(async () => {
 .toolbar-left, .toolbar-right { display: flex; align-items: center; }
 .toolbar-right { gap: 10px; }
 
-/* ✅ Material icon trong button (đồng bộ trang Khách hàng) */
 .btn-mi {
   font-size: 18px;
   line-height: 1;
@@ -654,7 +640,6 @@ onMounted(async () => {
   color: currentColor;
 }
 
-/* ===== Buttons (13px, không in đậm) ===== */
 .btn, .btn-export, .btn-newaccount {
   height: 36px;
   padding: 0 14px;
@@ -672,7 +657,6 @@ onMounted(async () => {
 }
 .btn:hover, .btn-export:hover, .btn-newaccount:hover { background: rgba(17,24,39,0.04); }
 
-/* ✅ ĐẶT LẠI BỘ LỌC: ss-btn-dark */
 .btn-reset{
   background: #4b5563 !important;
   color: #fff !important;
@@ -682,7 +666,6 @@ onMounted(async () => {
   filter: brightness(0.98);
 }
 
-/* ✅ XUẤT EXCEL: ss-btn-lite */
 .btn-export{
   background: #f3f4f6 !important;
   color: rgba(17,24,39,0.88) !important;
@@ -692,7 +675,6 @@ onMounted(async () => {
   background: #eef0f3 !important;
 }
 
-/* ✅ Thêm nhân viên (giữ nguyên) */
 .btn-newaccount{
   border: none !important;
   color:#fff !important;
@@ -705,7 +687,6 @@ onMounted(async () => {
 }
 .btn i, .btn-export i, .btn-newaccount i { font-size: 13px; }
 
-/* ===== Filters ===== */
 .filters-bar {
   display: flex;
   gap: 16px;
@@ -737,7 +718,6 @@ onMounted(async () => {
   border: 1px solid rgba(17,24,39,0.14);
 }
 
-/* ===== Search ===== */
 .search-wrapper { position: relative; display:flex; align-items:center; }
 .search-icon { position:absolute; left:12px; color: rgba(17,24,39,0.40); font-size: 13px; pointer-events:none; }
 .search-input{
@@ -757,7 +737,6 @@ onMounted(async () => {
   box-shadow: 0 0 0 3px rgba(255,77,79,0.10);
 }
 
-/* ===== Table ===== */
 .table-wrapper {
   overflow-x: auto;
   border-radius: 14px;
@@ -789,7 +768,6 @@ onMounted(async () => {
 .text-gray { color: rgba(17,24,39,0.62); }
 .text-dark { color: rgba(17,24,39,0.88); }
 
-/* ===== Avatar ===== */
 .avatar{
   width: 40px; height: 40px;
   border-radius: 12px;
@@ -810,7 +788,6 @@ onMounted(async () => {
   font-size: 13px;
 }
 
-/* ===== Badge (nhẹ) ===== */
 .badge{
   padding: 6px 10px;
   border-radius: 999px;
@@ -838,7 +815,6 @@ onMounted(async () => {
   border: 1px solid rgba(17,24,39,0.14);
 }
 
-/* ===== Pagination ===== */
 .pagination-container{
   display:flex;
   justify-content:center;
@@ -864,7 +840,6 @@ onMounted(async () => {
 .page-btn.active{ background:#111827; color:#fff; border-color:#111827; }
 .page-btn.disabled{ color: rgba(17,24,39,0.25); background:#F9FAFB; cursor:not-allowed; }
 
-/* ✅ Eye icon unified (SevenStrike) */
 .ss-icon-btn-view{
   width:36px; height:36px;
   border-radius:10px;
@@ -886,7 +861,6 @@ onMounted(async () => {
   border-color: rgba(17,24,39,0.22);
 }
 
-/* ===== switch ===== */
 .action-group{
   display: inline-flex;
   align-items: center;
@@ -922,15 +896,11 @@ onMounted(async () => {
   box-shadow: 0 2px 6px rgba(17,24,39,0.12);
 }
 
-/* ✅ ON = ĐỎ (đồng bộ) */
 .switch input:checked + .slider { background-color: #ff4d4f; }
 .switch input:checked + .slider:before { transform: translateX(14px); }
 
 .switch input:disabled + .slider { opacity: 0.6; cursor: not-allowed; }
 
-/* =======================
-   ✅ TOAST (TRANG)
-   ======================= */
 .ss-page-toast {
   position: fixed;
   top: 14px;
@@ -970,9 +940,6 @@ onMounted(async () => {
 }
 .ss-page-toast-x:hover { color: rgba(17, 24, 39, 0.7); }
 
-/* =======================
-   ✅ TOAST XÁC NHẬN
-   ======================= */
 .ss-confirm-toast {
   position: fixed;
   top: 64px;
@@ -1037,7 +1004,6 @@ onMounted(async () => {
 }
 .ss-confirm-ok:hover { filter: brightness(0.98); }
 
-/* Responsive */
 @media (max-width: 900px){
   .search-input{ min-width: 260px; width: 100%; }
   .filters-bar{ gap: 10px; }
