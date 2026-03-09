@@ -150,7 +150,6 @@ const showSuggestions    = ref(true)
 const showAllSuggestions = ref(false)
 const suggestions = [
   'Làm thế nào để đặt hàng?',
-  'Chính sách đổi trả hàng?',
   'Phí vận chuyển là bao nhiêu?',
   'Kiểm tra trạng thái đơn hàng',
   'Có voucher giảm giá không?',
