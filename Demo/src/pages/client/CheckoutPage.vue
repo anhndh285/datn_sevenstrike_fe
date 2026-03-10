@@ -129,8 +129,11 @@
               <span>Tiết kiệm (đợt giảm giá)</span>
               <span>-{{ formatPrice(campaignSavings) }}</span>
             </div>
-             <div class="d-flex justify-content-between mb-2 text-secondary">
-              <span>Phí vận chuyển</span>
+            <div class="d-flex justify-content-between mb-2 text-secondary">
+              <span class="d-flex align-items-center gap-2">
+                Phí vận chuyển
+                <img src="@/assets/images/logo/Logo_GHN.webp" height="16" alt="GHN" style="opacity: 0.7;">
+              </span>
               <span class="fw-bold text-dark">{{ formatPrice(shippingFee) }}</span>
             </div>
             <div v-if="discountAmount > 0" class="d-flex justify-content-between mb-2 text-success fw-bold">
@@ -205,7 +208,7 @@
                     :key="v.id"
                     class="d-flex align-items-center justify-content-between p-3 rounded-3 border cursor-pointer hover-bg-light position-relative overflow-hidden"
                     :class="{'border-danger bg-danger-subtle': tempSelectedVoucher && tempSelectedVoucher.id === v.id, 'opacity-50 grayscale': itemsPrice < v.hoaDonToiThieu}"
-                    @click="tempSelectedVoucher = v"
+                    @click="itemsPrice >= v.hoaDonToiThieu && (tempSelectedVoucher = v)"
                   >
                      <!-- Ticket Edge Effect (Optional css) -->
                     <div>
@@ -213,6 +216,9 @@
                       <div class="small text-secondary">{{ v.tenPhieuGiamGia }}</div>
                       <small class="text-danger fw-bold" style="font-size: 11px;">Giảm {{ v.giaTriGiamGia ? Number(v.giaTriGiamGia) + '%' : formatPrice(v.soTienGiamToiDa) }}</small>
                       <div class="small text-muted" style="font-size: 10px;">Đơn tối thiểu: {{ formatPrice(v.hoaDonToiThieu) }}</div>
+                      <div v-if="getBestVoucher() && getBestVoucher().id === v.id" class="small text-success fw-bold mt-1" style="font-size: 11px;">
+                        <i class="bi bi-star-fill me-1"></i>Phiếu giảm giá tốt nhất
+                      </div>
                     </div>
                     <div v-if="tempSelectedVoucher && tempSelectedVoucher.id === v.id">
                         <span class="material-icons text-danger">check_circle</span>
@@ -240,7 +246,6 @@ import { useRouter } from 'vue-router';
 import { useCart } from '@/services/cart';
 import { useClientAuth } from '@/services/authClient';
 import apiClient from '@/services/apiClient';
-import vnAddressService from '@/services/vnAddressService';
 import Swal from 'sweetalert2';
 
 const { cart, clearCart } = useCart();
@@ -280,9 +285,24 @@ const addressCodes = reactive({
 
 const loadProvinces = async () => {
     try {
-        provinces.value = await vnAddressService.getProvinces();
+        const res = await apiClient.get('/api/client/ghn/tinh-thanh');
+        provinces.value = (res.data || []).map(p => ({ code: p.provinceId, name: p.provinceName }));
     } catch (e) {
-        console.error("Lỗi tải tỉnh thành", e);
+        console.error("Lỗi tải tỉnh thành GHN", e);
+    }
+};
+
+const updateShippingFee = async () => {
+    if (!addressCodes.district || !addressCodes.ward) return;
+    try {
+        const res = await apiClient.post('/api/client/ghn/tinh-phi-van-chuyen', {
+            toDistrictId: addressCodes.district,
+            toWardCode: String(addressCodes.ward),
+            tongGiaTriHang: Math.round(itemsPrice.value)
+        });
+        shippingFee.value = res.data.total || res.data.phiVanChuyen || 0;
+    } catch (e) {
+        shippingFee.value = 0; // fallback nếu GHN lỗi
     }
 };
 
@@ -291,33 +311,46 @@ const onCityChange = async () => {
     addressCodes.ward = "";
     districts.value = [];
     wards.value = [];
-    
+    shippingFee.value = 0;
+
     const p = provinces.value.find(x => x.code == addressCodes.city);
     address.city = p ? p.name : "";
     address.district = "";
     address.ward = "";
 
     if (addressCodes.city) {
-        districts.value = await vnAddressService.getDistricts(addressCodes.city);
+        try {
+            const res = await apiClient.get(`/api/client/ghn/quan-huyen/${addressCodes.city}`);
+            districts.value = (res.data || []).map(d => ({ code: d.districtId, name: d.districtName }));
+        } catch (e) {
+            console.error("Lỗi tải quận huyện GHN", e);
+        }
     }
 };
 
 const onDistrictChange = async () => {
     addressCodes.ward = "";
     wards.value = [];
+    shippingFee.value = 0;
 
     const d = districts.value.find(x => x.code == addressCodes.district);
     address.district = d ? d.name : "";
     address.ward = "";
 
     if (addressCodes.district) {
-        wards.value = await vnAddressService.getWards(addressCodes.district);
+        try {
+            const res = await apiClient.get(`/api/client/ghn/phuong-xa/${addressCodes.district}`);
+            wards.value = (res.data || []).map(w => ({ code: w.wardCode, name: w.wardName }));
+        } catch (e) {
+            console.error("Lỗi tải phường xã GHN", e);
+        }
     }
 };
 
-const onWardChange = () => {
+const onWardChange = async () => {
     const w = wards.value.find(x => x.code == addressCodes.ward);
     address.ward = w ? w.name : "";
+    await updateShippingFee();
 };
 // --- Saved Address Selection ---
 const fillAddressFromSaved = async (addr) => {
@@ -329,20 +362,27 @@ const fillAddressFromSaved = async (addr) => {
     if (matchedProvince) {
         addressCodes.city = matchedProvince.code;
         address.city = matchedProvince.name;
-        districts.value = await vnAddressService.getDistricts(matchedProvince.code);
+        try {
+            const res = await apiClient.get(`/api/client/ghn/quan-huyen/${matchedProvince.code}`);
+            districts.value = (res.data || []).map(d => ({ code: d.districtId, name: d.districtName }));
+        } catch (e) { districts.value = []; }
 
         // Match district by name
         const matchedDistrict = districts.value.find(d => d.name === addr.quan);
         if (matchedDistrict) {
             addressCodes.district = matchedDistrict.code;
             address.district = matchedDistrict.name;
-            wards.value = await vnAddressService.getWards(matchedDistrict.code);
+            try {
+                const res = await apiClient.get(`/api/client/ghn/phuong-xa/${matchedDistrict.code}`);
+                wards.value = (res.data || []).map(w => ({ code: w.wardCode, name: w.wardName }));
+            } catch (e) { wards.value = []; }
 
             // Match ward by name
             const matchedWard = wards.value.find(w => w.name === addr.phuong);
             if (matchedWard) {
                 addressCodes.ward = matchedWard.code;
                 address.ward = matchedWard.name;
+                await updateShippingFee();
             }
         }
     }
@@ -383,7 +423,7 @@ const campaignSavings = computed(() =>
   }, 0)
 );
 
-const shippingFee = ref(40000); // Fixed or calculated
+const shippingFee = ref(0); // 0 khi chưa chọn địa chỉ; tính từ GHN API khi chọn xong phường/xã
 
 const discountAmount = computed(() => {
   if (!selectedVoucher.value) return 0;
@@ -420,6 +460,35 @@ const fetchVouchers = async () => {
     }
 };
 
+const getBestVoucher = () => {
+    const eligible = vouchers.value.filter(v => itemsPrice.value >= v.hoaDonToiThieu);
+    
+    if (eligible.length === 0) return null;
+    
+    return eligible.reduce((best, current) => {
+        let bestDiscount = 0;
+        let currentDiscount = 0;
+        
+        // Calculate discount for best voucher
+        if (best.giaTriGiamGia && best.giaTriGiamGia > 0) {
+            bestDiscount = itemsPrice.value * (best.giaTriGiamGia / 100);
+            if (bestDiscount > best.soTienGiamToiDa) bestDiscount = best.soTienGiamToiDa;
+        } else {
+            bestDiscount = best.soTienGiamToiDa;
+        }
+        
+        // Calculate discount for current voucher
+        if (current.giaTriGiamGia && current.giaTriGiamGia > 0) {
+            currentDiscount = itemsPrice.value * (current.giaTriGiamGia / 100);
+            if (currentDiscount > current.soTienGiamToiDa) currentDiscount = current.soTienGiamToiDa;
+        } else {
+            currentDiscount = current.soTienGiamToiDa;
+        }
+        
+        return currentDiscount > bestDiscount ? current : best;
+    });
+};
+
 const applyVoucher = () => {
     if (tempSelectedVoucher.value) {
          if (itemsPrice.value < tempSelectedVoucher.value.hoaDonToiThieu) {
@@ -427,12 +496,28 @@ const applyVoucher = () => {
             return;
         }
         selectedVoucher.value = tempSelectedVoucher.value;
+    } else {
+        // If no voucher selected, apply the best one automatically
+        const best = getBestVoucher();
+        if (best) {
+            selectedVoucher.value = best;
+        }
     }
 };
 
 onMounted(async () => {
   fetchVouchers();
   await loadProvinces();
+  
+  // Auto-select best voucher when page loads
+  setTimeout(() => {
+    const best = getBestVoucher();
+    if (best) {
+      selectedVoucher.value = best;
+      tempSelectedVoucher.value = best;
+    }
+  }, 500);
+  
   if (isLoggedIn.value && customer.value) {
     form.tenKhachHang = customer.value.hoTen || '';
     form.email = customer.value.email || '';
@@ -477,7 +562,9 @@ const submitOrder = async () => {
                 idChiTietSanPham: item.variantId,
                 soLuong: item.quantity
             })),
-            phuongThucThanhToan: paymentMethod.value // e.g. "COD" or "VNPAY"
+            loaiThanhToan: paymentMethod.value === 'VNPAY' ? 1 : 0,  // 0=COD, 1=VNPay/Banking
+            ghnToDistrictId: addressCodes.district || null,
+            ghnToWardCode: addressCodes.ward ? String(addressCodes.ward) : null
         };
         
         // Assume backend creates order and returns Order Object (id, total, etc)
