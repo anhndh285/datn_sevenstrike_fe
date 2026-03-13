@@ -214,6 +214,68 @@
           </table>
         </div>
       </div>
+
+      <!-- INVENTORY STATUS -->
+<div class="row mt-4">
+  <div class="col-md-12">
+    <div class="card p-3">
+      <h6>
+  Thống kê tồn kho Quý {{ quarterInfo.quarter }}
+  <br>
+  <small class="text-muted">
+    (Từ {{ quarterInfo.from }} → {{ quarterInfo.to }})
+  </small>
+</h6>
+
+      <table class="table table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>Sản phẩm</th>
+            <th>Nhập</th>
+            <th>Bán</th>
+            <th>Tỷ lệ bán</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+
+        <tbody>
+  <tr v-for="(item, index) in inventoryStatus" :key="index">
+    <td>{{ item.productName }}</td>
+
+    <td>{{ item.importQuarter }}</td>
+
+    <td>{{ item.soldQuarter }}</td>
+
+    <td>{{ item.sellRate }}%</td>
+
+    <td>
+      <span
+        v-if="item.sellRate < 40"
+        class="badge bg-danger"
+      >
+        🔴 Tồn kho nhiều
+      </span>
+
+      <span
+        v-else-if="item.sellRate < 60"
+        class="badge bg-warning"
+      >
+        🟡 Bình thường
+      </span>
+
+      <span
+        v-else
+        class="badge bg-success"
+      >
+        🟢 Bán chạy
+      </span>
+    </td>
+  </tr>
+</tbody>
+      </table>
+    </div>
+  </div>
+</div>
     </div>
   </div>
 
@@ -280,6 +342,40 @@ const chartType = ref("line");
 const sendReport = () => {
   reportType.value = "";
   showReportModal.value = true;
+};
+
+const quarterInfo = computed(() => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+
+  let quarter = Math.ceil(month / 3);
+
+  let startMonth = (quarter - 1) * 3;
+  let endMonth = startMonth + 2;
+
+  const startDate = new Date(year, startMonth, 1);
+  const endDate = new Date(year, endMonth + 1, 0);
+
+  return {
+    quarter,
+    from: formatDate(startDate),
+    to: formatDate(endDate)
+  };
+});
+
+const inventoryStatus = ref([]);
+
+const loadInventoryStatus = async () => {
+  try {
+    const inventoryRes = await axios.get(
+      "http://localhost:8080/api/statistic/product-inventory-status"
+    );
+
+    inventoryStatus.value = inventoryRes.data || [];
+  } catch (error) {
+    console.error("Lỗi load tồn kho:", error);
+  }
 };
 
 const confirmSendReport = async () => {
@@ -436,9 +532,12 @@ const loadStatistics = async () => {
   }
 };
 
-watch([filterType, fromDate, toDate, today], loadStatistics);
+watch([filterType, fromDate, toDate], loadStatistics);
 
-onMounted(loadStatistics);
+onMounted(() => {
+  loadStatistics();
+  loadInventoryStatus();
+});
 </script>
 
 <style scoped>
