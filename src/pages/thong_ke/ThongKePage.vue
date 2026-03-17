@@ -195,6 +195,7 @@
             <thead>
               <tr>
                 <th>STT</th>
+                <th>Mã CTSP</th>
                 <th>Tên sản phẩm</th>
                 <th>Giá</th>
                 <th>Số lượng bán</th>
@@ -204,10 +205,15 @@
             <tbody>
               <tr v-for="(item, index) in topProducts" :key="index">
                 <td>{{ index + 1 }}</td>
+
+                <td>{{ item.productDetailCode }}</td>
+
                 <td>{{ item.productName }}</td>
+
                 <td class="text-success">
                   {{ formatMoney(item.price) }}
                 </td>
+
                 <td>{{ item.quantity }}</td>
               </tr>
             </tbody>
@@ -220,39 +226,42 @@
         <div class="col-md-12">
           <div class="card p-3">
             <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6>Thống kê tồn kho Quý {{ quarterInfo.quarter }}</h6>
+                <small class="text-muted">
+                  (Từ {{ quarterInfo.from }} → {{ quarterInfo.to }})
+                </small>
+              </div>
 
-    <div>
-      <h6>
-        Thống kê tồn kho Quý {{ quarterInfo.quarter }}
-      </h6>
-      <small class="text-muted">
-        (Từ {{ quarterInfo.from }} → {{ quarterInfo.to }})
-      </small>
-    </div>
+              <!-- FILTER -->
+              <div class="d-flex gap-2">
+                <select
+                  v-model="brandFilter"
+                  class="form-select form-select-sm"
+                >
+                  <option value="">Thương hiệu</option>
+                  <option v-for="b in brands" :key="b">{{ b }}</option>
+                </select>
 
-    <!-- FILTER -->
-    <div class="d-flex gap-2">
+                <select
+                  v-model="surfaceFilter"
+                  class="form-select form-select-sm"
+                >
+                  <option value="">Loại sân</option>
+                  <option v-for="s in surfaces" :key="s">{{ s }}</option>
+                </select>
 
-      <select v-model="brandFilter" class="form-select form-select-sm">
-        <option value="">Thương hiệu</option>
-        <option v-for="b in brands" :key="b">{{ b }}</option>
-      </select>
-
-      <select v-model="surfaceFilter" class="form-select form-select-sm">
-        <option value="">Loại sân</option>
-        <option v-for="s in surfaces" :key="s">{{ s }}</option>
-      </select>
-
-      <select v-model="statusFilter" class="form-select form-select-sm">
-        <option value="">Trạng thái</option>
-        <option value="TON_KHO">Tồn kho nhiều</option>
-        <option value="BAN_ON">Bán ổn</option>
-        <option value="BAN_CHAY">Bán chạy</option>
-      </select>
-
-    </div>
-
-  </div>
+                <select
+                  v-model="statusFilter"
+                  class="form-select form-select-sm"
+                >
+                  <option value="">Trạng thái</option>
+                  <option value="TON_KHO">Tồn kho nhiều</option>
+                  <option value="BAN_ON">Bán ổn</option>
+                  <option value="BAN_CHAY">Bán chạy</option>
+                </select>
+              </div>
+            </div>
 
             <table class="table table-bordered mt-3">
               <thead>
@@ -266,13 +275,14 @@
                   <th>Giá</th>
                   <th>Nhập</th>
                   <th>Bán</th>
+                  <th>Tồn kho</th>
                   <th>Tỷ lệ bán</th>
                   <th>Trạng thái</th>
                 </tr>
               </thead>
 
               <tbody>
-               <tr v-for="(item, index) in filteredInventory" :key="index">
+                <tr v-for="(item, index) in filteredInventory" :key="index">
                   <td>{{ item.productCode }}</td>
 
                   <td>{{ item.productDetailCode }}</td>
@@ -299,28 +309,33 @@
 
                   <td>{{ item.soldQuarter }}</td>
 
+                  <td>{{ item.stockQuantity }}</td>
+
                   <td>{{ item.sellRate }}%</td>
 
                   <td>
-                    <span v-if="item.importQuarter == 0" class="badge bg-dark">
-                      ⚫ Hết hàng
+                    <span
+                      v-if="item.importQuarter == 0"
+                      class="badge status-out"
+                    >
+                      Hết hàng
                     </span>
 
                     <span
                       v-else-if="item.sellRate < 30"
-                      class="badge bg-danger"
+                      class="badge status-stock"
                     >
-                      🔴 Tồn kho nhiều
+                      Tồn kho nhiều
                     </span>
 
                     <span
                       v-else-if="item.sellRate < 70"
-                      class="badge bg-warning"
+                      class="badge status-normal"
                     >
-                      🟡 Bán ổn
+                      Bán ổn
                     </span>
 
-                    <span v-else class="badge bg-success"> 🟢 Bán chạy </span>
+                    <span v-else class="badge status-hot"> Bán chạy </span>
                   </td>
                 </tr>
               </tbody>
@@ -418,14 +433,12 @@ const quarterInfo = computed(() => {
 
 const inventoryStatus = ref([]);
 
-const brandFilter = ref("")
-const surfaceFilter = ref("")
-const statusFilter = ref("")
+const brandFilter = ref("");
+const surfaceFilter = ref("");
+const statusFilter = ref("");
 
-const brands = ref([])
-const surfaces = ref([])
-
-
+const brands = ref([]);
+const surfaces = ref([]);
 
 const loadInventoryStatus = async () => {
   try {
@@ -437,44 +450,36 @@ const loadInventoryStatus = async () => {
 
     // lấy danh sách thương hiệu
     brands.value = [
-      ...new Set(inventoryStatus.value.map(i => i.productName.split(" ")[0]))
-    ]
+      ...new Set(inventoryStatus.value.map((i) => i.productName.split(" ")[0])),
+    ];
 
     // lấy danh sách loại sân
-    surfaces.value = [
-      ...new Set(inventoryStatus.value.map(i => i.surface))
-    ]
-
+    surfaces.value = [...new Set(inventoryStatus.value.map((i) => i.surface))];
   } catch (error) {
     console.error("Lỗi load tồn kho:", error);
   }
 };
 
 const filteredInventory = computed(() => {
-  return inventoryStatus.value.filter(item => {
-
+  return inventoryStatus.value.filter((item) => {
     const brandMatch =
-      !brandFilter.value ||
-      item.productName.includes(brandFilter.value)
+      !brandFilter.value || item.productName.includes(brandFilter.value);
 
     const surfaceMatch =
-      !surfaceFilter.value ||
-      item.surface === surfaceFilter.value
+      !surfaceFilter.value || item.surface === surfaceFilter.value;
 
-    let status = ""
+    let status = "";
 
-    if (item.importQuarter == 0) status = "HET_HANG"
-    else if (item.sellRate < 30) status = "TON_KHO"
-    else if (item.sellRate < 70) status = "BAN_ON"
-    else status = "BAN_CHAY"
+    if (item.importQuarter == 0) status = "HET_HANG";
+    else if (item.sellRate < 30) status = "TON_KHO";
+    else if (item.sellRate < 70) status = "BAN_ON";
+    else status = "BAN_CHAY";
 
-    const statusMatch =
-      !statusFilter.value ||
-      status === statusFilter.value
+    const statusMatch = !statusFilter.value || status === statusFilter.value;
 
-    return brandMatch && surfaceMatch && statusMatch
-  })
-})
+    return brandMatch && surfaceMatch && statusMatch;
+  });
+});
 
 const confirmSendReport = async () => {
   const type = reportType.value;
@@ -751,5 +756,33 @@ onMounted(() => {
 .form-select-sm {
   width: 150px;
   font-size: 13px;
+}
+.status-out {
+  background: #6c757d;
+  color: white;
+}
+
+.status-stock {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.status-normal {
+  background: #fff3cd;
+  color: #664d03;
+}
+
+.status-hot {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+.status-out,
+.status-stock,
+.status-normal,
+.status-hot {
+  font-size: 14px;       /* tăng chữ */
+  padding: 6px 12px;     /* badge to hơn */
+  font-weight: 600;      /* chữ đậm hơn */
+  border-radius: 6px;
 }
 </style>
