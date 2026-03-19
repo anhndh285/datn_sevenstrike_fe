@@ -1,7 +1,13 @@
 <!-- File: src/pages/thong_ke/ThongKePage.vue -->
 <template>
   <div class="thong-ke-page container-fluid p-4">
-    <h4 class="title mb-2">BÁO CÁO THỐNG KÊ KINH DOANH</h4>
+    <div class="header-bar mb-2">
+      <h4 class="title">BÁO CÁO THỐNG KÊ KINH DOANH</h4>
+
+      <button class="btn btn-success btn-sm" @click="sendReport">
+        Gửi báo cáo
+      </button>
+    </div>
 
     <!-- Badge trạng thái -->
     <div class="mb-3">
@@ -208,6 +214,150 @@
           </table>
         </div>
       </div>
+
+      <!-- INVENTORY STATUS -->
+      <div class="row mt-4">
+        <div class="col-md-12">
+          <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-center">
+
+    <div>
+      <h6>
+        Thống kê tồn kho Quý {{ quarterInfo.quarter }}
+      </h6>
+      <small class="text-muted">
+        (Từ {{ quarterInfo.from }} → {{ quarterInfo.to }})
+      </small>
+    </div>
+
+    <!-- FILTER -->
+    <div class="d-flex gap-2">
+
+      <select v-model="brandFilter" class="form-select form-select-sm">
+        <option value="">Thương hiệu</option>
+        <option v-for="b in brands" :key="b">{{ b }}</option>
+      </select>
+
+      <select v-model="surfaceFilter" class="form-select form-select-sm">
+        <option value="">Loại sân</option>
+        <option v-for="s in surfaces" :key="s">{{ s }}</option>
+      </select>
+
+      <select v-model="statusFilter" class="form-select form-select-sm">
+        <option value="">Trạng thái</option>
+        <option value="TON_KHO">Tồn kho nhiều</option>
+        <option value="BAN_ON">Bán ổn</option>
+        <option value="BAN_CHAY">Bán chạy</option>
+      </select>
+
+    </div>
+
+  </div>
+
+            <table class="table table-bordered mt-3">
+              <thead>
+                <tr>
+                  <th>Mã SP</th>
+                  <th>Mã CTSP</th>
+                  <th>Tên SP</th>
+                  <th>Màu sắc</th>
+                  <th>Kích cỡ</th>
+                  <th>Loại sân</th>
+                  <th>Giá</th>
+                  <th>Nhập</th>
+                  <th>Bán</th>
+                  <th>Tỷ lệ bán</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+
+              <tbody>
+               <tr v-for="(item, index) in filteredInventory" :key="index">
+                  <td>{{ item.productCode }}</td>
+
+                  <td>{{ item.productDetailCode }}</td>
+
+                  <td>{{ item.productName }}</td>
+
+                  <td>
+                    {{ item.color }}
+                  </td>
+
+                  <td>
+                    {{ item.size }}
+                  </td>
+
+                  <td>
+                    {{ item.surface }}
+                  </td>
+
+                  <td>
+                    {{ formatMoney(item.price) }}
+                  </td>
+
+                  <td>{{ item.importQuarter }}</td>
+
+                  <td>{{ item.soldQuarter }}</td>
+
+                  <td>{{ item.sellRate }}%</td>
+
+                  <td>
+                    <span v-if="item.importQuarter == 0" class="badge bg-dark">
+                      ⚫ Hết hàng
+                    </span>
+
+                    <span
+                      v-else-if="item.sellRate < 30"
+                      class="badge bg-danger"
+                    >
+                      🔴 Tồn kho nhiều
+                    </span>
+
+                    <span
+                      v-else-if="item.sellRate < 70"
+                      class="badge bg-warning"
+                    >
+                      🟡 Bán ổn
+                    </span>
+
+                    <span v-else class="badge bg-success"> 🟢 Bán chạy </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT MODAL -->
+  <div v-if="showReportModal" class="report-modal">
+    <div class="report-modal-content">
+      <h5>Chọn loại báo cáo</h5>
+
+      <select class="form-select mt-3" v-model="reportType">
+        <option disabled value="">-- Chọn loại báo cáo --</option>
+        <option value="DAY">Hôm nay</option>
+        <option value="WEEK">Tuần</option>
+        <option value="MONTH">Tháng</option>
+        <option value="QUARTER">Quý</option>
+        <option value="YEAR">Năm</option>
+      </select>
+
+      <div class="mt-4 text-end">
+        <button class="btn btn-secondary me-2" @click="showReportModal = false">
+          Hủy
+        </button>
+
+        <button
+          v-if="reportType"
+          class="btn btn-success"
+          @click="confirmSendReport"
+        >
+          Xác nhận gửi
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -221,6 +371,9 @@ import OrderStatusChart from "./OrderStatusChart.vue";
 const totalOrders = ref(0);
 const totalRevenue = ref(0);
 const realRevenue = ref(0);
+
+const showReportModal = ref(false);
+const reportType = ref("");
 
 const revenueChart = ref([]);
 const orderStatus = ref([]);
@@ -237,6 +390,112 @@ const today = ref(new Date());
 const expectedRevenue = ref(0);
 
 const chartType = ref("line");
+
+const sendReport = () => {
+  reportType.value = "";
+  showReportModal.value = true;
+};
+
+const quarterInfo = computed(() => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+
+  let quarter = Math.ceil(month / 3);
+
+  let startMonth = (quarter - 1) * 3;
+  let endMonth = startMonth + 2;
+
+  const startDate = new Date(year, startMonth, 1);
+  const endDate = new Date(year, endMonth + 1, 0);
+
+  return {
+    quarter,
+    from: formatDate(startDate),
+    to: formatDate(endDate),
+  };
+});
+
+const inventoryStatus = ref([]);
+
+const brandFilter = ref("")
+const surfaceFilter = ref("")
+const statusFilter = ref("")
+
+const brands = ref([])
+const surfaces = ref([])
+
+
+
+const loadInventoryStatus = async () => {
+  try {
+    const inventoryRes = await axios.get(
+      "http://localhost:8080/api/statistic/product-inventory-status",
+    );
+
+    inventoryStatus.value = inventoryRes.data || [];
+
+    // lấy danh sách thương hiệu
+    brands.value = [
+      ...new Set(inventoryStatus.value.map(i => i.productName.split(" ")[0]))
+    ]
+
+    // lấy danh sách loại sân
+    surfaces.value = [
+      ...new Set(inventoryStatus.value.map(i => i.surface))
+    ]
+
+  } catch (error) {
+    console.error("Lỗi load tồn kho:", error);
+  }
+};
+
+const filteredInventory = computed(() => {
+  return inventoryStatus.value.filter(item => {
+
+    const brandMatch =
+      !brandFilter.value ||
+      item.productName.includes(brandFilter.value)
+
+    const surfaceMatch =
+      !surfaceFilter.value ||
+      item.surface === surfaceFilter.value
+
+    let status = ""
+
+    if (item.importQuarter == 0) status = "HET_HANG"
+    else if (item.sellRate < 30) status = "TON_KHO"
+    else if (item.sellRate < 70) status = "BAN_ON"
+    else status = "BAN_CHAY"
+
+    const statusMatch =
+      !statusFilter.value ||
+      status === statusFilter.value
+
+    return brandMatch && surfaceMatch && statusMatch
+  })
+})
+
+const confirmSendReport = async () => {
+  const type = reportType.value;
+
+  // đóng modal ngay
+  showReportModal.value = false;
+
+  // reset select để lần sau mở lại
+  reportType.value = "";
+
+  try {
+    await axios.post("http://localhost:8080/api/statistic/send-report", {
+      type,
+    });
+
+    alert("Đã gửi báo cáo cho ADMIN");
+  } catch (error) {
+    console.error(error);
+    alert("Gửi báo cáo thất bại");
+  }
+};
 
 setInterval(() => {
   today.value = new Date();
@@ -364,9 +623,12 @@ const loadStatistics = async () => {
   }
 };
 
-watch([filterType, fromDate, toDate, today], loadStatistics);
+watch([filterType, fromDate, toDate], loadStatistics);
 
-onMounted(loadStatistics);
+onMounted(() => {
+  loadStatistics();
+  loadInventoryStatus();
+});
 </script>
 
 <style scoped>
@@ -461,5 +723,33 @@ onMounted(loadStatistics);
   .mini-card {
     margin-bottom: 10px;
   }
+}
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.report-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.report-modal-content {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  width: 350px;
+}
+.form-select-sm {
+  width: 150px;
+  font-size: 13px;
 }
 </style>

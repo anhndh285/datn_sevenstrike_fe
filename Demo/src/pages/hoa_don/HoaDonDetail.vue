@@ -877,7 +877,7 @@ const loaiDonText = computed(() => {
   const type = selectedHD.value?.loaiDon;
   if (type === 1 || type === "1" || type === true) return "Giao hàng";
   if (type === 0 || type === "0" || type === false) return "Tại quầy";
-  return "Không xác định";
+  return "Online";
 });
 
 const isTaiQuay = computed(() => {
