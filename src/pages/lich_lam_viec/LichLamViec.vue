@@ -1,3 +1,4 @@
+<!-- File: src/pages/lich_lam_viec/LichLamViec.vue -->
 <template>
   <div class="lich-page">
     <div class="header-section">
@@ -12,19 +13,16 @@
       </div>
 
       <div class="toolbar-body">
-        <button v-if="hasPermission" class="btn-add" @click="openModal(null)">
-          <i class="fa-solid fa-plus"></i> Thêm mới lịch làm việc
-        </button>
-
         <div class="filters-bar">
-          <div class="form-group">
+          <div class="form-group row-layout">
             <label>Nhân viên <span class="req">*</span></label>
+
             <div class="combobox-wrapper">
               <input
+                v-model="searchNv"
                 type="text"
                 class="form-control"
-                placeholder="Nhập tên hoặc mã nhân viên..."
-                v-model="searchNv"
+                placeholder="Tìm kiếm nhân viên..."
                 @focus="showNvDropdown = true"
                 @blur="handleBlurNv"
                 @input="
@@ -37,7 +35,7 @@
                   v-for="nv in filteredNhanVienList"
                   :key="nv.id"
                   @click="selectNhanVien(nv)"
-                  :class="{ active: nv.id === form.idNhanVien }"
+                  :class="{ active: nv.id === filterNv }"
                 >
                   <span class="fw-bold">{{ nv.tenNhanVien }}</span>
                   <small v-if="nv.maNhanVien"> - {{ nv.maNhanVien }}</small>
@@ -54,8 +52,30 @@
             <input type="date" v-model="filterDate" class="form-control" />
           </div>
         </div>
+
+        <div class="toolbar-actions" v-if="hasPermission">
+          <button class="btn-template" type="button" @click="downloadTemplate">
+            <i class="fa-solid fa-file-arrow-down"></i> Tải template
+          </button>
+
+          <button class="btn-import" type="button" @click="openExcelModal">
+            <i class="fa-solid fa-upload"></i> Import Excel
+          </button>
+
+          <button class="btn-add" type="button" @click="openModal(null)">
+            <i class="fa-solid fa-plus"></i> Thêm mới lịch làm việc
+          </button>
+        </div>
       </div>
     </div>
+
+    <ImportExcelModal
+      ref="excelModalRef"
+      :listNhanVien="listNhanVien"
+      :listCa="listCa"
+      @close="closeExcelModal"
+      @import-success="loadData"
+    />
 
     <div class="card-box mt-20">
       <div class="table-header-row">
@@ -99,6 +119,7 @@
           <thead>
             <tr>
               <th>STT</th>
+              <th>MÃ NHÂN VIÊN</th>
               <th>NHÂN VIÊN</th>
               <th>CA LÀM</th>
               <th>THỜI GIAN</th>
@@ -109,6 +130,7 @@
           <tbody>
             <tr v-for="(l, index) in filterLichList" :key="l.id">
               <td>{{ index + 1 }}</td>
+              <td>{{ l.maNhanVien }}</td>
               <td>{{ l.tenNhanVien }}</td>
               <td>{{ l.tenCa }}</td>
               <td>
@@ -136,7 +158,7 @@
               </td>
             </tr>
             <tr v-if="filterLichList.length === 0">
-              <td colspan="5" class="text-center">Không có dữ liệu</td>
+              <td colspan="7" class="text-center">Không có dữ liệu</td>
             </tr>
           </tbody>
         </table>
@@ -160,20 +182,29 @@
           </div>
 
           <div class="nav-right">
-            <button
-              class="btn-month"
-              :class="{ active: viewMode === 'week' }"
-              @click="viewMode = 'week'"
-            >
-              Tuần
-            </button>
-            <button
-              class="btn-month"
-              :class="{ active: viewMode === 'calendar' }"
-              @click="viewMode = 'calendar'"
-            >
-              Tháng
-            </button>
+            <div class="btn-toggle-group">
+              <button
+                class="btn-toggle"
+                :class="{ active: viewMode === 'day' }"
+                @click="viewMode = 'day'"
+              >
+                Ngày
+              </button>
+              <button
+                class="btn-toggle"
+                :class="{ active: viewMode === 'week' }"
+                @click="viewMode = 'week'"
+              >
+                Tuần
+              </button>
+              <button
+                class="btn-toggle"
+                :class="{ active: viewMode === 'calendar' }"
+                @click="viewMode = 'calendar'"
+              >
+                Tháng
+              </button>
+            </div>
           </div>
         </div>
 
@@ -203,7 +234,7 @@
             <div class="cal-date-num">{{ day }}</div>
             <div class="cal-events-container">
               <div
-                v-for="nv in getEventsForDay(day)"
+                v-for="nv in getEventsForDayGrouped(day)"
                 :key="nv.id"
                 class="event-item"
                 @click="openModal(nv)"
@@ -245,7 +276,11 @@
 
             <div class="cal-events-container">
               <div
-                v-for="nv in getEventsForSpecificDay(wd.day, wd.month, wd.year)"
+                v-for="nv in getEventsForSpecificDayGrouped(
+                  wd.day,
+                  wd.month,
+                  wd.year,
+                )"
                 :key="nv.id"
                 class="event-item"
                 @click="openModal(nv)"
@@ -274,11 +309,90 @@
             </div>
           </div>
         </div>
+
+        <div v-else-if="viewMode === 'day'" class="matrix-view day-matrix">
+          <div class="matrix-header">
+            <div class="matrix-cell-header shift-col">CA LÀM VIỆC</div>
+            <div
+              class="matrix-cell-header day-col flex-1"
+              :class="{ 'is-today': isTodayDate(currentDate) }"
+            >
+              <div class="day-name">{{ getDayName(currentDate) }}</div>
+              <div class="day-date">{{ formatDateFull(currentDate) }}</div>
+            </div>
+          </div>
+
+          <div class="matrix-body">
+            <div v-for="ca in listCa" :key="ca.id" class="matrix-row">
+              <div class="matrix-cell shift-col">
+                <div class="shift-name">{{ ca.tenCa }}</div>
+                <div class="shift-time">
+                  {{ formatTime(ca.gioBatDau) }} -
+                  {{ formatTime(ca.gioKetThuc) }}
+                </div>
+              </div>
+
+              <div
+                class="matrix-cell day-col flex-1"
+                :class="{ 'is-today': isTodayDate(currentDate) }"
+              >
+                <div
+                  v-if="
+                    hasPermission &&
+                    getEventsForShiftAndDate(ca.id, currentDate).length === 0
+                  "
+                  class="add-full-btn"
+                  @click="openModalVoiNgayCa(currentDate, ca.id)"
+                >
+                  + Bấm vào đây để thêm nhân viên vào ca này
+                </div>
+                <div v-else class="employee-cards row-dir">
+                  <button
+                    v-if="hasPermission"
+                    class="btn-add-mini inline"
+                    @click="openModalVoiNgayCa(currentDate, ca.id)"
+                  >
+                    <i class="fa-solid fa-plus"></i>
+                  </button>
+                  <div
+                    v-for="nv in getEventsForShiftAndDate(ca.id, currentDate)"
+                    :key="nv.id"
+                    class="employee-card large"
+                    :class="['border-color-4']"
+                    @click="openModal(nv)"
+                  >
+                    <div class="avatar-circle">
+                      <img
+                        v-if="isImg(nv.nhanVien?.anhNhanVien)"
+                        :src="nv.nhanVien?.anhNhanVien"
+                      />
+                      <span v-else class="initial">
+                        {{
+                          getAvatarLabel(
+                            nv.tenNhanVien || nv.nhanVien?.tenTaiKhoan,
+                          )
+                        }}
+                      </span>
+                    </div>
+                    <div class="emp-info">
+                      <div class="emp-name">
+                        {{ nv.tenNhanVien || nv.nhanVien?.tenTaiKhoan }}
+                      </div>
+                      <div class="emp-id">
+                        {{ nv.nhanVien?.maNhanVien || nv.maNhanVien }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div v-if="showModal" class="modal-overlay">
-      <div class="modal-content">
+      <div class="modal-content form-modal">
         <div class="modal-header">
           <h3>{{ isEditing ? "Cập Nhật Lịch Làm Việc" : "Thêm Mới Lịch" }}</h3>
           <button @click="closeModal" class="btn-close"></button>
@@ -364,27 +478,47 @@
 
           <div class="form-group">
             <label>Ca làm việc <span class="req">*</span></label>
+
+            <div class="selected-tags" v-if="selectedCas.length > 0">
+              <div
+                v-for="(ca, index) in selectedCas"
+                :key="ca.id"
+                class="tag-item"
+              >
+                <span>{{ ca.tenCa }}</span>
+                <i
+                  class="fa-solid fa-xmark remove-tag"
+                  @click="removeSelectedCa(index)"
+                ></i>
+              </div>
+            </div>
+
             <div class="combobox-wrapper">
               <input
                 type="text"
                 class="form-control"
-                placeholder="Tìm ca làm việc..."
+                placeholder="Tìm và chọn ca làm việc..."
                 v-model="searchCaModal"
                 @focus="showCaModalDropdown = true"
                 @blur="handleBlurCaModal"
               />
+
               <ul v-if="showCaModalDropdown" class="combobox-dropdown">
                 <li
                   v-for="ca in filteredCaModal"
                   :key="ca.id"
-                  @click="selectCaModal(ca)"
-                  :class="{ active: ca.id === form.idCaLam }"
+                  @click="selectCaMulti(ca)"
+                  :class="{ active: isCaSelected(ca.id) }"
                 >
                   <span class="fw-bold">{{ ca.tenCa }}</span>
                   <small>
-                    ({{ formatTime(ca.gioBatDau) }} -
-                    {{ formatTime(ca.gioKetThuc) }})</small
-                  >
+                    - ({{ formatTime(ca.gioBatDau) }} -
+                    {{ formatTime(ca.gioKetThuc) }})
+                  </small>
+                  <i
+                    v-if="isCaSelected(ca.id)"
+                    class="fa-solid fa-check float-right"
+                  ></i>
                 </li>
                 <li v-if="filteredCaModal.length === 0" class="no-result">
                   Không tìm thấy
@@ -412,28 +546,59 @@
 
 <script setup>
 import { ref, onMounted, reactive, computed } from "vue";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 import {
   createPhanCong,
   removePhanCong,
   getAllPhanCong,
 } from "@/services/lich_lam_viec/lich_lam_viec_nhan_vienService";
-
 import { getAllNhanVien } from "@/services/tai_khoan/nhan_vien/nhan_vienService";
 import { getAllCaLam } from "@/services/lich_lam_viec/ca_lamService";
 import {
-  pagingLichLamViec,
   createLich,
   checkLichLamViec,
 } from "@/services/lich_lam_viec/lich_lam_viecService";
+import ImportExcelModal from "./ImportExcelModal.vue";
 
-const getUser = () => {
-  const raw = localStorage.getItem("user") || sessionStorage.getItem("user") || 
-              localStorage.getItem("nguoiDung") || sessionStorage.getItem("nguoiDung");
-  if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+const excelModalRef = ref(null);
+
+const toArray = (res) => {
+  if (Array.isArray(res)) return res;
+  return res?.content || [];
 };
 
-// ✅ QUYỀN ĐƯỢC GIỮ NGUYÊN
+const formatDateInputLocal = (date = new Date()) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+const openExcelModal = () => {
+  if (excelModalRef.value) {
+    excelModalRef.value.openModal();
+  }
+};
+
+const closeExcelModal = () => {};
+
+const getUser = () => {
+  const raw =
+    localStorage.getItem("user") ||
+    sessionStorage.getItem("user") ||
+    localStorage.getItem("nguoiDung") ||
+    sessionStorage.getItem("nguoiDung");
+
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
 const hasPermission = computed(() => {
   const u = getUser();
   const role = u?.role || u?.quyen || u?.vaiTro || u?.tenVaiTro;
@@ -442,11 +607,9 @@ const hasPermission = computed(() => {
     return false;
   }
 
-  return true; 
+  return true;
 });
 
-const listLichMaster = ref([]);
-const lichList = ref([]);
 const lichNhanVienList = ref([]);
 const listNhanVien = ref([]);
 const listCa = ref([]);
@@ -473,9 +636,15 @@ const currentMonth = ref(today.getMonth());
 const currentYear = ref(today.getFullYear());
 const currentDate = ref(new Date());
 
+const editingItem = ref(null);
+const selectedCas = ref([]);
+
 const form = reactive({
   idLichLamViec: null,
   idNhanVien: null,
+  idCaLam: null,
+  ngayLam: "",
+  ghiChu: "",
   nguoiTao: 1,
 });
 
@@ -517,6 +686,22 @@ const selectNvSingle = (nv) => {
   showNvModalDropdown.value = false;
 };
 
+const isCaSelected = (id) => {
+  return selectedCas.value.some((ca) => ca.id === id);
+};
+
+const selectCaMulti = (ca) => {
+  if (!isCaSelected(ca.id)) {
+    selectedCas.value.push(ca);
+  }
+  searchCaModal.value = "";
+  showCaModalDropdown.value = false;
+};
+
+const removeSelectedCa = (index) => {
+  selectedCas.value.splice(index, 1);
+};
+
 const daysInMonth = computed(() => {
   return new Date(currentYear.value, currentMonth.value + 1, 0).getDate();
 });
@@ -540,6 +725,274 @@ const isToday = (day) => {
   );
 };
 
+const formatDateFull = (d) => {
+  const day = d.getDate();
+  const month = d.getMonth() + 1;
+  const year = d.getFullYear();
+  const dStr = day < 10 ? `0${day}` : day;
+  const mStr = month < 10 ? `0${month}` : month;
+  return `${dStr}/${mStr}/${year}`;
+};
+
+const isTodayDate = (d) => {
+  const now = new Date();
+  return (
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear()
+  );
+};
+
+const getDayName = (d) => {
+  const dayIndex = d.getDay();
+  return dayIndex === 0 ? "CN" : `T${dayIndex + 1}`;
+};
+
+const formatTime = (arr) => {
+  if (Array.isArray(arr)) {
+    return `${arr[0]}:${arr[1] < 10 ? "0" + arr[1] : arr[1]}`;
+  }
+  if (typeof arr === "string") return arr.substring(0, 5);
+  return "";
+};
+
+const downloadTemplate = async () => {
+  try {
+    const [nvRes, caRes] = await Promise.all([getAllNhanVien(), getAllCaLam()]);
+
+    const freshNhanVien = toArray(nvRes); // Đã xóa filter để lấy cả Admin
+    const freshCa = toArray(caRes);
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "SevenStrike";
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet("Lịch Làm Việc");
+    const guideSheet = workbook.addWorksheet("Hướng Dẫn");
+    const danhMucSheet = workbook.addWorksheet("DanhMuc");
+
+    danhMucSheet.state = "hidden";
+
+    danhMucSheet.getCell("A1").value = "MaNhanVien";
+    danhMucSheet.getCell("B1").value = "TenNhanVien";
+    danhMucSheet.getCell("D1").value = "TenCa";
+    danhMucSheet.getCell("E1").value = "KhungGio";
+
+    freshNhanVien.forEach((nv, index) => {
+      const row = index + 2;
+      danhMucSheet.getCell(`A${row}`).value = nv.maNhanVien || "";
+      danhMucSheet.getCell(`B${row}`).value = nv.tenNhanVien || "";
+    });
+
+    freshCa.forEach((ca, index) => {
+      const row = index + 2;
+      danhMucSheet.getCell(`D${row}`).value = ca.tenCa || "";
+      danhMucSheet.getCell(`E${row}`).value =
+        `${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)}`;
+    });
+
+    const employeeLastRow = Math.max(freshNhanVien.length + 1, 2);
+    const shiftLastRow = Math.max(freshCa.length + 1, 2);
+
+    workbook.definedNames.add(
+      `DanhMuc!$A$2:$A$${employeeLastRow}`,
+      "DS_MA_NHAN_VIEN",
+    );
+    workbook.definedNames.add(`DanhMuc!$D$2:$D$${shiftLastRow}`, "DS_CA_LAM");
+
+    sheet.columns = [
+      { header: "STT", key: "stt", width: 10 },
+      { header: "Mã Nhân Viên", key: "maNhanVien", width: 20 },
+      { header: "Ca Làm", key: "tenCa", width: 22 },
+      { header: "Ngày Làm", key: "ngayLam", width: 18 },
+      { header: "Tên Nhân Viên", key: "tenNhanVien", width: 30 },
+      { header: "Ghi Chú", key: "ghiChu", width: 28 },
+    ];
+
+    const headerRow = sheet.getRow(1);
+    headerRow.height = 22;
+
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFDC2626" },
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFFECACA" } },
+        left: { style: "thin", color: { argb: "FFFECACA" } },
+        bottom: { style: "thin", color: { argb: "FFFECACA" } },
+        right: { style: "thin", color: { argb: "FFFECACA" } },
+      };
+    });
+
+    sheet.views = [{ state: "frozen", ySplit: 1 }];
+    sheet.autoFilter = "A1:F1";
+
+    for (let row = 2; row <= 300; row += 1) {
+      sheet.getCell(`A${row}`).value = row - 1;
+      sheet.getCell(`A${row}`).alignment = { horizontal: "center" };
+
+      sheet.getCell(`B${row}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: ["=DS_MA_NHAN_VIEN"],
+        showErrorMessage: true,
+        errorTitle: "Mã nhân viên không hợp lệ",
+        error: "Vui lòng chọn mã nhân viên từ danh sách.",
+      };
+
+      sheet.getCell(`C${row}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: ["=DS_CA_LAM"],
+        showErrorMessage: true,
+        errorTitle: "Ca làm không hợp lệ",
+        error: "Vui lòng chọn ca làm từ danh sách.",
+      };
+
+      // Giữ cột ngày ở dạng TEXT để Excel không tự đảo dd/MM thành MM/dd
+      sheet.getCell(`D${row}`).value = "";
+      sheet.getCell(`D${row}`).numFmt = "@";
+      sheet.getCell(`D${row}`).alignment = {
+        horizontal: "left",
+        vertical: "middle",
+      };
+
+      sheet.getCell(`E${row}`).value = {
+        formula: `IF(B${row}="","",IFERROR(VLOOKUP(B${row},DanhMuc!$A$2:$B$${employeeLastRow},2,FALSE),""))`,
+      };
+
+      ["A", "B", "C", "D", "E", "F"].forEach((col) => {
+        sheet.getCell(`${col}${row}`).border = {
+          top: { style: "thin", color: { argb: "FFE5E7EB" } },
+          left: { style: "thin", color: { argb: "FFE5E7EB" } },
+          bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
+          right: { style: "thin", color: { argb: "FFE5E7EB" } },
+        };
+      });
+    }
+
+    guideSheet.columns = [{ width: 28 }, { width: 95 }];
+    guideSheet.mergeCells("A1:B1");
+    guideSheet.getCell("A1").value = "HƯỚNG DẪN NHẬP LỊCH LÀM VIỆC";
+    guideSheet.getCell("A1").font = {
+      bold: true,
+      size: 14,
+      color: { argb: "FFB91C1C" },
+    };
+    guideSheet.getCell("A1").alignment = { horizontal: "center" };
+
+    const guideData = [
+      ["1.", "Nhập dữ liệu trong sheet “Lịch Làm Việc”."],
+      [
+        "2.",
+        "Cột “Mã Nhân Viên” có sẵn combobox để chọn mã nhân viên hiện tại.",
+      ],
+      ["3.", "Cột “Ca Làm” có sẵn combobox để chọn ca làm hiện tại."],
+      ["4.", "Cột “Tên Nhân Viên” tự điền theo mã nhân viên đã chọn."],
+      [
+        "5.",
+        "Cột bắt buộc để import: Mã Nhân Viên, Tên Nhân Viên, Ca Làm, Ngày Làm.",
+      ],
+      [
+        "6.",
+        "Cột STT và Ghi Chú chỉ để hỗ trợ nhập liệu, hệ thống không bắt buộc.",
+      ],
+      [
+        "7.",
+        "Cột Ngày Làm đã để kiểu Text để tránh Excel tự đảo ngày/tháng. Hãy nhập 10/03/2026 hoặc 2026-03-10.",
+      ],
+    ];
+
+    guideData.forEach((item, index) => {
+      const row = guideSheet.getRow(index + 3);
+      row.getCell(1).value = item[0];
+      row.getCell(2).value = item[1];
+      row.getCell(1).font = { bold: true };
+      row.getCell(1).alignment = { vertical: "top" };
+      row.getCell(2).alignment = { wrapText: true, vertical: "top" };
+      row.height = 22;
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(
+      new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }),
+      "template_lich_lam_viec.xlsx",
+    );
+  } catch (error) {
+    console.error("Lỗi khi tải template:", error);
+    alert("Không thể tải template Excel lúc này.");
+  }
+};
+
+const getEventsForShiftAndDate = (idCa, d) => {
+  if (!lichNhanVienList.value || lichNhanVienList.value.length === 0) return [];
+
+  const year = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const dateString = `${year}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+  return lichNhanVienList.value.filter((l) => {
+    let shiftId = null;
+
+    if (l.lichLamViec && l.lichLamViec.idCaLam) {
+      shiftId =
+        typeof l.lichLamViec.idCaLam === "object"
+          ? l.lichLamViec.idCaLam.id
+          : l.lichLamViec.idCaLam;
+    } else {
+      shiftId = l.idCaLam;
+    }
+
+    if (String(shiftId) !== String(idCa)) return false;
+
+    if (typeof l.ngayLam === "string") {
+      return l.ngayLam.startsWith(dateString);
+    }
+
+    if (Array.isArray(l.ngayLam)) {
+      return (
+        l.ngayLam[0] === year && l.ngayLam[1] === m && l.ngayLam[2] === day
+      );
+    }
+
+    return false;
+  });
+};
+
+const openModalVoiNgayCa = (dateObj, idCa) => {
+  isEditing.value = false;
+  editingItem.value = null;
+  currentId.value = null;
+  form.idLichLamViec = null;
+  form.idNhanVien = null;
+  form.idCaLam = idCa;
+  form.ghiChu = "";
+  selectedNhanViens.value = [];
+  searchNvModal.value = "";
+
+  const ca = listCa.value.find((c) => c.id === idCa);
+  selectedCas.value = ca ? [ca] : [];
+  searchCaModal.value = ca
+    ? `${ca.tenCa} (${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)})`
+    : "";
+
+  const year = dateObj.getFullYear();
+  const m = dateObj.getMonth() + 1;
+  const day = dateObj.getDate();
+  const mStr = m < 10 ? `0${m}` : m;
+  const dStr = day < 10 ? `0${day}` : day;
+  form.ngayLam = `${year}-${mStr}-${dStr}`;
+
+  showModal.value = true;
+};
+
 const weekDays = computed(() => {
   const days = [];
   const startOfWeek = new Date(currentDate.value);
@@ -561,7 +1014,7 @@ const weekDays = computed(() => {
 
 const changePeriod = (step) => {
   if (viewMode.value === "calendar") {
-    let newMonth = currentMonth.value + step;
+    const newMonth = currentMonth.value + step;
     if (newMonth > 11) {
       currentMonth.value = 0;
       currentYear.value++;
@@ -578,11 +1031,18 @@ const changePeriod = (step) => {
     currentDate.value = newDate;
     currentMonth.value = newDate.getMonth();
     currentYear.value = newDate.getFullYear();
+  } else if (viewMode.value === "day") {
+    const newDate = new Date(currentDate.value);
+    newDate.setDate(newDate.getDate() + step);
+    currentDate.value = newDate;
+    currentMonth.value = newDate.getMonth();
+    currentYear.value = newDate.getFullYear();
   }
 };
 
 const getEventsForSpecificDay = (day, month, year) => {
   if (!lichNhanVienList.value) return [];
+
   const m = month + 1;
   const mStr = m < 10 ? `0${m}` : m;
   const dStr = day < 10 ? `0${day}` : day;
@@ -598,8 +1058,14 @@ const getEventsForSpecificDay = (day, month, year) => {
   });
 };
 
+const getEventsForSpecificDayGrouped = (day, month, year) => {
+  const events = getEventsForSpecificDay(day, month, year);
+  return groupShiftsByNhanVien(events);
+};
+
 const getEventsForDay = (day) => {
   if (!lichNhanVienList.value) return [];
+
   const m = currentMonth.value + 1;
   const mStr = m < 10 ? `0${m}` : m;
   const dStr = day < 10 ? `0${day}` : day;
@@ -620,53 +1086,83 @@ const getEventsForDay = (day) => {
   });
 };
 
+const getEventsForDayGrouped = (day) => {
+  const events = getEventsForDay(day);
+  return groupShiftsByNhanVien(events);
+};
+
+const groupShiftsByNhanVien = (events) => {
+  const grouped = {};
+
+  events.forEach((item) => {
+    const nvId = item.nhanVien?.id;
+    if (!grouped[nvId]) {
+      grouped[nvId] = {
+        ...item,
+        danhSachCa: [],
+      };
+    }
+
+    grouped[nvId].danhSachCa.push({
+      idPhanCong: item.id,
+      idCa:
+        item.idCaLam ||
+        item.caLam?.id ||
+        (typeof item.lichLamViec?.idCaLam === "object"
+          ? item.lichLamViec?.idCaLam?.id
+          : item.lichLamViec?.idCaLam),
+      tenCa: item.tenCa || item.caLam?.tenCa,
+      gioBatDau: item.gioBatDau,
+      gioKetThuc: item.gioKetThuc,
+    });
+  });
+
+  return Object.values(grouped);
+};
+
 const filteredNhanVienList = computed(() => {
   if (!searchNv.value) return listNhanVien.value;
+
   return listNhanVien.value.filter((nv) => {
     const nhanVienSearch =
       !searchNv.value ||
-      nv.tenNhanVien.toLowerCase().includes(searchNv.value.toLowerCase()) ||
-      (nv.maNhanVien &&
-        nv.maNhanVien.toLowerCase().includes(searchNv.value.toLowerCase()));
+      (nv.tenNhanVien || "")
+        .toLowerCase()
+        .includes(searchNv.value.toLowerCase()) ||
+      (nv.maNhanVien || "")
+        .toLowerCase()
+        .includes(searchNv.value.toLowerCase());
 
-    const koPhaiAdmin = nv.idQuyenHan !== 1;
-    return nhanVienSearch && koPhaiAdmin;
+    return nhanVienSearch; // Đã xóa điều kiện chặn Admin
   });
 });
 
 const filteredNvModal = computed(() => {
   const q = searchNvModal.value.toLowerCase();
+
   return listNhanVien.value.filter((nv) => {
     const nhanVienSearch =
-      nv.tenNhanVien.toLowerCase().includes(q) ||
-      nv.maNhanVien.toLowerCase().includes(q);
+      (nv.tenNhanVien || "").toLowerCase().includes(q) ||
+      (nv.maNhanVien || "").toLowerCase().includes(q);
 
-    const koPhaiAdmin = nv.idQuyenHan !== 1;
-    return nhanVienSearch && koPhaiAdmin;
+    return nhanVienSearch; // Đã xóa điều kiện chặn Admin
   });
 });
 
 const filteredCaModal = computed(() => {
   const q = searchCaModal.value.toLowerCase();
-  return listCa.value.filter((ca) => ca.tenCa.toLowerCase().includes(q));
+
+  return listCa.value.filter((ca) => {
+    const matchesSearch = (ca.tenCa || "").toLowerCase().includes(q);
+    const notSelected = !isCaSelected(ca.id);
+    return matchesSearch && notSelected;
+  });
 });
 
 const selectNhanVien = (nv) => {
   filterNv.value = nv.id;
   searchNv.value = nv.tenNhanVien;
   showNvDropdown.value = false;
-};
-
-const selectNvModal = (nv) => {
-  form.idNhanVien = nv.id;
-  searchNvModal.value = nv.tenNhanVien;
-  showNvModalDropdown.value = false;
-};
-
-const selectCaModal = (ca) => {
-  form.idCaLam = ca.id;
-  searchCaModal.value = `${ca.tenCa} (${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)})`;
-  showCaModalDropdown.value = false;
 };
 
 const handleBlurNvModal = () =>
@@ -680,15 +1176,17 @@ const handleBlurNv = () => {
   }, 200);
 };
 
-const formatTime = (arr) => {
-  if (Array.isArray(arr))
-    return `${arr[0]}:${arr[1] < 10 ? "0" + arr[1] : arr[1]}`;
-  if (typeof arr === "string") return arr.substring(0, 5);
-  return "";
-};
-const formatDate = (arr) => {
-  if (Array.isArray(arr)) return `${arr[2]}/${arr[1]}/${arr[0]}`;
-  return arr;
+const formatDate = (value) => {
+  if (Array.isArray(value)) {
+    return `${String(value[2]).padStart(2, "0")}/${String(value[1]).padStart(2, "0")}/${value[0]}`;
+  }
+
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split("-");
+    return `${d}/${m}/${y}`;
+  }
+
+  return value || "";
 };
 
 const convertArrayDateToString = (arrDate) => {
@@ -701,15 +1199,16 @@ const convertArrayDateToString = (arrDate) => {
   return arrDate;
 };
 
-// ✅ ĐÃ FIX LỖI: Nhận thêm biến month và year để xử lý giao diện Tuần vắt chéo tháng
 const openModalVoiNgay = (day, month = null, year = null) => {
   isEditing.value = false;
+  editingItem.value = null;
   currentId.value = null;
   form.idLichLamViec = null;
   form.idNhanVien = null;
-  selectedNhanViens.value = [];
   form.idCaLam = null;
   form.ghiChu = "";
+  selectedNhanViens.value = [];
+  selectedCas.value = [];
   searchNvModal.value = "";
   searchCaModal.value = "";
 
@@ -719,54 +1218,75 @@ const openModalVoiNgay = (day, month = null, year = null) => {
   const m = targetMonth + 1;
   const mStr = m < 10 ? `0${m}` : m;
   const dStr = day < 10 ? `0${day}` : day;
-  const dateString = `${targetYear}-${mStr}-${dStr}`;
+  form.ngayLam = `${targetYear}-${mStr}-${dStr}`;
 
-  form.ngayLam = dateString;
   showModal.value = true;
 };
 
 const openModal = (item) => {
   if (item) {
     isEditing.value = true;
+    editingItem.value = item;
     currentId.value = item.id;
-
-    const idNv = item.nhanVien?.id;
-    const idCa = item.idCaLam || (item.caLam ? item.caLam.id : null);
-    form.idNhanVien = idNv;
-    form.idCaLam = idCa;
-    form.idLichLamViec = item.lichLamViec
-      ? item.lichLamViec.id
-      : item.idLichLamViec;
+    form.idNhanVien = item.nhanVien?.id;
     form.ngayLam = convertArrayDateToString(item.ngayLam);
-    form.ghiChu = item.ghiChu || "";
 
-    const nv = listNhanVien.value.find((n) => n.id === idNv);
+    if (item.danhSachCa) {
+      const uniqueCas = {};
+      (item.danhSachCa || []).forEach((ca) => {
+        const caId = ca.idCa || ca.id;
+        if (!uniqueCas[caId]) {
+          uniqueCas[caId] = {
+            id: caId,
+            tenCa: ca.tenCa,
+          };
+        }
+      });
+      selectedCas.value = Object.values(uniqueCas);
+    } else {
+      selectedCas.value = [
+        {
+          id:
+            item.idCaLam ||
+            item.caLam?.id ||
+            (typeof item.lichLamViec?.idCaLam === "object"
+              ? item.lichLamViec?.idCaLam?.id
+              : item.lichLamViec?.idCaLam),
+          tenCa: item.tenCa || item.caLam?.tenCa,
+        },
+      ];
+    }
+
+    const nv = listNhanVien.value.find((n) => n.id === form.idNhanVien);
     searchNvModal.value = nv ? nv.tenNhanVien : "";
-    selectedNhanViens.value = [];
-
-    const ca = listCa.value.find((c) => c.id === idCa);
-    searchCaModal.value = ca
-      ? `${ca.tenCa} (${formatTime(ca.gioBatDau)} - ${formatTime(ca.gioKetThuc)})`
-      : "";
+    searchCaModal.value = "";
   } else {
     isEditing.value = false;
+    editingItem.value = null;
     currentId.value = null;
     form.idLichLamViec = null;
     form.idNhanVien = null;
-    selectedNhanViens.value = [];
     form.idCaLam = null;
-    form.ngayLam = new Date().toISOString().split("T")[0];
     form.ghiChu = "";
+    form.ngayLam = formatDateInputLocal(new Date());
+    selectedNhanViens.value = [];
+    selectedCas.value = [];
     searchNvModal.value = "";
     searchCaModal.value = "";
   }
+
   showModal.value = true;
 };
 
 const closeModal = () => {
   showModal.value = false;
   isEditing.value = false;
+  editingItem.value = null;
   currentId.value = null;
+  selectedNhanViens.value = [];
+  selectedCas.value = [];
+  searchNvModal.value = "";
+  searchCaModal.value = "";
 };
 
 const handleSubmit = async () => {
@@ -774,10 +1294,12 @@ const handleSubmit = async () => {
     alert("Vui lòng chọn ngày làm việc!");
     return;
   }
-  if (!form.idCaLam) {
-    alert("Vui lòng chọn ca làm việc!");
+
+  if (selectedCas.value.length === 0) {
+    alert("Vui lòng chọn ít nhất một ca làm việc!");
     return;
   }
+
   if (!isEditing.value && selectedNhanViens.value.length === 0) {
     alert("Vui lòng chọn ít nhất một nhân viên!");
     return;
@@ -785,55 +1307,88 @@ const handleSubmit = async () => {
 
   try {
     loading.value = true;
-    if (!isEditing.value) {
+    const currentUser = getUser();
+    const idNguoiTao = currentUser?.id || 1;
+
+    if (isEditing.value && editingItem.value) {
+      let oldPhanCongIds = [];
+
+      if (editingItem.value.danhSachCa) {
+        oldPhanCongIds = editingItem.value.danhSachCa
+          .map((ca) => ca.idPhanCong)
+          .filter((id) => id);
+      } else {
+        oldPhanCongIds = [editingItem.value.id].filter((id) => id);
+      }
+
+      for (const id of oldPhanCongIds) {
+        try {
+          await removePhanCong(id);
+        } catch (e) {
+          console.error("Failed to remove old assignment", id, e);
+        }
+      }
+    }
+
+    const targetNvs = isEditing.value
+      ? [{ id: form.idNhanVien }]
+      : selectedNhanViens.value;
+
+    for (const ca of selectedCas.value) {
       const existingLich = await checkLichLamViec({
-        ca: form.idCaLam,
+        ca: ca.id,
         ngay: form.ngayLam,
       });
 
-      if (existingLich && existingLich.length > 0) {
-        const selectedIds = selectedNhanViens.value.map((nv) => nv.id);
-        const promises = selectedIds.map((nvId) =>
-          createPhanCong({
-            idLichLamViec: existingLich[0].id,
-            idNhanVien: nvId,
-            nguoiTao: 1,
-          }),
-        );
-        await Promise.all(promises);
-        alert(`Đã thêm ${selectedIds.length} nhân viên vào lịch làm việc.`);
-      } else {
-        const newLichData = {
-          idCaLam: form.idCaLam,
-          ngayLam: form.ngayLam,
-          ghiChu: form.ghiChu || "",
-          nguoiTao: 1,
-        };
-        const resLich = await createLich(newLichData);
+      let idLichHienTai = null;
 
-        const idLichMoi = Array.isArray(resLich) ? resLich[0]?.id : resLich?.id;
-        const selectedIds = selectedNhanViens.value.map((nv) => nv.id);
-        const promises = selectedIds.map((nvId) =>
+      if (
+        existingLich &&
+        (Array.isArray(existingLich)
+          ? existingLich.length > 0
+          : existingLich.id)
+      ) {
+        idLichHienTai = Array.isArray(existingLich)
+          ? existingLich[0].id
+          : existingLich.id;
+      } else {
+        const resLich = await createLich({
+          idCaLam: ca.id,
+          ngayLam: form.ngayLam,
+          ghiChu: "",
+          nguoiTao: idNguoiTao,
+        });
+
+        idLichHienTai =
+          resLich?.data?.id ||
+          resLich?.id ||
+          (Array.isArray(resLich) ? resLich[0]?.id : null);
+      }
+
+      if (idLichHienTai) {
+        const phanCongPromises = targetNvs.map((nv) =>
           createPhanCong({
-            idLichLamViec: idLichMoi,
-            idNhanVien: nvId,
-            nguoiTao: 1,
+            idLichLamViec: idLichHienTai,
+            idNhanVien: nv.id,
+            nguoiTao: idNguoiTao,
           }),
         );
-        await Promise.all(promises);
-        alert(`Đã thêm ${selectedIds.length} nhân viên vào lịch làm việc.`);
+
+        await Promise.all(phanCongPromises);
       }
-    } else {
-      alert("Tính năng cập nhật đang được xử lý.");
     }
 
+    alert(
+      isEditing.value
+        ? "Cập nhật lịch làm việc thành công!"
+        : `Đã phân công thành công cho ${targetNvs.length} nhân viên vào ${selectedCas.value.length} ca.`,
+    );
+
     closeModal();
-    loadData();
-  } catch (e) {
-    const errorMsg = e.message.includes("Unexpected token")
-      ? "Lỗi phản hồi từ Server (JSON error)"
-      : e.message;
-    alert("Không thể hoàn thành: " + errorMsg);
+    await loadData();
+  } catch (error) {
+    console.error("Lỗi khi lưu lịch làm việc:", error);
+    alert("Có lỗi xảy ra: " + (error?.message || "Không thể lưu dữ liệu"));
   } finally {
     loading.value = false;
   }
@@ -842,55 +1397,51 @@ const handleSubmit = async () => {
 const loadData = async () => {
   try {
     const res = await getAllPhanCong();
-    lichNhanVienList.value = Array.isArray(res) ? res : res.content || [];
-  } catch (e) {
-    console.error(e);
-  }
-};
-
-const loadLichMaster = async () => {
-  try {
-    const res = await pagingLichLamViec(0, 1000);
-    listLichMaster.value = res.content || [];
+    lichNhanVienList.value = toArray(res);
   } catch (e) {
     console.error(e);
   }
 };
 
 const loadthemLich = async () => {
-  const nv = await getAllNhanVien();
-  const ca = await getAllCaLam();
-  listNhanVien.value = Array.isArray(nv) ? nv : [];
-  listCa.value = Array.isArray(ca) ? ca : [];
-  loadData();
+  const [nvRes, caRes] = await Promise.all([getAllNhanVien(), getAllCaLam()]);
+  listNhanVien.value = toArray(nvRes);
+  listCa.value = toArray(caRes);
+  await loadData();
 };
 
 const filterLichList = computed(() => {
   let data = [...lichNhanVienList.value];
+
   if (filterNv.value) {
     data = data.filter((item) => item.nhanVien?.id === Number(filterNv.value));
   }
+
   if (filterDate.value) {
     data = data.filter(
       (l) => convertArrayDateToString(l.ngayLam) === filterDate.value,
     );
   }
+
   return data;
 });
 
 const deletePhanCong = async (id) => {
-  if (!confirm("Gỡ nhân viên này khỏi lịch?")) return;
+  const confirmDelete = window.confirm(
+    "Bạn có chắc chắn muốn xóa phân công này không?",
+  );
+  if (!confirmDelete) return;
+
   try {
     await removePhanCong(id);
-    loadData();
+    alert("Xóa phân công thành công!");
+    await loadData();
   } catch (e) {
-    alert("Thất bại: " + e.message);
+    alert("Xóa phân công thất bại: " + (e?.message || "Có lỗi xảy ra"));
   }
 };
 
 onMounted(() => {
-  loadData();
-  loadLichMaster();
   loadthemLich();
 });
 </script>
@@ -899,15 +1450,18 @@ onMounted(() => {
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
+
 .lich-page {
   font-family: var(--admin-font, sans-serif);
   padding: 20px;
   background-color: #f8f9fa;
   min-height: 100vh;
 }
+
 .header-section {
   margin-bottom: 20px;
 }
+
 .page-title {
   font-size: 22px;
   font-weight: 700;
@@ -915,6 +1469,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   margin-top: 10px;
   color: rgba(17, 24, 39, 0.92);
 }
+
 .card-box {
   background: white;
   border-radius: 8px;
@@ -922,9 +1477,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 20px;
   border: 1px solid #e5e7eb;
 }
+
 .mt-20 {
   margin-top: 20px;
 }
+
 .toolbar-header h3,
 .table-header-row h3 {
   font-size: 16px;
@@ -935,14 +1492,35 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   align-items: center;
   gap: 8px;
 }
+
 .toolbar-body {
   margin-top: 15px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   flex-wrap: wrap;
+  gap: 16px;
 }
-.btn-add {
+
+.filters-bar {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.btn-add,
+.btn-import,
+.btn-template {
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
   box-shadow: 0 10px 18px rgba(255, 77, 79, 0.16);
   color: white;
@@ -954,7 +1532,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   display: flex;
   gap: 8px;
   align-items: center;
+  transition: all 0.2s ease;
 }
+
+.btn-add:hover,
+.btn-import:hover,
+.btn-template:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(255, 77, 79, 0.22);
+}
+
 .btn-date {
   width: 100%;
   height: 38px;
@@ -965,19 +1552,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-radius: 4px;
   font-size: 14px;
 }
-.btn-import {
-  background: #10b981;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.filters-bar {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 24px;
-}
+
 .filter-group {
   display: flex;
   align-items: center;
@@ -987,35 +1562,29 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-weight: 600;
   white-space: nowrap;
 }
-.import-body {
-  margin-top: 15px;
-  background: #f9fafb;
-  padding: 15px;
-  border-radius: 6px;
-}
-.input-group {
-  display: flex;
-  gap: 10px;
-  margin-top: 5px;
-}
+
 .table-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
 }
+
 .view-modes {
   display: flex;
   gap: 5px;
 }
+
 .action-col {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
 }
+
 .ss-icon-btn-view:hover {
   background: #e0f2fe;
 }
+
 .mode-btn {
   border: 1px solid #e5e7eb;
   padding: 6px 14px;
@@ -1030,22 +1599,26 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-weight: 500;
   transition: all 0.2s ease;
 }
+
 .mode-btn:hover {
   background: #f3f4f6;
   color: #374151;
   border-color: #d1d5db;
 }
+
 .mode-btn.active {
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
   box-shadow: 0 4px 6px rgba(255, 77, 79, 0.2);
   color: white;
   border-color: transparent;
 }
+
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
 }
+
 th {
   text-align: left;
   padding: 12px;
@@ -1056,24 +1629,29 @@ th {
   font-weight: 700;
   text-transform: uppercase;
 }
+
 td {
   padding: 12px;
   border-bottom: 1px solid #e5e7eb;
   font-size: 14px;
   color: #111827;
 }
+
 .text-right {
   text-align: right;
 }
+
 .text-center {
   text-align: center;
 }
+
 .calendar-view {
   margin-top: 15px;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   overflow: hidden;
 }
+
 .cal-navigation {
   display: flex;
   justify-content: space-between;
@@ -1082,22 +1660,26 @@ td {
   background: white;
   border-bottom: 1px solid #e5e7eb;
 }
+
 .nav-left {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
 .nav-right {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
 .cal-title {
   font-size: 18px;
   font-weight: 700;
   margin: 0 10px;
   text-transform: capitalize;
 }
+
 .btn-nav {
   border: 1px solid #d1d5db;
   color: #000;
@@ -1107,37 +1689,51 @@ td {
   cursor: pointer;
   font-size: 13px;
 }
+
 .btn-nav:hover {
   background: #f3f4f6;
 }
+
 .btn-nav.active {
   background: #111827;
   color: white;
   border-color: #111827;
 }
-.btn-month {
+
+.btn-toggle-group {
+  display: flex;
   border: 1px solid #d1d5db;
-  color: #000;
-  background: white;
-  padding: 5px 10px;
   border-radius: 4px;
-  cursor: pointer;
+  overflow: hidden;
+}
+
+.btn-toggle {
+  padding: 5px 12px;
+  background: white;
+  border: none;
+  border-right: 1px solid #d1d5db;
   font-size: 13px;
+  color: #374151;
+  cursor: pointer;
 }
-.btn-month:hover {
-  background: #f3f4f6;
+
+.btn-toggle:last-child {
+  border-right: none;
 }
-.btn-month.active {
+
+.btn-toggle.active {
   background: #111827;
+  font-weight: 500;
   color: white;
-  border-color: #111827;
 }
+
 .cal-grid-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   background: #f8fafc;
   border-bottom: 1px solid #e5e7eb;
 }
+
 .cal-day-name {
   padding: 10px;
   text-align: center;
@@ -1145,30 +1741,40 @@ td {
   color: #1e40af;
   border-right: 1px solid #e5e7eb;
 }
+
 .cal-day-name:last-child {
   border-right: none;
 }
+
 .cal-grid-body {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   background: #fff;
 }
+
 .cal-cell {
   min-height: 120px;
   border-right: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb;
   padding: 5px;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
+
 .cal-cell:nth-child(7n) {
   border-right: none;
 }
+
 .cal-cell.disabled {
   background: #f9fafb;
 }
+
 .cal-cell.is-today {
   background: #fffbeb;
 }
+
 .cal-date-num {
   font-size: 14px;
   font-weight: 600;
@@ -1177,29 +1783,7 @@ td {
   margin-bottom: 5px;
   padding-right: 5px;
 }
-.cal-events {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.banglich-chip {
-  background: #0ea5e9;
-  color: white;
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 2px;
-  transition: all 0.2s;
-}
-.banglich-chip:hover {
-  background: #0284c7;
-  transform: translateY(-1px);
-}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1212,13 +1796,15 @@ td {
   align-items: center;
   z-index: 1000;
 }
-.modal-content {
+
+.modal-content.form-modal {
   background: white;
   width: 500px;
   border-radius: 8px;
   overflow: hidden;
   animation: fadeIn 0.2s;
 }
+
 .modal-header {
   padding: 15px 20px;
   border-bottom: 1px solid #eee;
@@ -1226,24 +1812,30 @@ td {
   justify-content: space-between;
   align-items: center;
 }
+
 .btn-close {
   font-size: 15px;
   cursor: pointer;
 }
+
 .modal-body {
   padding: 20px;
 }
+
 .form-group {
   margin-bottom: 15px;
 }
+
 .form-group label {
   display: block;
   margin-bottom: 5px;
   font-weight: 500;
 }
+
 .req {
   color: red;
 }
+
 .form-control {
   width: 100%;
   padding: 8px;
@@ -1251,6 +1843,7 @@ td {
   border-radius: 4px;
   box-sizing: border-box;
 }
+
 .modal-footer {
   padding: 15px 20px;
   border-top: 1px solid #eee;
@@ -1258,13 +1851,7 @@ td {
   justify-content: flex-end;
   gap: 10px;
 }
-.btn-cancel {
-  background: #f3f4f6;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
+
 .btn-save {
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
   box-shadow: 0 10px 18px rgba(255, 77, 79, 0.16);
@@ -1274,9 +1861,11 @@ td {
   border-radius: 4px;
   cursor: pointer;
 }
+
 .combobox-wrapper {
   position: relative;
 }
+
 .combobox-dropdown {
   position: absolute;
   top: 100%;
@@ -1293,6 +1882,7 @@ td {
   padding: 0;
   list-style: none;
 }
+
 .combobox-dropdown li {
   padding: 10px;
   cursor: pointer;
@@ -1300,17 +1890,21 @@ td {
   font-size: 14px;
   color: #374151;
 }
+
 .combobox-dropdown li:last-child {
   border-bottom: none;
 }
+
 .combobox-dropdown li:hover {
   background-color: #f3f4f6;
 }
+
 .combobox-dropdown li.active {
   background-color: #e0f2fe;
   color: #0369a1;
   font-weight: 600;
 }
+
 .combobox-dropdown .no-result {
   padding: 10px;
   color: #9ca3af;
@@ -1318,9 +1912,11 @@ td {
   font-style: italic;
   cursor: default;
 }
+
 .fw-bold {
   font-weight: 600;
 }
+
 .selected-tags {
   display: flex;
   flex-wrap: wrap;
@@ -1332,6 +1928,7 @@ td {
   background: #fff;
   min-height: 40px;
 }
+
 .tag-item {
   background-color: #e0f2fe;
   color: #0369a1;
@@ -1345,93 +1942,36 @@ td {
   gap: 6px;
   animation: fadeIn 0.2s;
 }
+
 .remove-tag {
   cursor: pointer;
   font-size: 14px;
   color: #0284c7;
 }
+
 .remove-tag:hover {
   color: #ef4444;
 }
+
 .text-muted {
   font-size: 12px;
   color: #6b7280;
   margin-top: 4px;
   display: block;
 }
+
 .float-right {
   float: right;
   color: #10b981;
 }
-.avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 12px;
-  border: 1px solid rgba(17, 24, 39, 0.14);
-  background: #fff;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.avatar-fallback {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(17, 24, 39, 0.04);
-  color: rgba(17, 24, 39, 0.78);
-  font-weight: 500;
-  font-size: 13px;
-}
-.cal-cell {
-  position: relative;
-  transition: background-color 0.2s;
-}
-.quick-add-wrapper {
-  margin-top: 8px;
-  display: flex;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s ease-in-out;
-}
-.cal-cell:hover .quick-add-wrapper {
-  opacity: 1;
-}
-.btn-quick-add {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background-color: #ecfdf5;
-  color: #10b981;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s;
-}
-.btn-quick-add:hover {
-  background-color: #d1fae5;
-  transform: scale(1.1);
-}
-.btn-quick-add i {
-  font-size: 14px;
-}
+
 .cal-events-container {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   padding: 4px;
 }
+
 .event-item {
   display: flex;
   flex-direction: column;
@@ -1439,6 +1979,7 @@ td {
   cursor: pointer;
   width: 40px;
 }
+
 .avatar-circle {
   width: 36px;
   height: 36px;
@@ -1455,14 +1996,17 @@ td {
   overflow: hidden;
   transition: transform 0.2s;
 }
+
 .event-item:hover .avatar-circle {
   transform: scale(1.1);
 }
+
 .avatar-circle img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 .event-name {
   font-size: 11px;
   color: #374151;
@@ -1474,35 +2018,243 @@ td {
   text-overflow: ellipsis;
   width: 100%;
 }
+
 .circle-add {
   background-color: #ecfdf5;
-  color: #10b981;
-  border: 1px dashed #10b981;
+  color: #ff4d4f;
+  border: 1px dashed #ff4d4f;
 }
+
 .add-new-btn:hover .circle-add {
-  background-color: #10b981;
+  background-color: #ff4d4f;
   color: white;
 }
-.quick-add-wrapper {
-  display: none;
-}
-.cal-cell {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  min-height: 100px;
-}
+
 .event-item.add-new-btn {
   opacity: 0;
   visibility: hidden;
   transition: all 0.2s ease-in-out;
   transform: translateY(5px);
 }
+
 .cal-cell:hover .event-item.add-new-btn {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
 }
+
+.matrix-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-top: none;
+  overflow-x: auto;
+  background: white;
+}
+
+.matrix-header {
+  display: flex;
+  background: #fcfcfc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.matrix-row {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.matrix-row:last-child {
+  border-bottom: none;
+}
+
+.matrix-cell-header {
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  color: #374151;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.matrix-cell {
+  padding: 8px;
+  border-right: 1px solid #e5e7eb;
+  position: relative;
+  min-height: 100px;
+}
+
+.matrix-cell-header:last-child,
+.matrix-cell:last-child {
+  border-right: none;
+}
+
+.shift-col {
+  width: 150px;
+  min-width: 150px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  background: #fff;
+}
+
+.matrix-cell-header.shift-col {
+  justify-content: center;
+  align-items: center;
+  background: #f9fafb;
+}
+
+.day-col {
+  flex: 1;
+  min-width: 130px;
+}
+
+.day-name {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.day-date {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.is-today {
+  background-color: #fdf8f6 !important;
+}
+
+.row-layout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.row-layout label {
+  margin-bottom: 0;
+  white-space: nowrap;
+  min-width: 90px;
+}
+
+.shift-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #111827;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.shift-time {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+  text-align: center;
+}
+
+.btn-add-mini {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #78350f;
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 10px;
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-add-mini:hover {
+  background: #92400e;
+}
+
+.employee-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.employee-card {
+  border: 1px solid #e5e7eb;
+  border-left: 3px solid #ef4444;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.1s;
+}
+
+.employee-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.employee-card.large {
+  flex-direction: row;
+  padding: 10px 16px;
+  gap: 15px;
+  width: fit-content;
+}
+
+.employee-cards.row-dir {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 0;
+  padding-left: 0;
+}
+
+.btn-add-mini.inline {
+  position: static;
+  margin-right: 10px;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+}
+
+.add-full-btn {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 80px;
+  border: 1px dashed transparent;
+  transition: all 0.2s;
+}
+
+.add-full-btn:hover {
+  color: #4b5563;
+  border-color: #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.border-color-4 {
+  border-left-color: #ef4444 !important;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -1511,6 +2263,21 @@ td {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 992px) {
+  .toolbar-body {
+    align-items: stretch;
+  }
+
+  .filters-bar,
+  .toolbar-actions {
+    width: 100%;
+  }
+
+  .toolbar-actions {
+    justify-content: flex-start;
   }
 }
 </style>

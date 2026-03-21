@@ -6,76 +6,77 @@ import TrangChuPage from "@/pages/trang_chu/TrangChuPage.vue";
 import AdminLayout from "@/views/admin/AdminLayout.vue";
 import LoginManager from "@/views/authen_author/LoginManager.vue";
 
+import ChatPage from "@/chatAI/pages/ChatPage.vue";
+
 import ProductManagePage from "@/pages/product/ProductManagePage.vue";
 import ProductDetailListPage from "@/pages/product/ProductDetailListPage.vue";
 import ProductDetailFormPage from "@/pages/product/ProductDetailFormPage.vue";
 import ProductFormPage from "@/pages/product/ProductFormPage.vue";
 
+import ChatLieuPage from "@/pages/product/thuoc_tinh/ChatLieuPage.vue";
 import CoGiayPage from "@/pages/product/thuoc_tinh/CoGiayPage.vue";
-
-// ✅ THUỘC TÍNH (file lẻ, không folder snake_case)
-import XuatXuPage from "@/pages/product/thuoc_tinh/XuatXuPage.vue";
+import FormChanPage from "@/pages/product/thuoc_tinh/FormChanPage.vue";
+import KichThuocPage from "@/pages/product/thuoc_tinh/KichThuocPage.vue";
+import LoaiSanPage from "@/pages/product/thuoc_tinh/LoaiSanPage.vue";
+import MauSacPage from "@/pages/product/thuoc_tinh/MauSacPage.vue";
+import PhongCachChoiPage from "@/pages/product/thuoc_tinh/PhongCachChoiPage.vue";
 import ThuongHieuPage from "@/pages/product/thuoc_tinh/ThuongHieuPage.vue";
 import ViTriThiDauPage from "@/pages/product/thuoc_tinh/ViTriThiDauPage.vue";
-import PhongCachChoiPage from "@/pages/product/thuoc_tinh/PhongCachChoiPage.vue";
-import ChatLieuPage from "@/pages/product/thuoc_tinh/ChatLieuPage.vue";
-import MauSacPage from "@/pages/product/thuoc_tinh/MauSacPage.vue";
-import KichThuocPage from "@/pages/product/thuoc_tinh/KichThuocPage.vue";
-import FormChanPage from "@/pages/product/thuoc_tinh/FormChanPage.vue";
-import LoaiSanPage from "@/pages/product/thuoc_tinh/LoaiSanPage.vue";
+import XuatXuPage from "@/pages/product/thuoc_tinh/XuatXuPage.vue";
 
-import DiscountPage from "@/pages/khuyen_mai/dot_giam_gia/DiscountPage.vue";
 import AddDiscountPage from "@/pages/khuyen_mai/dot_giam_gia/AddDiscountPage.vue";
 import DetailDiscountPage from "@/pages/khuyen_mai/dot_giam_gia/DetailDiscountPage.vue";
+import DiscountPage from "@/pages/khuyen_mai/dot_giam_gia/DiscountPage.vue";
 
-// ✅ Phiếu giảm giá
-import VoucherManagePage from "@/pages/khuyen_mai/phieu_giam_gia/VoucherManagePage.vue";
 import VoucherFormPage from "@/pages/khuyen_mai/phieu_giam_gia/VoucherFormPage.vue";
+import VoucherManagePage from "@/pages/khuyen_mai/phieu_giam_gia/VoucherManagePage.vue";
 
-// ✅ Tài khoản (nhân viên / khách hàng)
-import TaiKhoanNhanVienPage from "@/pages/tai_khoan/taikhoan_nhanvien.vue";
-import ThemNhanVienPage from "@/pages/tai_khoan/them_nhanvien.vue";
-import CapNhatNhanVienPage from "@/pages/tai_khoan/capnhat_nhanvien.vue";
-
-import TaiKhoanKhachHangPage from "@/pages/tai_khoan/taikhoan_khachhang.vue";
-import ThemKhachHangPage from "@/pages/tai_khoan/them_khachhang.vue";
 import CapNhatKhachHangPage from "@/pages/tai_khoan/capnhat_khachhang.vue";
+import CapNhatNhanVienPage from "@/pages/tai_khoan/capnhat_nhanvien.vue";
+import TaiKhoanKhachHangPage from "@/pages/tai_khoan/taikhoan_khachhang.vue";
+import TaiKhoanNhanVienPage from "@/pages/tai_khoan/taikhoan_nhanvien.vue";
+import ThemKhachHangPage from "@/pages/tai_khoan/them_khachhang.vue";
+import ThemNhanVienPage from "@/pages/tai_khoan/them_nhanvien.vue";
 
-// ✅ Hóa đơn
-import HoaDonList from "@/pages/hoa_don/HoaDonList.vue";
 import HoaDonDetail from "@/pages/hoa_don/HoaDonDetail.vue";
+import HoaDonList from "@/pages/hoa_don/HoaDonList.vue";
 
-// ✅ Bán hàng
 import SalesPage from "@/pages/sales/SalesPage.vue";
 
-// ✅ Thống kê
 import ThongKePage from "@/pages/thong_ke/ThongKePage.vue";
 
-// ✅ LỊCH LÀM VIỆC
-import LichLamViecPage from "@/pages/lich_lam_viec/LichLamViec.vue";
 import GiaoCaPage from "@/pages/lich_lam_viec/GiaoCa.vue";
 import LichCaLamPage from "@/pages/lich_lam_viec/LichCaLam.vue";
-// ✅ ĐÃ THÊM IMPORT TRANG LỊCH SỬ HOẠT ĐỘNG
+import LichLamViecPage from "@/pages/lich_lam_viec/LichLamViec.vue";
 import LichSuHoatDongPage from "@/pages/lich_lam_viec/LichSuHoatDong.vue";
 
+import AccountLayout from "@/pages/client/account/AccountLayout.vue";
+import AddressPage from "@/pages/client/account/AddressPage.vue";
+import ChangePasswordPage from "@/pages/client/account/ChangePasswordPage.vue";
+import CouponsPage from "@/pages/client/account/CouponsPage.vue";
+import OrderHistoryPage from "@/pages/client/account/OrderHistoryPage.vue";
+import OrderTrackingPage from "@/pages/client/account/OrderTrackingPage.vue";
+import ProfilePage from "@/pages/client/account/ProfilePage.vue";
+import AboutPage from "@/pages/client/AboutPage.vue";
+import CartPage from "@/pages/client/CartPage.vue";
+import CheckoutPage from "@/pages/client/CheckoutPage.vue";
+import ClientLayout from "@/views/client/ClientLayout.vue";
+import ContactPage from "@/pages/client/ContactPage.vue";
+import GuestOrderTrackingPage from "@/pages/client/GuestOrderTrackingPage.vue";
+import HomePage from "@/pages/client/HomePage.vue";
+import LoginPage from "@/pages/client/LoginPage.vue";
+import NewsPage from "@/pages/client/NewsPage.vue";
+import OrderSuccessPage from "@/pages/client/OrderSuccessPage.vue";
+import ProductDetailPage from "@/pages/client/ProductDetailPage.vue";
+import ProductsPage from "@/pages/client/ProductsPage.vue";
+import RegisterPage from "@/pages/client/RegisterPage.vue";
+
 // ======================= AUTH HELPERS =======================
-const normalizeRole = (role) => {
-  const r = String(role || "").trim().toUpperCase();
+const ADMIN_ROLES = ["ADMIN", "NHAN_VIEN"];
+const ADMIN_USER_KEYS = ["user", "nguoiDung"];
+const CLIENT_USER_KEYS = ["ss_customer"];
 
-  // tương thích nếu ai đó còn lưu STAFF
-  if (r === "STAFF") return "NHAN_VIEN";
-  if (r === "NHANVIEN" || r === "NHÂN_VIÊN" || r === "NHÂN VIÊN") return "NHAN_VIEN";
-
-  return r;
-};
-
-const getUser = () => {
-  const raw =
-    localStorage.getItem("user") ||
-    sessionStorage.getItem("user") ||
-    localStorage.getItem("nguoiDung") ||
-    sessionStorage.getItem("nguoiDung");
-
+const safeParseJson = (raw) => {
   if (!raw) return null;
 
   try {
@@ -85,40 +86,80 @@ const getUser = () => {
   }
 };
 
-const getUserRole = () => {
-  const u = getUser();
+const getStorageRaw = (keys) => {
+  for (const key of keys) {
+    const localValue = localStorage.getItem(key);
+    if (localValue) return localValue;
 
-  // ưu tiên field dạng string trước, object (quyenHan) để sau
-  const role =
-    u?.role ||
-    u?.vaiTro ||
-    u?.tenVaiTro ||
-    u?.tenQuyenHan ||
-    u?.quyenHan?.tenQuyenHan ||
-    u?.quyenHan;
+    const sessionValue = sessionStorage.getItem(key);
+    if (sessionValue) return sessionValue;
+  }
 
-  return normalizeRole(role);
+  return null;
 };
 
-// ✅ Check đăng nhập: token (nếu có) HOẶC user
-const isLoggedIn = () => {
-  const tokenKeys = ["accessToken", "token", "jwt", "ss_token"];
-  const hasToken = tokenKeys.some((k) => !!localStorage.getItem(k) || !!sessionStorage.getItem(k));
+const getStorageObject = (keys) => {
+  const raw = getStorageRaw(keys);
+  const parsed = safeParseJson(raw);
 
-  const hasUser =
-    !!localStorage.getItem("user") ||
-    !!sessionStorage.getItem("user") ||
-    !!localStorage.getItem("nguoiDung") ||
-    !!sessionStorage.getItem("nguoiDung");
-
-  return hasToken || hasUser;
+  return parsed && typeof parsed === "object" ? parsed : null;
 };
 
-const clearAuth = () => {
-  const keys = ["user", "nguoiDung", "accessToken", "token", "jwt", "ss_token", "ss_nguoi_ban"];
-  keys.forEach((k) => {
-    localStorage.removeItem(k);
-    sessionStorage.removeItem(k);
+const normalizeRole = (role) => {
+  const r = String(role || "").trim().toUpperCase();
+
+  if (r === "STAFF") return "NHAN_VIEN";
+  if (r === "NHANVIEN" || r === "NHÂN_VIÊN" || r === "NHÂN VIÊN") return "NHAN_VIEN";
+
+  return r;
+};
+
+const extractRole = (user) => {
+  if (!user || typeof user !== "object") return null;
+
+  return normalizeRole(
+    user.role ||
+      user.vaiTro ||
+      user.tenVaiTro ||
+      user.tenQuyenHan ||
+      user.quyenHan?.tenQuyenHan ||
+      user.quyenHan ||
+      user.chucVu
+  );
+};
+
+const getAdminUser = () => getStorageObject(ADMIN_USER_KEYS);
+
+const getClientUser = () => getStorageObject(CLIENT_USER_KEYS);
+
+const getAdminRole = () => extractRole(getAdminUser());
+
+const isAdminLoggedIn = () => {
+  const user = getAdminUser();
+  const role = extractRole(user);
+
+  return !!user && ADMIN_ROLES.includes(role);
+};
+
+const isClientLoggedIn = () => {
+  return !!getClientUser();
+};
+
+const clearAdminAuth = () => {
+  const keys = [
+    "accessToken",
+    "token",
+    "jwt",
+    "ss_token",
+    "user",
+    "nguoiDung",
+    "ss_nguoi_ban",
+    "ss_has_active_shift",
+  ];
+
+  keys.forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
   });
 };
 
@@ -126,8 +167,22 @@ const hasPermission = (requiredRoles, userRole) => {
   if (!requiredRoles) return true;
   if (!userRole) return false;
 
-  return Array.isArray(requiredRoles) ? requiredRoles.includes(userRole) : requiredRoles === userRole;
+  return Array.isArray(requiredRoles)
+    ? requiredRoles.includes(userRole)
+    : requiredRoles === userRole;
 };
+
+const getRequiredRoles = (to) => {
+  const matched = [...to.matched].reverse();
+  const record = matched.find((r) => r.meta?.roles || r.meta?.role);
+
+  if (!record) return null;
+  return record.meta.roles ?? record.meta.role ?? null;
+};
+
+const hasActiveShift = () => sessionStorage.getItem("ss_has_active_shift") === "true";
+
+const isActionRoute = (path) => /\/(new|them|edit|cap-nhat)(\/|$)/.test(path);
 
 // ======================= ROUTES =======================
 const routes = [
@@ -141,29 +196,97 @@ const routes = [
   },
 
   {
+    path: "/client",
+    component: ClientLayout,
+    meta: { public: true },
+    children: [
+      { path: "", name: "client-home", component: HomePage },
+      { path: "about", name: "client-about", component: AboutPage },
+      { path: "cart", name: "client-cart", component: CartPage },
+      { path: "checkout", name: "client-checkout", component: CheckoutPage },
+      { path: "contact", name: "client-contact", component: ContactPage },
+      { path: "login", name: "client-login", component: LoginPage },
+      { path: "news", name: "client-news", component: NewsPage },
+      { path: "products", name: "client-products", component: ProductsPage },
+      {
+        path: "products/:id",
+        name: "client-product-detail",
+        component: ProductDetailPage,
+        props: true,
+      },
+      { path: "register", name: "client-register", component: RegisterPage },
+      { path: "success", name: "client-order-success", component: OrderSuccessPage },
+      { path: "tracking", name: "client-guest-tracking", component: GuestOrderTrackingPage },
+
+      {
+        path: "account",
+        component: AccountLayout,
+        meta: { requiresClientAuth: true },
+        redirect: "/client/account/orders",
+        children: [
+          { path: "address", name: "client-address", component: AddressPage },
+          { path: "coupons", name: "client-coupons", component: CouponsPage },
+          { path: "orders", name: "client-orders", component: OrderHistoryPage },
+          { path: "orders/:id", name: "client-tracking", component: OrderTrackingPage },
+          { path: "password", name: "client-password", component: ChangePasswordPage },
+          { path: "profile", name: "client-profile", component: ProfilePage },
+        ],
+      },
+    ],
+  },
+
+  {
     path: "/admin",
     component: AdminLayout,
     meta: { requiresAuth: true },
     children: [
       { path: "", redirect: "/admin/trang-chu" },
 
-      // ✅ TRANG CHỦ: ADMIN + NHÂN VIÊN ĐỀU THẤY
       {
-        path: "trang-chu",
-        name: "admin-trang-chu",
-        component: TrangChuPage,
+        path: "chat",
+        name: "admin-chat",
+        component: ChatPage,
         meta: { roles: ["ADMIN", "NHAN_VIEN"] },
       },
-
-      // ✅ TRANG THÔNG TIN CÁ NHÂN: ADMIN + NHÂN VIÊN ĐỀU THẤY
       {
-        path: "thong-tin-ca-nhan",
-        name: "admin-profile",
-        component: () => import("@/views/admin/ThongTinCaNhan.vue"),
-        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+        path: "quan-ly-chat",
+        redirect: "/admin/chat",
       },
 
-      // ✅ THỐNG KÊ: chỉ ADMIN
+      {
+        path: "chi-tiet-san-pham",
+        name: "admin-ctsp",
+        component: ProductDetailListPage,
+        meta: { roles: ["ADMIN"] },
+      },
+      {
+        path: "chi-tiet-san-pham/new",
+        name: "admin-ctsp-new",
+        component: ProductDetailFormPage,
+        meta: { roles: ["ADMIN"] },
+      },
+      {
+        path: "chi-tiet-san-pham/:id(\\d+)",
+        name: "admin-ctsp-one",
+        component: ProductDetailFormPage,
+        props: true,
+        meta: { roles: ["ADMIN"] },
+      },
+
+      {
+        path: "co-giay",
+        name: "admin-co-giay",
+        component: CoGiayPage,
+        meta: { roles: ["ADMIN"] },
+      },
+
+      {
+        path: "chat-lieu",
+        name: "admin-chat-lieu",
+        component: ChatLieuPage,
+        meta: { roles: ["ADMIN"] },
+      },
+
       {
         path: "dashboard",
         name: "admin-dashboard",
@@ -171,74 +294,10 @@ const routes = [
         meta: { roles: ["ADMIN"] },
       },
 
-      // ✅ POS / HÓA ĐƠN / KHÁCH HÀNG / LỊCH: ADMIN + NHÂN VIÊN
       {
-        path: "pos",
-        name: "admin-pos",
-        component: SalesPage,
-        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
-      },
-
-      {
-        path: "hoa-don",
-        name: "admin-hoa-don",
-        component: HoaDonList,
-        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
-      },
-      {
-        path: "hoa-don/:id(\\d+)",
-        name: "admin-hoa-don-detail",
-        component: HoaDonDetail,
-        props: true,
-        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
-      },
-
-      {
-        path: "lich-lam-viec",
-        name: "admin-lich-lam-viec",
-        component: LichLamViecPage,
-        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
-      },
-      {
-        path: "lich-ca-lam",
-        name: "admin-lich-ca-lam",
-        component: LichCaLamPage,
-        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
-      },
-      {
-        path: "giao-ca",
-        name: "admin-giao-ca",
-        component: GiaoCaPage,
-        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
-      },
-      // ✅ ĐÃ THÊM ROUTE LỊCH SỬ HOẠT ĐỘNG (CHỈ CÓ ADMIN MỚI VÀO ĐƯỢC)
-      {
-        path: "lich-su-hoat-dong",
-        name: "admin-lich-su-hoat-dong",
-        component: LichSuHoatDongPage,
-        meta: { roles: ["ADMIN"] },
-      },
-
-      // =========================================================
-      // ✅ KHUYẾN MẠI (ADMIN)
-      // =========================================================
-      {
-        path: "giam-gia/phieu",
-        name: "admin-voucher",
-        component: VoucherManagePage,
-        meta: { roles: ["ADMIN"] },
-      },
-      {
-        path: "giam-gia/phieu/them",
-        name: "admin-voucher-new",
-        component: VoucherFormPage,
-        meta: { roles: ["ADMIN"] },
-      },
-      {
-        path: "giam-gia/phieu/:id(\\d+)",
-        name: "admin-voucher-detail",
-        component: VoucherFormPage,
-        props: true,
+        path: "form-chan",
+        name: "admin-form-chan",
+        component: FormChanPage,
         meta: { roles: ["ADMIN"] },
       },
 
@@ -262,9 +321,112 @@ const routes = [
         meta: { roles: ["ADMIN"] },
       },
 
-      // =========================================================
-      // ✅ SẢN PHẨM (ADMIN)
-      // =========================================================
+      {
+        path: "giam-gia/phieu",
+        name: "admin-voucher",
+        component: VoucherManagePage,
+        meta: { roles: ["ADMIN"] },
+      },
+      {
+        path: "giam-gia/phieu/them",
+        name: "admin-voucher-new",
+        component: VoucherFormPage,
+        meta: { roles: ["ADMIN"] },
+      },
+      {
+        path: "giam-gia/phieu/:id(\\d+)",
+        name: "admin-voucher-detail",
+        component: VoucherFormPage,
+        props: true,
+        meta: { roles: ["ADMIN"] },
+      },
+
+      {
+        path: "giao-ca",
+        name: "admin-giao-ca",
+        component: GiaoCaPage,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+
+      {
+        path: "hoa-don",
+        name: "admin-hoa-don",
+        component: HoaDonList,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+      {
+        path: "hoa-don/:id(\\d+)",
+        name: "admin-hoa-don-detail",
+        component: HoaDonDetail,
+        props: true,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+
+      {
+        path: "khach-hang",
+        redirect: "/admin/tai-khoan/khach-hang",
+      },
+
+      {
+        path: "kich-thuoc",
+        name: "admin-kich-thuoc",
+        component: KichThuocPage,
+        meta: { roles: ["ADMIN"] },
+      },
+
+      {
+        path: "lich-ca-lam",
+        name: "admin-lich-ca-lam",
+        component: LichCaLamPage,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+
+      {
+        path: "lich-lam-viec",
+        name: "admin-lich-lam-viec",
+        component: LichLamViecPage,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+      {
+        path: "lich-su-hoat-dong",
+        name: "admin-lich-su-hoat-dong",
+        component: LichSuHoatDongPage,
+        meta: { roles: ["ADMIN"] },
+      },
+
+      {
+        path: "loai-san",
+        name: "admin-loai-san",
+        component: LoaiSanPage,
+        meta: { roles: ["ADMIN"] },
+      },
+
+      {
+        path: "mau-sac",
+        name: "admin-mau-sac",
+        component: MauSacPage,
+        meta: { roles: ["ADMIN"] },
+      },
+
+      {
+        path: "nhan-vien",
+        redirect: "/admin/tai-khoan/nhan-vien",
+      },
+
+      {
+        path: "phong-cach-choi",
+        name: "admin-phong-cach-choi",
+        component: PhongCachChoiPage,
+        meta: { roles: ["ADMIN"] },
+      },
+
+      {
+        path: "pos",
+        name: "admin-pos",
+        component: SalesPage,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+
       {
         path: "san-pham",
         name: "admin-san-pham",
@@ -293,53 +455,17 @@ const routes = [
       },
 
       {
-        path: "chi-tiet-san-pham",
-        name: "admin-ctsp",
-        component: ProductDetailListPage,
-        meta: { roles: ["ADMIN"] },
-      },
-      {
-        path: "chi-tiet-san-pham/new",
-        name: "admin-ctsp-new",
-        component: ProductDetailFormPage,
-        meta: { roles: ["ADMIN"] },
-      },
-      {
-        path: "chi-tiet-san-pham/:id(\\d+)",
-        name: "admin-ctsp-one",
-        component: ProductDetailFormPage,
-        props: true,
-        meta: { roles: ["ADMIN"] },
-      },
-
-      // =========================================================
-      // ✅ THUỘC TÍNH (ADMIN)
-      // =========================================================
-      { path: "xuat-xu", name: "admin-xuat-xu", component: XuatXuPage, meta: { roles: ["ADMIN"] } },
-      { path: "thuong-hieu", name: "admin-thuong-hieu", component: ThuongHieuPage, meta: { roles: ["ADMIN"] } },
-      { path: "vi-tri-thi-dau", name: "admin-vi-tri-thi-dau", component: ViTriThiDauPage, meta: { roles: ["ADMIN"] } },
-      { path: "phong-cach-choi", name: "admin-phong-cach-choi", component: PhongCachChoiPage, meta: { roles: ["ADMIN"] } },
-      { path: "co-giay", name: "admin-co-giay", component: CoGiayPage, meta: { roles: ["ADMIN"] } },
-      { path: "chat-lieu", name: "admin-chat-lieu", component: ChatLieuPage, meta: { roles: ["ADMIN"] } },
-      { path: "mau-sac", name: "admin-mau-sac", component: MauSacPage, meta: { roles: ["ADMIN"] } },
-      { path: "kich-thuoc", name: "admin-kich-thuoc", component: KichThuocPage, meta: { roles: ["ADMIN"] } },
-      { path: "form-chan", name: "admin-form-chan", component: FormChanPage, meta: { roles: ["ADMIN"] } },
-      { path: "loai-san", name: "admin-loai-san", component: LoaiSanPage, meta: { roles: ["ADMIN"] } },
-
-      // ✅ redirect demo cũ
-      { path: "khach-hang", redirect: "/admin/tai-khoan/khach-hang" },
-      { path: "nhan-vien", redirect: "/admin/tai-khoan/nhan-vien" },
-
-      // =========================================================
-      // ✅ TÀI KHOẢN
-      // =========================================================
-      {
         path: "tai-khoan/khach-hang",
         name: "tai-khoan-khach-hang",
         component: TaiKhoanKhachHangPage,
         meta: { roles: ["ADMIN", "NHAN_VIEN"] },
         children: [
-          { path: "them", name: "tai-khoan-khach-hang-them", component: ThemKhachHangPage, meta: { roles: ["ADMIN", "NHAN_VIEN"] } },
+          {
+            path: "them",
+            name: "tai-khoan-khach-hang-them",
+            component: ThemKhachHangPage,
+            meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+          },
           {
             path: "cap-nhat/:id(\\d+)",
             name: "tai-khoan-khach-hang-cap-nhat",
@@ -355,7 +481,12 @@ const routes = [
         component: TaiKhoanNhanVienPage,
         meta: { roles: ["ADMIN"] },
         children: [
-          { path: "them", name: "tai-khoan-nhan-vien-them", component: ThemNhanVienPage, meta: { roles: ["ADMIN"] } },
+          {
+            path: "them",
+            name: "tai-khoan-nhan-vien-them",
+            component: ThemNhanVienPage,
+            meta: { roles: ["ADMIN"] },
+          },
           {
             path: "cap-nhat/:id(\\d+)",
             name: "tai-khoan-nhan-vien-cap-nhat",
@@ -364,6 +495,41 @@ const routes = [
             meta: { roles: ["ADMIN"] },
           },
         ],
+      },
+
+      {
+        path: "thong-tin-ca-nhan",
+        name: "admin-profile",
+        component: () => import("@/views/admin/ThongTinCaNhan.vue"),
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+
+      {
+        path: "trang-chu",
+        name: "admin-trang-chu",
+        component: TrangChuPage,
+        meta: { roles: ["ADMIN", "NHAN_VIEN"] },
+      },
+
+      {
+        path: "thuong-hieu",
+        name: "admin-thuong-hieu",
+        component: ThuongHieuPage,
+        meta: { roles: ["ADMIN"] },
+      },
+
+      {
+        path: "vi-tri-thi-dau",
+        name: "admin-vi-tri-thi-dau",
+        component: ViTriThiDauPage,
+        meta: { roles: ["ADMIN"] },
+      },
+
+      {
+        path: "xuat-xu",
+        name: "admin-xuat-xu",
+        component: XuatXuPage,
+        meta: { roles: ["ADMIN"] },
       },
     ],
   },
@@ -378,79 +544,48 @@ const router = createRouter({
 
 // ======================= GUARD =======================
 router.beforeEach((to, from, next) => {
-  const role = getUserRole();
+  const isPublicRoute = to.matched.some((record) => record.meta?.public);
+  const requiresClientAuth = to.matched.some((record) => record.meta?.requiresClientAuth);
+  const requiresAdminAuth = to.matched.some((record) => record.meta?.requiresAuth);
 
-  // Public route
-  if (to.meta?.public) {
-    // chỉ đá khỏi /dang-nhap khi đã login + role hợp lệ
-    if (to.name === "dang-nhap" && isLoggedIn() && role) {
+  if (requiresClientAuth && !isClientLoggedIn()) {
+    return next({ name: "client-login", query: { redirect: to.fullPath } });
+  }
+
+  if (to.name === "dang-nhap") {
+    if (isAdminLoggedIn()) {
       return next("/admin/trang-chu");
     }
     return next();
   }
 
-  const requiresAuth = to.matched.some((r) => r.meta?.requiresAuth);
-  if (!requiresAuth) return next();
+  if (isPublicRoute && !requiresAdminAuth) {
+    return next();
+  }
 
-  // chưa login -> về login
-  if (!isLoggedIn()) {
+  if (!requiresAdminAuth) {
+    return next();
+  }
+
+  if (!isAdminLoggedIn()) {
+    clearAdminAuth();
     return next({ name: "dang-nhap", query: { redirect: to.fullPath } });
   }
 
-  // đã có token/user nhưng không đọc ra role -> coi như chưa login (tránh “từ chối” sai)
-  if (!role) {
-    clearAuth();
-    return next({ name: "dang-nhap" });
-  }
+  const role = getAdminRole();
+  const requiredRoles = getRequiredRoles(to);
 
-  // lấy roles gần nhất trong matched (ưu tiên route con)
-  const requiredRoles = to.matched.reduce(
-    (acc, r) => (r.meta?.roles ?? r.meta?.role ?? acc),
-    null
-  );
+  // ✅ Không chặn /admin/giao-ca nữa.
+  // Đây là trang để nhân viên mở/đóng ca, nên phải cho vào kể cả khi chưa có ca hoạt động.
 
-  // =========================================================
-  // ✅ CHẶN VÀO TRANG GIAO CA NẾU CHƯA MỞ CA LÀM VIỆC
-  // =========================================================
-  if (to.path.includes("/admin/giao-ca")) {
-    if (role === "NHAN_VIEN") {
-      const hasActiveShift = sessionStorage.getItem("ss_has_active_shift") === "true";
-      if (!hasActiveShift) {
-        // Thông báo nhẹ góc màn hình
-        Swal.fire({
-          icon: "warning",
-          title: "Chưa mở ca",
-          text: "Bạn cần có ca làm việc đang hoạt động để vào mục này.",
-          toast: true,
-          position: "top-end",
-          showConfirmButton: false,
-          timer: 3000
-        });
-        return next(false); // Từ chối chuyển trang
-      }
-    }
+  if (isActionRoute(to.path) && role === "NHAN_VIEN" && !hasActiveShift()) {
+    Swal.fire({
+      icon: "error",
+      title: "Chế độ Chỉ xem",
+      text: "Bạn cần Bắt đầu ca làm việc mới có thể Thêm hoặc Sửa dữ liệu!",
+    });
+    return next(false);
   }
-  
-  // =========================================================
-  // ✅ LỚP BẢO VỆ 1: CHẶN VÀO CÁC TRANG THÊM/SỬA/CẬP NHẬT NẾU CHƯA MỞ CA
-  // =========================================================
-  const isActionRoute = to.path.includes("/new") || 
-                        to.path.includes("/them") || 
-                        to.path.includes("/edit") || 
-                        to.path.includes("/cap-nhat");
-
-  if (isActionRoute && role === "NHAN_VIEN") {
-    const hasActiveShift = sessionStorage.getItem("ss_has_active_shift") === "true";
-    if (!hasActiveShift) {
-      Swal.fire({
-        icon: "error",
-        title: "Chế độ Chỉ xem",
-        text: "Bạn cần Bắt đầu ca làm việc mới có thể Thêm hoặc Sửa dữ liệu!",
-      });
-      return next(false); // Chặn không cho vào trang form
-    }
-  }
-  // =========================================================
 
   if (!hasPermission(requiredRoles, role)) {
     Swal.fire({
@@ -461,8 +596,7 @@ router.beforeEach((to, from, next) => {
       showConfirmButton: false,
     });
 
-    // fallback an toàn
-    const fallback = role === "NHAN_VIEN" ? "/admin/trang-chu" : "/admin/trang-chu";
+    const fallback = "/admin/trang-chu";
     return next(from.fullPath && from.fullPath !== "/dang-nhap" ? from.fullPath : fallback);
   }
 
