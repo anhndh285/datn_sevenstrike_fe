@@ -1,341 +1,383 @@
-<!-- File: src/pages/thong_ke/ThongKePage.vue -->
 <template>
   <div class="thong-ke-page container-fluid p-4">
-    <div class="header-bar mb-2">
-      <h4 class="title">BÁO CÁO THỐNG KÊ KINH DOANH</h4>
-
-      <button class="btn btn-success btn-sm" @click="sendReport">
+    <div class="mb-2">
+      <small class="text-muted">Thống kê doanh thu</small>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="fw-bold mb-0">Thống kê doanh thu</h4>
+      <button class="btn btn-outline-secondary btn-sm" @click="sendReport">
         Gửi báo cáo
       </button>
     </div>
 
-    <!-- Badge trạng thái -->
     <div class="mb-3">
-      <span v-if="filterType === 'TODAY'" class="badge bg-success">
-        Đang hiển thị dữ liệu của HÔM NAY ({{ todayString }})
+      <span v-if="filterType === 'TODAY'" class="text-muted small">
+        <i class="bi bi-info-circle me-1"></i> Đang hiển thị dữ liệu của HÔM NAY
+        ({{ todayString }})
       </span>
-      <span v-else class="badge bg-primary">
-        Khoảng thời gian đang xem: {{ currentRange.from }} →
-        {{ currentRange.to }}
+      <span v-else class="text-muted small">
+        <i class="bi bi-info-circle me-1"></i> Khoảng thời gian đang xem:
+        {{ currentRange.from }} → {{ currentRange.to }}
       </span>
     </div>
 
-    <!-- Filter Bar -->
-    <div class="card p-3 mb-4 filter-bar">
-      <div class="row align-items-center">
-        <div class="col-md-6 text-muted">
-          Lựa chọn khoảng thời gian để xem thống kê doanh thu và đơn hàng
+    <div class="card border-0 shadow-sm p-4 mb-4 filter-bar">
+      <div class="row align-items-end mb-4">
+        <div class="col-md-5">
+          <label class="form-label text-muted small mb-2"
+            >Khoảng thời gian</label
+          >
+          <div class="d-flex align-items-center gap-2">
+            <input
+              type="date"
+              class="form-control"
+              v-model="fromDate"
+              @change="filterType = 'CUSTOM'"
+            />
+            <span class="text-muted">→</span>
+            <input
+              type="date"
+              class="form-control"
+              v-model="toDate"
+              @change="filterType = 'CUSTOM'"
+            />
+          </div>
         </div>
 
-        <div class="col-md-6 text-end">
-          <select class="form-select d-inline w-auto me-2" v-model="filterType">
-            <option value="TODAY">Hôm nay</option>
-            <option value="WEEK">Tuần này</option>
-            <option value="MONTH">Tháng này</option>
-            <option value="CUSTOM">Tùy chọn</option>
-          </select>
-
-          <!-- FROM -->
-          <input
-            v-if="filterType === 'CUSTOM'"
-            type="date"
-            class="form-control d-inline w-auto me-2"
-            v-model="fromDate"
-          />
-
-          <!-- TO -->
-          <input
-            v-if="filterType === 'CUSTOM'"
-            type="date"
-            class="form-control d-inline w-auto me-2"
-            v-model="toDate"
-          />
-
+        <div class="col-md-7 text-end">
+          <button class="btn btn-primary px-4 me-2" @click="handleCustomFilter">
+            Lọc dữ liệu
+          </button>
+          <button
+            class="btn btn-light border px-4 me-2"
+            @click="loadStatistics"
+          >
+            Tải lại
+          </button>
           <button
             class="btn me-2"
-            :class="
-              chartType === 'line' ? 'btn-success' : 'btn-outline-success'
-            "
+            :class="chartType === 'line' ? 'btn-primary' : 'btn-light border'"
             @click="chartType = 'line'"
           >
             Biểu đồ đường
           </button>
-
           <button
             class="btn"
-            :class="chartType === 'bar' ? 'btn-success' : 'btn-outline-success'"
+            :class="chartType === 'bar' ? 'btn-primary' : 'btn-light border'"
             @click="chartType = 'bar'"
           >
             Biểu đồ cột
           </button>
         </div>
       </div>
+
+      <div class="d-flex gap-2">
+        <button
+          class="btn px-4"
+          :class="filterType === 'TODAY' ? 'btn-primary' : 'btn-light border'"
+          @click="filterType = 'TODAY'"
+        >
+          Theo ngày
+        </button>
+        <button
+          class="btn px-4"
+          :class="filterType === 'WEEK' ? 'btn-primary' : 'btn-light border'"
+          @click="filterType = 'WEEK'"
+        >
+          Theo tuần
+        </button>
+        <button
+          class="btn px-4"
+          :class="filterType === 'MONTH' ? 'btn-primary' : 'btn-light border'"
+          @click="filterType = 'MONTH'"
+        >
+          Theo tháng
+        </button>
+      </div>
     </div>
 
-    <!-- Summary -->
-    <div class="card p-3 mb-4">
-      <div class="row text-center">
-        <div class="col-md-3">
-          <div class="stat-box">
-            <div class="stat-title">Tổng số đơn hàng</div>
-            <div class="stat-value">{{ totalOrders }}</div>
-          </div>
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100 stat-card text-center">
+          <div class="text-muted small mb-2">Tổng đơn hàng</div>
+          <div class="fs-4 text-dark">{{ totalOrders }}</div>
         </div>
+      </div>
 
-        <div class="col-md-3">
-          <div class="stat-box">
-            <div class="stat-title">Tổng doanh thu</div>
-            <div class="stat-value text-success">
-              {{ formatMoney(totalRevenue) }}
-            </div>
-          </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100 stat-card text-center">
+          <div class="text-muted small mb-2">Tổng doanh thu</div>
+          <div class="fs-4 text-dark">{{ formatMoney(totalRevenue) }}</div>
         </div>
+      </div>
 
-        <div class="col-md-3">
-          <div class="stat-box">
-            <div class="stat-title">Doanh thu thực tế</div>
-            <div class="stat-value text-primary">
-              {{ formatMoney(realRevenue) }}
-            </div>
-          </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100 stat-card text-center">
+          <div class="text-muted small mb-2">Doanh thu thực tế</div>
+          <div class="fs-4 text-dark">{{ formatMoney(realRevenue) }}</div>
         </div>
+      </div>
 
-        <div class="col-md-3">
-          <div class="stat-box">
-            <div class="stat-title">Doanh thu dự kiến</div>
-            <div class="stat-value text-warning">
-              {{ formatMoney(expectedRevenue) }}
-            </div>
-          </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100 stat-card text-center">
+          <div class="text-muted small mb-2">Doanh thu dự kiến</div>
+          <div class="fs-4 text-dark">{{ formatMoney(expectedRevenue) }}</div>
         </div>
       </div>
     </div>
 
-    <!-- 4 Cards -->
-    <div class="row mb-4">
+    <div class="row g-3 mb-4">
       <div class="col-md-3" v-for="(card, index) in miniCards" :key="index">
-        <div class="card p-3 mini-card">
-          <div class="mini-title">{{ card.label }}</div>
-          <div class="mini-value">
-            {{ formatMoney(card.revenue) }}
-          </div>
-          <div class="mini-desc">
-            Sản phẩm: {{ card.totalProducts }} | Đơn hàng:
-            {{ card.totalOrders }}
+        <div class="card border-0 shadow-sm p-3 mini-card text-center">
+          <div class="text-muted small fw-bold mb-1">{{ card.label }}</div>
+          <div class="fs-5 mb-1">{{ formatMoney(card.revenue) }}</div>
+          <div class="small text-muted">
+            Sản phẩm: {{ card.totalProducts }} | Đơn: {{ card.totalOrders }}
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Chart -->
-    <div class="row">
-      <div class="col-md-8">
-        <div class="card p-3 chart-card">
-          <h6>Biểu đồ doanh thu theo thời gian</h6>
-          <div style="height: 300px">
-            <RevenueChart :chart="revenueChart" :type="chartType" />
+    <div class="card border-0 shadow-sm p-4 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h6 class="fw-bold mb-0">Biểu đồ doanh thu theo thời gian</h6>
+        <span class="text-muted small"
+          >Bấm vào 1 điểm trên biểu đồ để xem doanh thu</span
+        >
+      </div>
+      <div style="height: 350px">
+        <RevenueChart :chart="revenueChart" :type="chartType" />
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-xl-8 col-lg-12">
+        <div class="card border-0 shadow-sm p-4 h-100">
+          <h6 class="fw-bold mb-4">Bảng thống kê chi tiết theo thời gian</h6>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th class="text-muted fw-normal">Thời gian</th>
+                  <th class="text-muted fw-normal">Doanh thu</th>
+                  <th class="text-muted fw-normal">Số đơn</th>
+                  <th class="text-muted fw-normal">Giá trị trung bình/đơn</th>
+                  <th class="text-muted fw-normal">Tăng trưởng (%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(item, index) in detailTable" :key="index">
+                  <td>{{ item.time }}</td>
+                  <td>{{ formatMoney(item.revenue) }}</td>
+                  <td>{{ item.totalOrders }}</td>
+                  <td>{{ formatMoney(item.avgPerOrder) }}</td>
+                  <td
+                    :class="item.growth >= 0 ? 'text-success' : 'text-danger'"
+                  >
+                    {{ item.growth.toFixed(2) }}%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4">
-        <div class="card p-3 chart-card">
-          <h6>Phân bố trạng thái đơn hàng</h6>
-          <div style="height: 300px">
+      <div class="col-xl-4 col-lg-12">
+        <div class="card border-0 shadow-sm p-4 h-100">
+          <h6 class="fw-bold mb-4">Phân bố trạng thái đơn hàng</h6>
+          <div
+            style="height: 250px"
+            class="d-flex align-items-center justify-content-center"
+          >
             <OrderStatusChart :statusData="orderStatus" />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Bottom -->
-    <div class="row mt-4">
-      <div class="col-md-8">
-        <div class="card p-3">
-          <h6>Bảng thống kê chi tiết theo thời gian</h6>
+    <div class="row g-4 mt-1 mb-4">
+      <div class="col-12">
+    <div class="card border-0 shadow-sm p-4">
+      <h6 class="fw-bold mb-1">Top sản phẩm bán chạy (30 ngày)</h6>
+      <small class="text-muted mb-4 d-block">Từ {{ lastMonthRange.from }} đến {{ lastMonthRange.to }}</small>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle" style="font-size: 14px">
+          <thead class="table-light">
+            <tr>
+              <th>STT</th>
+              <th>Sản phẩm</th>
+              <th>Thuộc tính</th>
+              <th>Giá</th>
+              <th class="text-center">Tồn kho</th>
+              <th class="text-center">Đã bán</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, index) in topProducts" :key="index">
+              <td>{{ index + 1 }}</td>
+              <td style="width: 30%">
+                <div class="d-flex align-items-center gap-3">
+                  <img 
+                    :src="item.imageUrl || 'https://via.placeholder.com/50'" 
+                    class="rounded border shadow-sm" 
+                    style="width: 50px; height: 50px; object-fit: cover;" 
+                    @error="(e) => e.target.src = 'https://via.placeholder.com/50'"
+                  />
+                  <div>
+                    <div class="fw-bold">{{ item.productDetailCode }}</div>
+                    <div class="text-muted small text-truncate" style="max-width: 300px" :title="item.productName">
+                      {{ item.productName }}
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="d-flex flex-wrap gap-1">
+                  <span v-if="item.color" class="badge bg-light text-dark border">{{ item.color }}</span>
+                  <span v-if="item.size" class="badge bg-light text-dark border">Size {{ item.size }}</span>
+                  <span v-if="item.surface" class="badge bg-light text-dark border">{{ item.surface }}</span>
+                </div>
+              </td>
+              <td class="text-nowrap">{{ formatMoney(item.price) }}</td>
+              
+              <td class="text-center fw-bold" :class="item.stockQuantity <= 5 ? 'text-danger' : 'text-dark'">
+                {{ item.stockQuantity }}
+              </td>
 
-          <table class="table table-bordered mt-3">
-            <thead>
-              <tr>
-                <th>Thời gian</th>
-                <th>Doanh thu</th>
-                <th>Số đơn</th>
-                <th>Giá trị trung bình/đơn</th>
-                <th>Tăng trưởng (%)</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr v-for="(item, index) in detailTable" :key="index">
-                <td>{{ item.time }}</td>
-                <td>{{ formatMoney(item.revenue) }}</td>
-                <td>{{ item.totalOrders }}</td>
-                <td>{{ formatMoney(item.avgPerOrder) }}</td>
-                <td :class="item.growth >= 0 ? 'text-success' : 'text-danger'">
-                  {{ item.growth.toFixed(2) }}%
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+              <td class="text-center fw-bold text-success">{{ item.quantity }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
+    </div>
+  </div>
 
-      <!-- TOP 30 NGÀY -->
-      <div class="col-md-4">
-        <div class="card p-3">
-          <h6>
-            Top sản phẩm bán chạy trong 30 ngày gần nhất
-            <br />
-            <small class="text-muted">
-              (Từ {{ lastMonthRange.from }} đến {{ lastMonthRange.to }})
-            </small>
-          </h6>
-
-          <table class="table table-bordered mt-3">
-            <thead>
-              <tr>
-                <th>STT</th>
-                <th>Mã CTSP</th>
-                <th>Tên sản phẩm</th>
-                <th>Giá</th>
-                <th>Số lượng bán</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr v-for="(item, index) in topProducts" :key="index">
-                <td>{{ index + 1 }}</td>
-
-                <td>{{ item.productDetailCode }}</td>
-
-                <td>{{ item.productName }}</td>
-
-                <td class="text-success">
-                  {{ formatMoney(item.price) }}
-                </td>
-
-                <td>{{ item.quantity }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- INVENTORY STATUS -->
-      <div class="row mt-4">
-        <div class="col-md-12">
-          <div class="card p-3">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6>Thống kê tồn kho Quý {{ quarterInfo.quarter }}</h6>
-                <small class="text-muted">
-                  (Từ {{ quarterInfo.from }} → {{ quarterInfo.to }})
-                </small>
-              </div>
-
-              <!-- FILTER -->
-              <div class="d-flex gap-2">
-                <select
-                  v-model="brandFilter"
-                  class="form-select form-select-sm"
-                >
-                  <option value="">Thương hiệu</option>
-                  <option v-for="b in brands" :key="b">{{ b }}</option>
-                </select>
-
-                <select
-                  v-model="surfaceFilter"
-                  class="form-select form-select-sm"
-                >
-                  <option value="">Loại sân</option>
-                  <option v-for="s in surfaces" :key="s">{{ s }}</option>
-                </select>
-
-                <select
-                  v-model="statusFilter"
-                  class="form-select form-select-sm"
-                >
-                  <option value="">Trạng thái</option>
-                  <option value="TON_KHO">Tồn kho nhiều</option>
-                  <option value="BAN_ON">Bán ổn</option>
-                  <option value="BAN_CHAY">Bán chạy</option>
-                </select>
-              </div>
+      <div class="col-12">
+        <div class="card border-0 shadow-sm p-4">
+          <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+              <h6 class="fw-bold mb-1">
+                Thống kê tồn kho Quý {{ quarterInfo.quarter }}
+              </h6>
+              <small class="text-muted"
+                >Từ {{ quarterInfo.from }} → {{ quarterInfo.to }}</small
+              >
             </div>
+            <div class="d-flex gap-2">
+              <select
+                v-model="brandFilter"
+                class="form-select border-0 bg-light form-select-sm"
+              >
+                <option value="">Thương hiệu</option>
+                <option v-for="b in brands" :key="b">{{ b }}</option>
+              </select>
+              <select
+                v-model="surfaceFilter"
+                class="form-select border-0 bg-light form-select-sm"
+              >
+                <option value="">Loại sân</option>
+                <option v-for="s in surfaces" :key="s">{{ s }}</option>
+              </select>
+              <select
+                v-model="statusFilter"
+                class="form-select border-0 bg-light form-select-sm"
+              >
+                <option value="">Trạng thái</option>
+                <option value="TON_KHO">Tồn kho nhiều</option>
+                <option value="BAN_ON">Bán ổn</option>
+                <option value="BAN_CHAY">Bán chạy</option>
+              </select>
+            </div>
+          </div>
 
-            <table class="table table-bordered mt-3">
-              <thead>
+          <div class="table-responsive">
+            <table
+              class="table table-hover align-middle"
+              style="font-size: 14px"
+            >
+              <thead class="table-light">
                 <tr>
-                  <th>Mã SP</th>
-                  <th>Mã CTSP</th>
-                  <th>Tên SP</th>
-                  <th>Màu sắc</th>
-                  <th>Kích cỡ</th>
-                  <th>Loại sân</th>
-                  <th>Giá</th>
-                  <th>Nhập</th>
-                  <th>Bán</th>
-                  <th>Tồn kho</th>
-                  <th>Tỷ lệ bán</th>
-                  <th>Trạng thái</th>
+                  <th class="text-muted fw-normal">Mã SP</th>
+                  <th class="text-muted fw-normal">Sản phẩm</th>
+                  <th class="text-muted fw-normal">Thuộc tính</th>
+                  <th class="text-muted fw-normal text-center">Nhập/Bán/Tồn</th>
+                  <th class="text-muted fw-normal">Tỷ lệ</th>
+                  <th class="text-muted fw-normal text-center">Trạng thái</th>
                 </tr>
               </thead>
-
               <tbody>
                 <tr v-for="(item, index) in filteredInventory" :key="index">
-                  <td>{{ item.productCode }}</td>
-
-                  <td>{{ item.productDetailCode }}</td>
-
-                  <td>{{ item.productName }}</td>
-
-                  <td>
-                    {{ item.color }}
+                  <td class="fw-bold" style="padding: 1rem 0.5rem">
+                    {{ item.productDetailCode }}
                   </td>
-
-                  <td>
-                    {{ item.size }}
+                  <td style="padding: 1rem 0.5rem; width: 30%">
+                    <div class="d-flex align-items-center gap-3">
+                      <img 
+                        :src="item.imageUrl || 'https://via.placeholder.com/40'" 
+                        class="rounded border shadow-sm" 
+                        style="width: 40px; height: 40px; object-fit: cover;"
+                        @error="(e) => e.target.src = 'https://via.placeholder.com/40'"
+                      />
+                      <div>
+                        <div
+                          class="text-truncate fw-bold"
+                          style="max-width: 250px"
+                          :title="item.productName"
+                        >
+                          {{ item.productName }}
+                        </div>
+                        <div class="text-muted small">
+                          {{ formatMoney(item.price) }}
+                        </div>
+                      </div>
+                    </div>
                   </td>
-
-                  <td>
-                    {{ item.surface }}
+                  <td style="padding: 1rem 0.5rem">
+                    <div class="d-flex flex-wrap gap-1">
+                      <span
+                        v-if="item.color"
+                        class="badge bg-light text-dark border"
+                        >{{ item.color }}</span
+                      >
+                      <span
+                        v-if="item.size"
+                        class="badge bg-light text-dark border"
+                        >Size {{ item.size }}</span
+                      >
+                      <span
+                        v-if="item.surface"
+                        class="badge bg-light text-dark border"
+                        >{{ item.surface }}</span
+                      >
+                    </div>
                   </td>
-
-                  <td>
-                    {{ formatMoney(item.price) }}
+                  <td class="text-center" style="padding: 1rem 0.5rem">
+                    {{ item.importQuarter }} / {{ item.soldQuarter }} /
+                    <strong class="text-danger">{{
+                      item.stockQuantity
+                    }}</strong>
                   </td>
-
-                  <td>{{ item.importQuarter }}</td>
-
-                  <td>{{ item.soldQuarter }}</td>
-
-                  <td>{{ item.stockQuantity }}</td>
-
-                  <td>{{ item.sellRate }}%</td>
-
-                  <td>
+                  <td style="padding: 1rem 0.5rem">{{ item.sellRate }}%</td>
+                  <td class="text-center" style="padding: 1rem 0.5rem">
                     <span
                       v-if="item.importQuarter == 0"
-                      class="badge status-out"
+                      class="badge badge-outline-secondary"
+                      >Hết hàng</span
                     >
-                      Hết hàng
-                    </span>
-
                     <span
                       v-else-if="item.sellRate < 30"
-                      class="badge status-stock"
+                      class="badge badge-outline-danger"
+                      >Tồn kho</span
                     >
-                      Tồn kho nhiều
-                    </span>
-
                     <span
                       v-else-if="item.sellRate < 70"
-                      class="badge status-normal"
+                      class="badge badge-outline-warning"
+                      >Bán ổn</span
                     >
-                      Bán ổn
-                    </span>
-
-                    <span v-else class="badge status-hot"> Bán chạy </span>
+                    <span v-else class="badge badge-outline-success"
+                      >Bán chạy</span
+                    >
                   </td>
                 </tr>
               </tbody>
@@ -346,12 +388,10 @@
     </div>
   </div>
 
-  <!-- REPORT MODAL -->
   <div v-if="showReportModal" class="report-modal">
-    <div class="report-modal-content">
-      <h5>Chọn loại báo cáo</h5>
-
-      <select class="form-select mt-3" v-model="reportType">
+    <div class="report-modal-content card border-0 shadow">
+      <h5 class="fw-bold mb-3">Chọn loại báo cáo</h5>
+      <select class="form-select bg-light border-0 mb-4" v-model="reportType">
         <option disabled value="">-- Chọn loại báo cáo --</option>
         <option value="DAY">Hôm nay</option>
         <option value="WEEK">Tuần</option>
@@ -359,15 +399,16 @@
         <option value="QUARTER">Quý</option>
         <option value="YEAR">Năm</option>
       </select>
-
-      <div class="mt-4 text-end">
-        <button class="btn btn-secondary me-2" @click="showReportModal = false">
+      <div class="text-end">
+        <button
+          class="btn btn-light border me-2"
+          @click="showReportModal = false"
+        >
           Hủy
         </button>
-
         <button
           v-if="reportType"
-          class="btn btn-success"
+          class="btn btn-primary"
           @click="confirmSendReport"
         >
           Xác nhận gửi
@@ -448,12 +489,10 @@ const loadInventoryStatus = async () => {
 
     inventoryStatus.value = inventoryRes.data || [];
 
-    // lấy danh sách thương hiệu
     brands.value = [
       ...new Set(inventoryStatus.value.map((i) => i.productName.split(" ")[0])),
     ];
 
-    // lấy danh sách loại sân
     surfaces.value = [...new Set(inventoryStatus.value.map((i) => i.surface))];
   } catch (error) {
     console.error("Lỗi load tồn kho:", error);
@@ -483,18 +522,13 @@ const filteredInventory = computed(() => {
 
 const confirmSendReport = async () => {
   const type = reportType.value;
-
-  // đóng modal ngay
   showReportModal.value = false;
-
-  // reset select để lần sau mở lại
   reportType.value = "";
 
   try {
     await axios.post("http://localhost:8080/api/statistic/send-report", {
       type,
     });
-
     alert("Đã gửi báo cáo cho ADMIN");
   } catch (error) {
     console.error(error);
@@ -519,6 +553,15 @@ const todayString = computed(() => formatDate(today.value));
 const formatMoney = (money) => {
   if (!money) return "0 đ";
   return new Intl.NumberFormat("vi-VN").format(money) + " đ";
+};
+
+const handleCustomFilter = () => {
+  // 1. Xóa trắng 2 ô chọn ngày
+  fromDate.value = "";
+  toDate.value = "";
+
+  // 2. Chuyển trạng thái về HÔM NAY (Vue sẽ tự động load lại dữ liệu ngay lập tức)
+  filterType.value = "TODAY";
 };
 
 const currentRange = computed(() => {
@@ -573,24 +616,18 @@ const loadStatistics = async () => {
       chartRes,
       statusRes,
     ] = await Promise.all([
-      axios.get("http://localhost:8080/api/statistic/total-orders", {
-        params,
-      }),
+      axios.get("http://localhost:8080/api/statistic/total-orders", { params }),
       axios.get("http://localhost:8080/api/statistic/total-revenue", {
         params,
       }),
-      axios.get("http://localhost:8080/api/statistic/real-revenue", {
-        params,
-      }),
+      axios.get("http://localhost:8080/api/statistic/real-revenue", { params }),
       axios.get("http://localhost:8080/api/statistic/expected-revenue", {
         params,
       }),
       axios.get("http://localhost:8080/api/statistic/revenue-chart", {
         params,
       }),
-      axios.get("http://localhost:8080/api/statistic/order-status", {
-        params,
-      }),
+      axios.get("http://localhost:8080/api/statistic/order-status", { params }),
     ]);
 
     totalOrders.value = ordersRes.data || 0;
@@ -610,7 +647,7 @@ const loadStatistics = async () => {
       },
     );
 
-    topProducts.value = topRes.data || [];
+    topProducts.value = (topRes.data || []).slice(0, 3);
 
     const detailRes = await axios.get(
       "http://localhost:8080/api/statistic/detail-table",
@@ -637,152 +674,112 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Reset nền tổng quan để làm nổi bật thẻ trắng */
 .thong-ke-page {
-  background: #f5f7fb;
+  background: #f4f7f6;
   min-height: 100vh;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
 }
 
-.title {
-  font-weight: bold;
-  color: #2c3e50;
+/* Kiểu dáng chung cho các thẻ Card */
+.card {
+  border-radius: 12px;
 }
 
-.filter-bar {
-  border-radius: 10px;
+/* Các chỉ số lớn */
+.stat-card {
+  transition: transform 0.2s ease-in-out;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
 }
 
-.stat-box {
-  padding: 15px;
-  border-radius: 10px;
-  background: #f9fafc;
-  transition: 0.3s;
-}
-
-.stat-box:hover {
-  background: #eef2f7;
-}
-
-.stat-title {
-  font-size: 14px;
-  color: #666;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.mini-card {
-  border-radius: 10px;
-  transition: 0.3s;
-  cursor: pointer;
-}
-
-.mini-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.mini-title {
-  font-size: 14px;
-  color: #555;
-}
-
-.mini-value {
-  font-size: 20px;
-  font-weight: bold;
-  margin-top: 5px;
-}
-
-.mini-desc {
-  font-size: 12px;
-  color: #888;
-}
-
-.chart-card {
-  border-radius: 10px;
-}
-
-.chart-placeholder {
-  height: 260px;
-  background: #f1f3f7;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #888;
-  margin-top: 10px;
-  font-size: 16px;
-  font-weight: bold;
-}
-
+/* Custom Table gọn, sạch sẽ */
 .table {
-  background: white;
+  margin-bottom: 0;
+}
+.table th {
+  border-bottom-width: 1px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.table td {
+  border-bottom: 1px solid #f1f3f5;
+  vertical-align: middle;
 }
 
-.table thead {
-  background: #f1f3f7;
+/* Các nút button màu cơ bản */
+.btn-primary {
+  background-color: #1a73e8;
+  border-color: #1a73e8;
+}
+.btn-primary:hover {
+  background-color: #155db1;
+  border-color: #155db1;
 }
 
-@media (max-width: 768px) {
-  .mini-card {
-    margin-bottom: 10px;
-  }
+/* Custom form elements */
+.form-control,
+.form-select {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: none;
 }
-.header-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.form-control:focus,
+.form-select:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 0.2rem rgba(26, 115, 232, 0.1);
 }
+
+/* Report Modal */
 .report-modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 999;
+  z-index: 1050;
 }
-
 .report-modal-content {
   background: white;
-  padding: 25px;
-  border-radius: 10px;
-  width: 350px;
-}
-.form-select-sm {
-  width: 150px;
-  font-size: 13px;
-}
-.status-out {
-  background: #6c757d;
-  color: white;
+  padding: 30px;
+  width: 100%;
+  max-width: 400px;
 }
 
-.status-stock {
-  background: #f8d7da;
-  color: #842029;
-}
-
-.status-normal {
-  background: #fff3cd;
-  color: #664d03;
-}
-
-.status-hot {
-  background: #d1e7dd;
-  color: #0f5132;
-}
-.status-out,
-.status-stock,
-.status-normal,
-.status-hot {
-  font-size: 14px;       /* tăng chữ */
-  padding: 6px 12px;     /* badge to hơn */
-  font-weight: 600;      /* chữ đậm hơn */
+/* Badge Thuộc tính (Màu, Size, Loại Sân) */
+.badge {
+  font-weight: 500;
+  padding: 0.4em 0.6em;
   border-radius: 6px;
+}
+
+/* Custom Badges (Outline) cho cột Trạng Thái */
+.badge-outline-secondary {
+  color: #6c757d;
+  background-color: transparent;
+  border: 1px solid #6c757d;
+}
+.badge-outline-danger {
+  color: #dc3545;
+  background-color: transparent;
+  border: 1px solid #dc3545;
+}
+.badge-outline-warning {
+  color: #d97706; /* Vàng sậm dễ đọc hơn trên nền trắng */
+  background-color: transparent;
+  border: 1px solid #f59e0b;
+}
+.badge-outline-success {
+  color: #15803d;
+  background-color: transparent;
+  border: 1px solid #22c55e;
 }
 </style>
