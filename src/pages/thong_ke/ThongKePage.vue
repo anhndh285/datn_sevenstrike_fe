@@ -1,8 +1,5 @@
 <template>
   <div class="thong-ke-page container-fluid p-4">
-    <div class="mb-2">
-      <small class="text-muted">Thống kê doanh thu</small>
-    </div>
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h4 class="mb-0">Thống kê doanh thu</h4>
       <button class="btn btn-pastel-red btn-sm px-3" @click="sendReport">
@@ -45,50 +42,52 @@
         </div>
 
         <div class="col-md-7 text-end">
-          <button class="btn btn-pastel-red px-4 me-2" @click="handleCustomFilter">
-            <i class="bi bi-funnel me-1"></i> Lọc dữ liệu
-          </button>
-          <button
-            class="btn btn-light border px-4 me-2"
-            @click="loadStatistics"
-          >
-            <i class="bi bi-arrow-clockwise me-1"></i> Tải lại
-          </button>
-          <button
-            class="btn me-2"
-            :class="chartType === 'line' ? 'btn-pastel-red' : 'btn-light border'"
-            @click="chartType = 'line'"
-          >
-            <i class="bi bi-graph-up me-1"></i> Biểu đồ đường
-          </button>
-          <button
-            class="btn"
-            :class="chartType === 'bar' ? 'btn-pastel-red' : 'btn-light border'"
-            @click="chartType = 'bar'"
-          >
-            <i class="bi bi-bar-chart me-1"></i> Biểu đồ cột
-          </button>
+          <div class="d-flex justify-content-end gap-2 flex-wrap">
+            <button class="btn btn-pastel-red" @click="handleCustomFilter">
+              <i class="bi bi-funnel me-1"></i> Lọc dữ liệu
+            </button>
+            <button
+              class="btn btn-light"
+              @click="loadStatistics"
+            >
+              <i class="bi bi-arrow-clockwise me-1"></i> Tải lại
+            </button>
+            <button
+              class="btn"
+              :class="chartType === 'line' ? 'btn-pastel-red' : 'btn-light'"
+              @click="chartType = 'line'"
+            >
+              <i class="bi bi-graph-up me-1"></i> Biểu đồ đường
+            </button>
+            <button
+              class="btn"
+              :class="chartType === 'bar' ? 'btn-pastel-red' : 'btn-light'"
+              @click="chartType = 'bar'"
+            >
+              <i class="bi bi-bar-chart me-1"></i> Biểu đồ cột
+            </button>
+          </div>
         </div>
       </div>
 
       <div class="d-flex gap-2">
         <button
-          class="btn px-4"
-          :class="filterType === 'TODAY' ? 'btn-pastel-red' : 'btn-light border'"
+          class="btn"
+          :class="filterType === 'TODAY' ? 'btn-pastel-red' : 'btn-light'"
           @click="filterType = 'TODAY'"
         >
           <i class="bi bi-calendar-day me-1"></i> Theo ngày
         </button>
         <button
-          class="btn px-4"
-          :class="filterType === 'WEEK' ? 'btn-pastel-red' : 'btn-light border'"
+          class="btn"
+          :class="filterType === 'WEEK' ? 'btn-pastel-red' : 'btn-light'"
           @click="filterType = 'WEEK'"
         >
           <i class="bi bi-calendar-week me-1"></i> Theo tuần
         </button>
         <button
-          class="btn px-4"
-          :class="filterType === 'MONTH' ? 'btn-pastel-red' : 'btn-light border'"
+          class="btn"
+          :class="filterType === 'MONTH' ? 'btn-pastel-red' : 'btn-light'"
           @click="filterType = 'MONTH'"
         >
           <i class="bi bi-calendar-month me-1"></i> Theo tháng
@@ -435,9 +434,9 @@
         <option value="QUARTER">Quý</option>
         <option value="YEAR">Năm</option>
       </select>
-      <div class="text-end">
+      <div class="text-end d-flex justify-content-end gap-2">
         <button
-          class="btn btn-light border me-2"
+          class="btn btn-light"
           @click="showReportModal = false"
         >
           <i class="bi bi-x-circle me-1"></i> Hủy
@@ -748,17 +747,37 @@ onMounted(() => {
   vertical-align: middle;
 }
 
+/* --- ĐỒNG BỘ KÍCH THƯỚC VÀ HIỆN RÕ VIỀN TẤT CẢ CÁC NÚT --- */
+.btn {
+  min-width: 130px; 
+  height: 36px;     
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #999999 !important; /* Viền xám đen rõ ràng */
+  font-size: 13.5px; 
+  padding: 0 10px;
+}
+
+.btn i {
+  /* Margin-right mặc định của class me-1 */
+}
+
+.btn:hover {
+  border: 1px solid #555555 !important; /* Hover viền đậm hơn */
+}
+
 /* CLASS NÚT MÀU PASTEL TỪ ẢNH */
 .btn-pastel-red {
-  background-color: #fdebeb; /* Màu nền hồng nhạt */
-  color: #a13c3c !important; /* Chữ & icon màu đỏ sậm */
-  border: none;
-  border-radius: 8px; /* Bo góc mềm mại */
+  background-color: #fdebeb; 
+  color: #a13c3c !important; 
+  border-radius: 8px; 
   font-weight: normal;
   transition: all 0.2s ease-in-out;
+  /* Xóa dòng border: transparent ở đây */
 }
 .btn-pastel-red:hover {
-  background-color: #f7d5d5; /* Hover đậm lên một chút */
+  background-color: #f7d5d5; 
   color: #8b3131 !important;
 }
 
@@ -767,6 +786,7 @@ onMounted(() => {
   border: 1px solid #e0e0e0;
   border-radius: 6px;
   box-shadow: none;
+  height: 36px; /* Bằng với chiều cao nút */
 }
 .form-control:focus,
 .form-select:focus {
