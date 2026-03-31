@@ -4,15 +4,15 @@
       <small class="text-muted">Thống kê doanh thu</small>
     </div>
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4 class="fw-bold mb-0">Thống kê doanh thu</h4>
-      <button class="btn btn-outline-secondary btn-sm" @click="sendReport">
-        Gửi báo cáo
+      <h4 class="mb-0">Thống kê doanh thu</h4>
+      <button class="btn btn-pastel-red btn-sm px-3" @click="sendReport">
+        <i class="bi bi-send me-1"></i> Gửi báo cáo
       </button>
     </div>
 
     <div class="mb-3">
       <span v-if="filterType === 'TODAY'" class="text-muted small">
-        <i class="bi bi-info-circle me-1"></i> Đang hiển thị dữ liệu của HÔM NAY
+        <i class="bi bi-info-circle me-1"></i> Đang hiển thị dữ liệu của hôm nay
         ({{ todayString }})
       </span>
       <span v-else class="text-muted small">
@@ -45,28 +45,28 @@
         </div>
 
         <div class="col-md-7 text-end">
-          <button class="btn btn-primary px-4 me-2" @click="handleCustomFilter">
-            Lọc dữ liệu
+          <button class="btn btn-pastel-red px-4 me-2" @click="handleCustomFilter">
+            <i class="bi bi-funnel me-1"></i> Lọc dữ liệu
           </button>
           <button
             class="btn btn-light border px-4 me-2"
             @click="loadStatistics"
           >
-            Tải lại
+            <i class="bi bi-arrow-clockwise me-1"></i> Tải lại
           </button>
           <button
             class="btn me-2"
-            :class="chartType === 'line' ? 'btn-primary' : 'btn-light border'"
+            :class="chartType === 'line' ? 'btn-pastel-red' : 'btn-light border'"
             @click="chartType = 'line'"
           >
-            Biểu đồ đường
+            <i class="bi bi-graph-up me-1"></i> Biểu đồ đường
           </button>
           <button
             class="btn"
-            :class="chartType === 'bar' ? 'btn-primary' : 'btn-light border'"
+            :class="chartType === 'bar' ? 'btn-pastel-red' : 'btn-light border'"
             @click="chartType = 'bar'"
           >
-            Biểu đồ cột
+            <i class="bi bi-bar-chart me-1"></i> Biểu đồ cột
           </button>
         </div>
       </div>
@@ -74,24 +74,24 @@
       <div class="d-flex gap-2">
         <button
           class="btn px-4"
-          :class="filterType === 'TODAY' ? 'btn-primary' : 'btn-light border'"
+          :class="filterType === 'TODAY' ? 'btn-pastel-red' : 'btn-light border'"
           @click="filterType = 'TODAY'"
         >
-          Theo ngày
+          <i class="bi bi-calendar-day me-1"></i> Theo ngày
         </button>
         <button
           class="btn px-4"
-          :class="filterType === 'WEEK' ? 'btn-primary' : 'btn-light border'"
+          :class="filterType === 'WEEK' ? 'btn-pastel-red' : 'btn-light border'"
           @click="filterType = 'WEEK'"
         >
-          Theo tuần
+          <i class="bi bi-calendar-week me-1"></i> Theo tuần
         </button>
         <button
           class="btn px-4"
-          :class="filterType === 'MONTH' ? 'btn-primary' : 'btn-light border'"
+          :class="filterType === 'MONTH' ? 'btn-pastel-red' : 'btn-light border'"
           @click="filterType = 'MONTH'"
         >
-          Theo tháng
+          <i class="bi bi-calendar-month me-1"></i> Theo tháng
         </button>
       </div>
     </div>
@@ -129,8 +129,8 @@
     <div class="row g-3 mb-4">
       <div class="col-md-3" v-for="(card, index) in miniCards" :key="index">
         <div class="card border-0 shadow-sm p-3 mini-card text-center">
-          <div class="text-muted small fw-bold mb-1">{{ card.label }}</div>
-          <div class="fs-5 mb-1">{{ formatMoney(card.revenue) }}</div>
+          <div class="text-muted small mb-1">{{ card.label }}</div>
+          <div class="fs-5 mb-1 text-dark">{{ formatMoney(card.revenue) }}</div>
           <div class="small text-muted">
             Sản phẩm: {{ card.totalProducts }} | Đơn: {{ card.totalOrders }}
           </div>
@@ -140,7 +140,7 @@
 
     <div class="card border-0 shadow-sm p-4 mb-4">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h6 class="fw-bold mb-0">Biểu đồ doanh thu theo thời gian</h6>
+        <h6 class="mb-0">Biểu đồ doanh thu theo thời gian</h6>
         <span class="text-muted small"
           >Bấm vào 1 điểm trên biểu đồ để xem doanh thu</span
         >
@@ -153,16 +153,16 @@
     <div class="row g-4 mb-4">
       <div class="col-xl-8 col-lg-12">
         <div class="card border-0 shadow-sm p-4 h-100">
-          <h6 class="fw-bold mb-4">Bảng thống kê chi tiết theo thời gian</h6>
+          <h6 class="mb-4">Bảng thống kê chi tiết theo thời gian</h6>
           <div class="table-responsive">
             <table class="table table-hover align-middle">
               <thead class="table-light">
                 <tr>
-                  <th class="text-muted fw-normal">Thời gian</th>
-                  <th class="text-muted fw-normal">Doanh thu</th>
-                  <th class="text-muted fw-normal">Số đơn</th>
-                  <th class="text-muted fw-normal">Giá trị trung bình/đơn</th>
-                  <th class="text-muted fw-normal">Tăng trưởng (%)</th>
+                  <th class="text-muted">Thời gian</th>
+                  <th class="text-muted">Doanh thu</th>
+                  <th class="text-muted">Số đơn</th>
+                  <th class="text-muted">Giá trị trung bình/đơn</th>
+                  <th class="text-muted">Tăng trưởng (%)</th>
                 </tr>
               </thead>
               <tbody>
@@ -185,7 +185,7 @@
 
       <div class="col-xl-4 col-lg-12">
         <div class="card border-0 shadow-sm p-4 h-100">
-          <h6 class="fw-bold mb-4">Phân bố trạng thái đơn hàng</h6>
+          <h6 class="mb-4">Phân bố trạng thái đơn hàng</h6>
           <div
             style="height: 250px"
             class="d-flex align-items-center justify-content-center"
@@ -198,66 +198,99 @@
 
     <div class="row g-4 mt-1 mb-4">
       <div class="col-12">
-    <div class="card border-0 shadow-sm p-4">
-      <h6 class="fw-bold mb-1">Top sản phẩm bán chạy (30 ngày)</h6>
-      <small class="text-muted mb-4 d-block">Từ {{ lastMonthRange.from }} đến {{ lastMonthRange.to }}</small>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle" style="font-size: 14px">
-          <thead class="table-light">
-            <tr>
-              <th>STT</th>
-              <th>Sản phẩm</th>
-              <th>Thuộc tính</th>
-              <th>Giá</th>
-              <th class="text-center">Tồn kho</th>
-              <th class="text-center">Đã bán</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(item, index) in topProducts" :key="index">
-              <td>{{ index + 1 }}</td>
-              <td style="width: 30%">
-                <div class="d-flex align-items-center gap-3">
-                  <img 
-                    :src="item.imageUrl || 'https://via.placeholder.com/50'" 
-                    class="rounded border shadow-sm" 
-                    style="width: 50px; height: 50px; object-fit: cover;" 
-                    @error="(e) => e.target.src = 'https://via.placeholder.com/50'"
-                  />
-                  <div>
-                    <div class="fw-bold">{{ item.productDetailCode }}</div>
-                    <div class="text-muted small text-truncate" style="max-width: 300px" :title="item.productName">
-                      {{ item.productName }}
+        <div class="card border-0 shadow-sm p-4">
+          <h6 class="mb-1">Top sản phẩm bán chạy (30 ngày)</h6>
+          <small class="text-muted mb-4 d-block"
+            >Từ {{ lastMonthRange.from }} đến {{ lastMonthRange.to }}</small
+          >
+          <div class="table-responsive">
+            <table
+              class="table table-hover align-middle"
+              style="font-size: 14px"
+            >
+              <thead class="table-light">
+                <tr>
+                  <th class="text-muted">STT</th>
+                  <th class="text-muted">Sản phẩm</th>
+                  <th class="text-muted">Thuộc tính</th>
+                  <th class="text-muted">Giá</th>
+                  <th class="text-center text-muted">Tồn kho</th>
+                  <th class="text-center text-muted">Đã bán</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(item, index) in topProducts" :key="index">
+                  <td>{{ index + 1 }}</td>
+                  <td style="width: 30%">
+                    <div class="d-flex align-items-center gap-3">
+                      <img
+                        :src="getFullImageUrl(item.imageUrl)"
+                        class="rounded border shadow-sm"
+                        style="width: 50px; height: 50px; object-fit: cover"
+                        @error="
+                          (e) =>
+                            (e.target.src = 'https://via.placeholder.com/50')
+                        "
+                      />
+                      <div>
+                        <div>{{ item.productDetailCode }}</div>
+                        <div
+                          class="text-muted small text-truncate"
+                          style="max-width: 250px"
+                          :title="item.productName"
+                        >
+                          {{ item.productName }}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </td>
-              <td>
-                <div class="d-flex flex-wrap gap-1">
-                  <span v-if="item.color" class="badge bg-light text-dark border">{{ item.color }}</span>
-                  <span v-if="item.size" class="badge bg-light text-dark border">Size {{ item.size }}</span>
-                  <span v-if="item.surface" class="badge bg-light text-dark border">{{ item.surface }}</span>
-                </div>
-              </td>
-              <td class="text-nowrap">{{ formatMoney(item.price) }}</td>
-              
-              <td class="text-center fw-bold" :class="item.stockQuantity <= 5 ? 'text-danger' : 'text-dark'">
-                {{ item.stockQuantity }}
-              </td>
+                  </td>
+                  <td>
+                    <div class="d-flex flex-wrap gap-1">
+                      <span
+                        v-if="item.color"
+                        class="badge bg-light text-dark border"
+                        >{{ item.color }}</span
+                      >
+                      <span
+                        v-if="item.size"
+                        class="badge bg-light text-dark border"
+                        >Size {{ item.size }}</span
+                      >
+                      <span
+                        v-if="item.surface"
+                        class="badge bg-light text-dark border"
+                        >{{ item.surface }}</span
+                      >
+                    </div>
+                  </td>
+                  <td class="text-nowrap">{{ formatMoney(item.price) }}</td>
 
-              <td class="text-center fw-bold text-success">{{ item.quantity }}</td>
-            </tr>
-          </tbody>
-        </table>
+                  <td
+                    class="text-center"
+                    :class="
+                      item.stockQuantity <= 5 ? 'text-danger' : 'text-dark'
+                    "
+                  >
+                    {{ item.stockQuantity }}
+                  </td>
+
+                  <td class="text-center text-success">
+                    {{ item.quantity }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
+    <div class="row g-4 mt-1 mb-4">
       <div class="col-12">
         <div class="card border-0 shadow-sm p-4">
           <div class="d-flex justify-content-between align-items-start mb-4">
             <div>
-              <h6 class="fw-bold mb-1">
+              <h6 class="mb-1">
                 Thống kê tồn kho Quý {{ quarterInfo.quarter }}
               </h6>
               <small class="text-muted"
@@ -298,30 +331,33 @@
             >
               <thead class="table-light">
                 <tr>
-                  <th class="text-muted fw-normal">Mã SP</th>
-                  <th class="text-muted fw-normal">Sản phẩm</th>
-                  <th class="text-muted fw-normal">Thuộc tính</th>
-                  <th class="text-muted fw-normal text-center">Nhập/Bán/Tồn</th>
-                  <th class="text-muted fw-normal">Tỷ lệ</th>
-                  <th class="text-muted fw-normal text-center">Trạng thái</th>
+                  <th class="text-muted">Mã SP</th>
+                  <th class="text-muted">Sản phẩm</th>
+                  <th class="text-muted">Thuộc tính</th>
+                  <th class="text-muted text-center">Nhập/Bán/Tồn</th>
+                  <th class="text-muted">Tỷ lệ</th>
+                  <th class="text-muted text-center">Trạng thái</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(item, index) in filteredInventory" :key="index">
-                  <td class="fw-bold" style="padding: 1rem 0.5rem">
+                  <td style="padding: 1rem 0.5rem">
                     {{ item.productDetailCode }}
                   </td>
                   <td style="padding: 1rem 0.5rem; width: 30%">
                     <div class="d-flex align-items-center gap-3">
-                      <img 
-                        :src="item.imageUrl || 'https://via.placeholder.com/40'" 
-                        class="rounded border shadow-sm" 
-                        style="width: 40px; height: 40px; object-fit: cover;"
-                        @error="(e) => e.target.src = 'https://via.placeholder.com/40'"
+                      <img
+                        :src="getFullImageUrl(item.imageUrl)"
+                        class="rounded border shadow-sm"
+                        style="width: 40px; height: 40px; object-fit: cover"
+                        @error="
+                          (e) =>
+                            (e.target.src = 'https://via.placeholder.com/40')
+                        "
                       />
                       <div>
                         <div
-                          class="text-truncate fw-bold"
+                          class="text-truncate"
                           style="max-width: 250px"
                           :title="item.productName"
                         >
@@ -354,9 +390,9 @@
                   </td>
                   <td class="text-center" style="padding: 1rem 0.5rem">
                     {{ item.importQuarter }} / {{ item.soldQuarter }} /
-                    <strong class="text-danger">{{
+                    <span class="text-danger">{{
                       item.stockQuantity
-                    }}</strong>
+                    }}</span>
                   </td>
                   <td style="padding: 1rem 0.5rem">{{ item.sellRate }}%</td>
                   <td class="text-center" style="padding: 1rem 0.5rem">
@@ -390,7 +426,7 @@
 
   <div v-if="showReportModal" class="report-modal">
     <div class="report-modal-content card border-0 shadow">
-      <h5 class="fw-bold mb-3">Chọn loại báo cáo</h5>
+      <h5 class="mb-3">Chọn loại báo cáo</h5>
       <select class="form-select bg-light border-0 mb-4" v-model="reportType">
         <option disabled value="">-- Chọn loại báo cáo --</option>
         <option value="DAY">Hôm nay</option>
@@ -404,14 +440,14 @@
           class="btn btn-light border me-2"
           @click="showReportModal = false"
         >
-          Hủy
+          <i class="bi bi-x-circle me-1"></i> Hủy
         </button>
         <button
           v-if="reportType"
-          class="btn btn-primary"
+          class="btn btn-pastel-red"
           @click="confirmSendReport"
         >
-          Xác nhận gửi
+          <i class="bi bi-check2-circle me-1"></i> Xác nhận gửi
         </button>
       </div>
     </div>
@@ -447,6 +483,21 @@ const expectedRevenue = ref(0);
 
 const chartType = ref("line");
 
+const inventoryStatus = ref([]);
+
+const brandFilter = ref("");
+const surfaceFilter = ref("");
+const statusFilter = ref("");
+
+const brands = ref([]);
+const surfaces = ref([]);
+
+const getFullImageUrl = (path) => {
+  if (!path) return "https://via.placeholder.com/50";
+  if (path.startsWith("http")) return path;
+  return `http://localhost:8080${path}`;
+};
+
 const sendReport = () => {
   reportType.value = "";
   showReportModal.value = true;
@@ -471,15 +522,6 @@ const quarterInfo = computed(() => {
     to: formatDate(endDate),
   };
 });
-
-const inventoryStatus = ref([]);
-
-const brandFilter = ref("");
-const surfaceFilter = ref("");
-const statusFilter = ref("");
-
-const brands = ref([]);
-const surfaces = ref([]);
 
 const loadInventoryStatus = async () => {
   try {
@@ -556,11 +598,8 @@ const formatMoney = (money) => {
 };
 
 const handleCustomFilter = () => {
-  // 1. Xóa trắng 2 ô chọn ngày
   fromDate.value = "";
   toDate.value = "";
-
-  // 2. Chuyển trạng thái về HÔM NAY (Vue sẽ tự động load lại dữ liệu ngay lập tức)
   filterType.value = "TODAY";
 };
 
@@ -647,7 +686,7 @@ const loadStatistics = async () => {
       },
     );
 
-    topProducts.value = (topRes.data || []).slice(0, 3);
+    topProducts.value = (topRes.data || []).slice(0, 5);
 
     const detailRes = await axios.get(
       "http://localhost:8080/api/statistic/detail-table",
@@ -674,7 +713,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Reset nền tổng quan để làm nổi bật thẻ trắng */
 .thong-ke-page {
   background: #f4f7f6;
   min-height: 100vh;
@@ -683,12 +721,10 @@ onMounted(() => {
     Arial, sans-serif;
 }
 
-/* Kiểu dáng chung cho các thẻ Card */
 .card {
   border-radius: 12px;
 }
 
-/* Các chỉ số lớn */
 .stat-card {
   transition: transform 0.2s ease-in-out;
 }
@@ -696,32 +732,36 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
-/* Custom Table gọn, sạch sẽ */
 .table {
   margin-bottom: 0;
 }
+
+/* Loại bỏ chữ viết hoa ở thẻ <th> */
 .table th {
   border-bottom-width: 1px;
   font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-weight: normal;
 }
+
 .table td {
   border-bottom: 1px solid #f1f3f5;
   vertical-align: middle;
 }
 
-/* Các nút button màu cơ bản */
-.btn-primary {
-  background-color: #1a73e8;
-  border-color: #1a73e8;
+/* CLASS NÚT MÀU PASTEL TỪ ẢNH */
+.btn-pastel-red {
+  background-color: #fdebeb; /* Màu nền hồng nhạt */
+  color: #a13c3c !important; /* Chữ & icon màu đỏ sậm */
+  border: none;
+  border-radius: 8px; /* Bo góc mềm mại */
+  font-weight: normal;
+  transition: all 0.2s ease-in-out;
 }
-.btn-primary:hover {
-  background-color: #155db1;
-  border-color: #155db1;
+.btn-pastel-red:hover {
+  background-color: #f7d5d5; /* Hover đậm lên một chút */
+  color: #8b3131 !important;
 }
 
-/* Custom form elements */
 .form-control,
 .form-select {
   border: 1px solid #e0e0e0;
@@ -734,7 +774,6 @@ onMounted(() => {
   box-shadow: 0 0 0 0.2rem rgba(26, 115, 232, 0.1);
 }
 
-/* Report Modal */
 .report-modal {
   position: fixed;
   top: 0;
@@ -754,14 +793,12 @@ onMounted(() => {
   max-width: 400px;
 }
 
-/* Badge Thuộc tính (Màu, Size, Loại Sân) */
 .badge {
-  font-weight: 500;
+  font-weight: normal;
   padding: 0.4em 0.6em;
   border-radius: 6px;
 }
 
-/* Custom Badges (Outline) cho cột Trạng Thái */
 .badge-outline-secondary {
   color: #6c757d;
   background-color: transparent;
@@ -773,7 +810,7 @@ onMounted(() => {
   border: 1px solid #dc3545;
 }
 .badge-outline-warning {
-  color: #d97706; /* Vàng sậm dễ đọc hơn trên nền trắng */
+  color: #d97706;
   background-color: transparent;
   border: 1px solid #f59e0b;
 }
