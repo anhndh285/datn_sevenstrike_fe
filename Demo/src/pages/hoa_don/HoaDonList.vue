@@ -7,7 +7,6 @@
       </div>
     </div>
 
-    <!-- Bộ Lọc -->
     <section class="ss-card ss-border mb-4">
       <div class="p-4">
         <div class="d-flex align-items-center mb-3">
@@ -71,7 +70,6 @@
       </div>
     </section>
 
-    <!-- Danh Sách Hóa Đơn -->
     <div class="ss-card ss-border">
       <div class="p-4">
         <div class="d-flex align-items-center gap-3 mb-3">
@@ -84,7 +82,6 @@
           </div>
         </div>
 
-        <!-- Tabs trạng thái -->
         <div class="order-tabs mb-3">
           <button
             v-for="tab in tabList"
@@ -150,8 +147,8 @@
                       hd.loaiDonCode === 1
                         ? 'ss-pill-ship'
                         : hd.loaiDonCode === 2
-                        ? 'ss-pill-online'
-                        : 'ss-pill-store'
+                          ? 'ss-pill-online'
+                          : 'ss-pill-store'
                     "
                   >
                     {{ hd.loaiDonLabel }}
@@ -243,7 +240,6 @@
       </div>
     </div>
 
-    <!-- PAGINATION -->
     <div class="ss-pagination-bar" v-if="!loading && filteredHoaDon.length">
       <div class="ss-pagination">
         <button class="ss-pagebtn" :disabled="page <= 1" @click="page--" title="Trang trước">
@@ -400,7 +396,7 @@ const getCurrentNhanVienInfo = () => {
       u?.username ??
       u?.taiKhoan ??
       u?.account ??
-      ""
+      "",
   ).trim();
 
   return {
@@ -456,11 +452,11 @@ const tabList = computed(() => {
     { label: "Đã giao hàng", value: TRANG_THAI.DA_GIAO_HANG },
     { label: "Hoàn thành", value: TRANG_THAI.HOAN_THANH },
     { label: "Đã hủy", value: TRANG_THAI.HUY_DON },
-    { label: "⚠️ Yêu cầu hủy", value: TRANG_THAI.YEU_CAU_HUY },
+    { label: "Yêu cầu hủy", value: TRANG_THAI.YEU_CAU_HUY },
   ];
 
   if (laAdmin()) {
-    base.push({ label: "💰 Cần hoàn phí", value: TRANG_THAI.CAN_HOAN_PHI });
+    base.push({ label: "Cần hoàn phí", value: TRANG_THAI.CAN_HOAN_PHI });
   }
 
   return base;
@@ -503,6 +499,20 @@ function toLoaiDonLabel(code) {
   return "Tại quầy";
 }
 
+/* ================== HELPERS TIỀN ================== */
+function toMoneyNumber(val) {
+  const n = Number(val ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function tinhTongTienHienThi(hd) {
+  const tongTienSauGiam = toMoneyNumber(hd.tongTienSauGiam);
+  const tongTien = toMoneyNumber(hd.tongTien);
+
+  if (tongTienSauGiam > 0) return tongTienSauGiam;
+  return tongTien;
+}
+
 /* ================== LOAD DATA ================== */
 const loadHoaDon = async () => {
   loading.value = true;
@@ -511,13 +521,9 @@ const loadHoaDon = async () => {
 
     hoaDonList.value = (res.data || [])
       .map((hd) => {
-        const tongHang = Number(hd.tongTien ?? 0);
-        const giamGia = Number(hd.tongTienGiam ?? 0);
-        const phiShip = Number(hd.phiVanChuyen ?? 0);
-
-        const tongThanhToan = tongHang - giamGia + phiShip;
         const loaiDonCode = Number(hd.loaiDon ?? 0);
         const ngayTaoRaw = hd.ngayTao ?? "";
+        const tongThanhToan = tinhTongTienHienThi(hd);
 
         return {
           id: hd.id,
@@ -536,7 +542,7 @@ const loadHoaDon = async () => {
       })
       .sort(
         (a, b) =>
-          new Date(a.ngayTaoRaw || a.ngayTao) - new Date(b.ngayTaoRaw || b.ngayTao)
+          new Date(a.ngayTaoRaw || a.ngayTao) - new Date(b.ngayTaoRaw || b.ngayTao),
       );
 
     filteredHoaDon.value = [...hoaDonList.value];
@@ -564,8 +570,8 @@ const apDungBoLoc = () => {
       tabTrangThai.value === "ALL"
         ? true
         : tabTrangThai.value === TRANG_THAI.CAN_HOAN_PHI
-        ? hd.trangThaiHienTai === TRANG_THAI.HUY_DON && hd.daHoanPhi === false
-        : Number(hd.trangThaiHienTai) === Number(tabTrangThai.value);
+          ? hd.trangThaiHienTai === TRANG_THAI.HUY_DON && hd.daHoanPhi === false
+          : Number(hd.trangThaiHienTai) === Number(tabTrangThai.value);
 
     return ma && loai && bd && kt && trangThai;
   });
@@ -591,7 +597,7 @@ const lamMoi = async () => {
 };
 
 const xuatFile = () => {
-  if (!filteredHoaDon.value.length) return alert("❌ Không có hóa đơn để xuất");
+  if (!filteredHoaDon.value.length) return alert("Không có hóa đơn để xuất");
 
   const data = filteredHoaDon.value.map((hd, i) => ({
     STT: i + 1,
@@ -630,7 +636,7 @@ const xacNhanHuyInList = async (hd) => {
     await axios.post(
       `${API_HD}/${hd.id}/xac-nhan-huy-theo-yeu-cau`,
       { nhanVienId: info?.idNhanVien || null },
-      taoConfigHeaderNhanVien()
+      taoConfigHeaderNhanVien(),
     );
 
     await loadHoaDon();
@@ -658,7 +664,7 @@ const tuChoiHuyInList = async (hd) => {
         nhanVienId: info?.idNhanVien || null,
         lyDo: lyDo || null,
       },
-      taoConfigHeaderNhanVien()
+      taoConfigHeaderNhanVien(),
     );
 
     await loadHoaDon();
@@ -686,7 +692,7 @@ const xacNhanHoanPhiInList = async (hd) => {
       {
         nhanVienId: info?.idNhanVien || null,
       },
-      taoConfigHeaderNhanVien()
+      taoConfigHeaderNhanVien(),
     );
 
     await loadHoaDon();
@@ -703,7 +709,7 @@ const page = ref(1);
 const pageSize = ref(10);
 
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil((filteredHoaDon.value.length || 0) / pageSize.value))
+  Math.max(1, Math.ceil((filteredHoaDon.value.length || 0) / pageSize.value)),
 );
 
 const pagedHoaDon = computed(() => {
@@ -715,7 +721,7 @@ watch(
   () => filteredHoaDon.value.length,
   () => {
     if (page.value > totalPages.value) page.value = totalPages.value;
-  }
+  },
 );
 
 const pageButtons = computed(() => {
