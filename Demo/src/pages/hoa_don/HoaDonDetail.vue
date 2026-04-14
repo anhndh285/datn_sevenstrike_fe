@@ -521,7 +521,7 @@
         <div class="modal-footer">
           <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Hủy</button>
 
-          <button class="btn btn-success" type="button" @click="checkQuyenThaoTac(saveEditModal)">
+          <button class="btn btn-danger" type="button" @click="checkQuyenThaoTac(saveEditModal)">
             Lưu
           </button>
         </div>
@@ -673,9 +673,7 @@
                 {{ item.nguoiThaoTac }}
               </div>
 
-              <div class="history-text">
-                {{ item.noiDung }}
-              </div>
+              <div class="history-text" v-html="formatHistoryContent(item.noiDung)"></div>
             </div>
           </div>
         </div>
@@ -1387,6 +1385,170 @@ const sapXepLichSuGiamDan = (arr) => {
   });
 };
 
+const escapeHtml = (value) => {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
+const formatHistoryContent = (value) => {
+  return escapeHtml(value).replace(/\n/g, "<br>");
+};
+
+const normalizeText = (value) => {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+};
+
+const isSameText = (a, b) => normalizeText(a) === normalizeText(b);
+
+const valueOrDash = (v) => {
+  const s = String(v ?? "").trim();
+  return s || "—";
+};
+
+const getStatusLabel = (value) => {
+  const item = trangThaiList.find((x) => Number(x.value) === Number(value));
+  return item?.label || `Trạng thái ${value}`;
+};
+
+const buildDetailedStatusNote = (oldStatus, newStatus) => {
+  return [
+    "Cập nhật trạng thái đơn hàng",
+    `- Phần thay đổi: Trạng thái đơn hàng`,
+    `- Từ: ${getStatusLabel(oldStatus)}`,
+    `- Thành: ${getStatusLabel(newStatus)}`,
+  ].join("\n");
+};
+
+const pushFieldChange = (changes, section, label, oldValue, newValue) => {
+  const oldText = valueOrDash(oldValue);
+  const newText = valueOrDash(newValue);
+  if (oldText === newText) return;
+
+  changes.push({
+    section,
+    label,
+    oldValue: oldText,
+    newValue: newText,
+  });
+};
+
+const buildDetailedInfoNote = (changes) => {
+  if (!changes.length) return "";
+
+  const grouped = changes.reduce((acc, item) => {
+    if (!acc[item.section]) acc[item.section] = [];
+    acc[item.section].push(item);
+    return acc;
+  }, {});
+
+  const lines = ["Cập nhật thông tin đơn hàng"];
+
+  Object.entries(grouped).forEach(([section, items]) => {
+    lines.push(`- Phần cập nhật: ${section}`);
+    items.forEach((item) => {
+      lines.push(`  + ${item.label}: ${item.oldValue} -> ${item.newValue}`);
+    });
+  });
+
+  return lines.join("\n");
+};
+
+const findByNameLoose = (items, name) => {
+  const target = normalizeText(name);
+  if (!target) return null;
+
+  return (
+    items.find((x) => normalizeText(x?.name) === target) ||
+    items.find((x) => normalizeText(x?.name).includes(target)) ||
+    items.find((x) => target.includes(normalizeText(x?.name))) ||
+    null
+  );
+};
+
+const parseAddressParts = (diaChi) => {
+  const parts = String(diaChi || "")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+
+  if (!parts.length) {
+    return {
+      detail: "",
+      ward: "",
+      district: "",
+      province: "",
+    };
+  }
+
+  const province = parts.length >= 1 ? parts[parts.length - 1] : "";
+  const district = parts.length >= 2 ? parts[parts.length - 2] : "";
+  const ward = parts.length >= 3 ? parts[parts.length - 3] : "";
+  const detail = parts.length >= 4 ? parts.slice(0, parts.length - 3).join(", ") : parts[0] || "";
+
+  return {
+    detail,
+    ward,
+    district,
+    province,
+  };
+};
+
+const hydrateShippingFormFromExistingAddress = async () => {
+  const parsed = parseAddressParts(selectedHD.value.diaChi);
+
+  form.value.diaChiCuThe = parsed.detail || tachDiaChiCuThe(selectedHD.value.diaChi);
+
+  addressCodes.city = "";
+  addressCodes.district = "";
+  addressCodes.ward = "";
+  addressNames.city = "";
+  addressNames.district = "";
+  addressNames.ward = "";
+  districts.value = [];
+  wards.value = [];
+
+  if (!parsed.province) return;
+
+  if (!provinces.value.length) {
+    provinces.value = await vnAddressService.getProvinces();
+  }
+
+  const province = findByNameLoose(provinces.value, parsed.province);
+  if (!province) return;
+
+  addressCodes.city = province.code;
+  addressNames.city = province.name;
+
+  districts.value = await vnAddressService.getDistricts(province.code);
+
+  if (!parsed.district) return;
+  const district = findByNameLoose(districts.value, parsed.district);
+  if (!district) return;
+
+  addressCodes.district = district.code;
+  addressNames.district = district.name;
+
+  wards.value = await vnAddressService.getWards(district.code);
+
+  if (!parsed.ward) return;
+  const ward = findByNameLoose(wards.value, parsed.ward);
+  if (!ward) return;
+
+  addressCodes.ward = ward.code;
+  addressNames.ward = ward.name;
+};
+
 const layThongTinNhanVien = async (id) => {
   if (!id) return null;
   if (mapNhanVienTaiKhoan.value[id]) return mapNhanVienTaiKhoan.value[id];
@@ -1632,6 +1794,10 @@ const tachDiaChiCuThe = (diaChi) => {
     .map((x) => x.trim())
     .filter(Boolean);
 
+  if (parts.length >= 4) {
+    return parts.slice(0, parts.length - 3).join(", ");
+  }
+
   return parts[0] || "";
 };
 
@@ -1642,6 +1808,7 @@ const layPhanHanhChinhCu = (diaChi) => {
     .filter(Boolean);
 
   if (parts.length <= 1) return "";
+  if (parts.length >= 4) return parts.slice(parts.length - 3).join(", ");
   return parts.slice(1).join(", ");
 };
 
@@ -1669,6 +1836,10 @@ const moModalSua = async () => {
 
   if (!provinces.value.length) {
     provinces.value = await vnAddressService.getProvinces();
+  }
+
+  if (!isTaiQuay.value) {
+    await hydrateShippingFormFromExistingAddress();
   }
 
   const el = document.getElementById("modalEdit");
@@ -1702,7 +1873,7 @@ const updateHoaDon = async () => {
       `${API_HD}/${id}/trang-thai`,
       {
         trangThai: next,
-        ghiChu: "Cập nhật trạng thái từ giao diện",
+        ghiChu: buildDetailedStatusNote(current, next),
       },
       taoConfigHeaderNhanVien()
     );
@@ -1745,6 +1916,45 @@ const updateThongTinKhachHangVaGiaoHang = async () => {
       }
     }
 
+    const changes = [];
+
+    pushFieldChange(
+      changes,
+      "Thông tin khách hàng",
+      "Tên khách hàng",
+      selectedHD.value.tenKhachHang,
+      form.value.tenKhachHang
+    );
+    pushFieldChange(
+      changes,
+      "Thông tin khách hàng",
+      "Số điện thoại",
+      selectedHD.value.sdt,
+      form.value.sdt
+    );
+    pushFieldChange(
+      changes,
+      "Thông tin khách hàng",
+      "Email",
+      selectedHD.value.email,
+      form.value.email
+    );
+
+    if (tab.value === "giaohang" || !isTaiQuay.value) {
+      pushFieldChange(
+        changes,
+        "Thông tin giao hàng",
+        "Địa chỉ giao hàng",
+        selectedHD.value.diaChi,
+        diaChiMoi
+      );
+    }
+
+    if (!changes.length) {
+      showToast("Không có thông tin nào thay đổi!", "warning");
+      return;
+    }
+
     await apiClient.put(
       `${API_HD}/${id}/thong-tin-giao-hang`,
       {
@@ -1752,6 +1962,7 @@ const updateThongTinKhachHangVaGiaoHang = async () => {
         soDienThoaiKhachHang: form.value.sdt,
         emailKhachHang: form.value.email,
         diaChiKhachHang: diaChiMoi,
+        ghiChu: buildDetailedInfoNote(changes),
       },
       taoConfigHeaderNhanVien()
     );
@@ -2663,5 +2874,7 @@ button.btn-warning {
 
 .history-text {
   font-size: 13px;
+  white-space: normal;
+  line-height: 1.6;
 }
 </style>

@@ -192,6 +192,51 @@
           <button class="ss-addr-toast-x" type="button" @click="hideSoDiaChiToast">×</button>
         </div>
 
+                <div
+          v-if="quickConfirm.open"
+          class="ss-addr-inline-confirm-backdrop"
+          @click.self="closeQuickConfirm"
+        >
+          <div
+            class="ss-addr-inline-confirm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ss-addr-inline-confirm-title"
+          >
+            <div class="ss-addr-inline-confirm-title" id="ss-addr-inline-confirm-title">
+              {{ quickConfirm.title || "Xác nhận" }}
+            </div>
+
+            <div class="ss-addr-inline-confirm-text">
+              {{ quickConfirm.text || "Bạn có chắc chắn muốn thực hiện thao tác này không?" }}
+            </div>
+
+            <div class="ss-addr-inline-confirm-preview">
+              {{ quickConfirm.preview || "---" }}
+            </div>
+
+            <div class="ss-addr-inline-confirm-actions">
+              <button
+                class="ss-addr-btn ss-addr-btn-secondary"
+                type="button"
+                @click="closeQuickConfirm"
+                :disabled="soDiaChi.loading"
+              >
+                Hủy
+              </button>
+
+              <button
+                class="ss-addr-btn ss-addr-btn-primary"
+                type="button"
+                @click="confirmInlineAction"
+                :disabled="soDiaChi.loading"
+              >
+                {{ soDiaChi.loading ? "Đang xử lý..." : "Đồng ý" }}
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="ss-addr-head">
           <div class="ss-addr-head-left">
             <div class="ss-addr-title">
@@ -617,7 +662,7 @@ const loadAddressMap = async () => {
     const m = new Map();
     for (const a of arr) {
       if (a?.xoaMem) continue;
-      const idkh = a?.idKhachHang;
+      const idkh = a?.idKhachHang ?? a?.id_khach_hang;
       if (!idkh) continue;
 
       const txt = buildAddrText(a) || a?.tenDiaChi || "---";
@@ -921,6 +966,15 @@ const quick = reactive({
   xa: null,
 });
 
+const quickConfirm = reactive({
+  open: false,
+  mode: "",
+  preview: "",
+  target: null,
+  title: "",
+  text: "",
+});
+
 const resetQuick = () => {
   quick.tenNguoiNhan = "";
   quick.soDienThoai = "";
@@ -942,6 +996,30 @@ const quickPreviewText = () => {
     quick.tinh?.name,
   ].filter((x) => (x ?? "").toString().trim());
   return parts.join(", ");
+};
+
+const closeQuickConfirm = () => {
+  quickConfirm.open = false;
+  quickConfirm.mode = "";
+  quickConfirm.preview = "";
+  quickConfirm.target = null;
+  quickConfirm.title = "";
+  quickConfirm.text = "";
+};
+
+const openQuickConfirm = ({
+  mode = "",
+  preview = "",
+  target = null,
+  title = "Xác nhận",
+  text = "Bạn có chắc chắn muốn thực hiện thao tác này không?",
+} = {}) => {
+  quickConfirm.mode = mode;
+  quickConfirm.preview = preview || "---";
+  quickConfirm.target = target;
+  quickConfirm.title = title;
+  quickConfirm.text = text;
+  quickConfirm.open = true;
 };
 
 const getErrMsgNganGon = (e) => {
@@ -1017,6 +1095,7 @@ const closeSoDiaChi = () => {
   soDiaChi.idKhachHang = null;
   soDiaChi.maKhachHang = "";
   soDiaChi.tenKhachHang = "";
+  closeQuickConfirm();
   resetQuick();
   hideSoDiaChiToast();
 };
@@ -1053,7 +1132,11 @@ const reloadSoDiaChi = async (resetForm = false) => {
 };
 
 const themNhanhDiaChi = async () => {
-  if (!soDiaChi.idKhachHang) return;
+  if (!soDiaChi.idKhachHang) {
+    soDiaChi.err = "Không xác định được khách hàng để thêm địa chỉ.";
+    showSoDiaChiToast("error", soDiaChi.err);
+    return;
+  }
 
   const hasAny =
     String(quick.diaChiCuThe || "").trim() ||
@@ -1067,26 +1150,22 @@ const themNhanhDiaChi = async () => {
     return;
   }
 
-  const preview = quickPreviewText() || "---";
-
-  const result = await Swal.fire({
-    ...getSwalBase("confirm"),
-    icon: "question",
-    title: "Xác nhận?",
-    html: `
-      <div style="font-weight:400;color:#666;line-height:1.5;">
-        <div style="margin-bottom:10px;font-weight:400;">Bạn có muốn thêm địa chỉ này không?</div>
-        <div style="border:1px solid rgba(255,77,79,0.14);background:linear-gradient(180deg, rgba(255,77,79,0.04), rgba(17,24,39,0.02));border-radius:10px;padding:12px 14px;text-align:left;">
-          <div style="font-size:13px;color:#666;font-weight:400;">${escapeHtml(preview)}</div>
-        </div>
-      </div>
-    `,
-    confirmButtonText: "Đồng ý",
-    cancelButtonText: "Hủy",
-    showCancelButton: true,
+  soDiaChi.err = "";
+  openQuickConfirm({
+    mode: "add",
+    preview: quickPreviewText() || "---",
+    title: "Xác nhận thêm địa chỉ",
+    text: "Bạn có muốn thêm địa chỉ này không?",
   });
+};
 
-  if (!result.isConfirmed) return;
+const confirmThemNhanhDiaChi = async () => {
+  if (!soDiaChi.idKhachHang) {
+    soDiaChi.err = "Không xác định được khách hàng để thêm địa chỉ.";
+    showSoDiaChiToast("error", soDiaChi.err);
+    closeQuickConfirm();
+    return;
+  }
 
   try {
     soDiaChi.loading = true;
@@ -1096,21 +1175,27 @@ const themNhanhDiaChi = async () => {
       await unsetMacDinhHienTai(null);
     }
 
+    const tenNguoiNhan = String(quick.tenNguoiNhan || "").trim();
+    const soDienThoai = String(quick.soDienThoai || "").trim();
+    const diaChiCuThe = String(quick.diaChiCuThe || "").trim();
+
     const payload = {
       idKhachHang: soDiaChi.idKhachHang,
-      tenDiaChi: String(quick.tenNguoiNhan || "Địa chỉ").trim(),
+      id_khach_hang: soDiaChi.idKhachHang,
+      tenDiaChi: tenNguoiNhan || "Địa chỉ",
       thanhPho: quick.tinh?.name || null,
       quan: quick.huyen?.name || null,
       phuong: quick.xa?.name || null,
-      diaChiCuThe: String(quick.diaChiCuThe || "").trim() || null,
+      diaChiCuThe: diaChiCuThe || null,
       macDinh: !!quick.macDinh,
-      hoTenNguoiNhan: String(quick.tenNguoiNhan || "").trim() || null,
-      tenNguoiNhan: String(quick.tenNguoiNhan || "").trim() || null,
-      soDienThoai: String(quick.soDienThoai || "").trim() || null,
+      hoTenNguoiNhan: tenNguoiNhan || null,
+      tenNguoiNhan: tenNguoiNhan || null,
+      soDienThoai: soDienThoai || null,
     };
 
     await createDiaChiKhachHang(payload);
 
+    closeQuickConfirm();
     showSoDiaChiToast("success", "Thêm địa chỉ thành công");
     resetQuick();
     await reloadSoDiaChi(false);
@@ -1128,28 +1213,28 @@ const confirmSetMacDinhDiaChi = async (a) => {
   const id = a?.id;
   if (!id) return;
 
-  const preview = buildAddrText(a) || a?.tenDiaChi || "---";
-
-  const result = await Swal.fire({
-    ...getSwalBase("confirm"),
-    icon: "question",
-    title: "Xác nhận?",
-    html: `
-      <div style="font-weight:400;color:#666;line-height:1.5;">
-        <div style="margin-bottom:10px;font-weight:400;">Bạn có muốn đặt địa chỉ này làm mặc định không?</div>
-        <div style="border:1px solid rgba(255,77,79,0.14);background:linear-gradient(180deg, rgba(255,77,79,0.04), rgba(17,24,39,0.02));border-radius:10px;padding:12px 14px;text-align:left;">
-          <div style="font-size:13px;color:#666;font-weight:400;">${escapeHtml(preview)}</div>
-        </div>
-      </div>
-    `,
-    confirmButtonText: "Đồng ý",
-    cancelButtonText: "Hủy",
-    showCancelButton: true,
+  soDiaChi.err = "";
+  openQuickConfirm({
+    mode: "default",
+    target: a,
+    preview: buildAddrText(a) || a?.tenDiaChi || "---",
+    title: "Xác nhận đặt mặc định",
+    text: "Bạn có muốn đặt địa chỉ này làm mặc định không?",
   });
+};
 
-  if (!result.isConfirmed) return;
+const confirmInlineAction = async () => {
+  if (quickConfirm.mode === "add") {
+    await confirmThemNhanhDiaChi();
+    return;
+  }
 
-  await setMacDinhDiaChi(a);
+  if (quickConfirm.mode === "default") {
+    await setMacDinhDiaChi(quickConfirm.target);
+    return;
+  }
+
+  closeQuickConfirm();
 };
 
 const setMacDinhDiaChi = async (a) => {
@@ -1163,6 +1248,7 @@ const setMacDinhDiaChi = async (a) => {
     await unsetMacDinhHienTai(id);
     await updateDiaChiKhachHang(id, { macDinh: true });
 
+    closeQuickConfirm();
     showSoDiaChiToast("success", "Đã đặt địa chỉ mặc định");
     await reloadSoDiaChi(false);
     await loadAddressMap();
@@ -1970,6 +2056,67 @@ tbody tr:hover { background:#F9FAFB; }
 :deep(.ss-swal-ok-btn:focus) {
   outline: none !important;
   box-shadow: none !important;
+}
+
+.ss-addr-inline-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: rgba(17, 24, 39, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ss-addr-inline-confirm {
+  width: min(420px, calc(100% - 24px));
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+  padding: 18px;
+}
+
+.ss-addr-inline-confirm-title {
+  font-size: 17px;
+  color: rgba(17, 24, 39, 0.92);
+  margin-bottom: 8px;
+}
+
+.ss-addr-inline-confirm-text {
+  font-size: 13px;
+  color: rgba(17, 24, 39, 0.66);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.ss-addr-inline-confirm-preview {
+  border: 1px solid rgba(255, 77, 79, 0.16);
+  background: linear-gradient(180deg, rgba(255, 77, 79, 0.04), rgba(17, 24, 39, 0.02));
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 13px;
+  color: rgba(17, 24, 39, 0.8);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.ss-addr-inline-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ss-addr-btn-secondary {
+  background: #f3f4f6;
+  color: rgba(17, 24, 39, 0.88);
+  border-color: rgba(17, 24, 39, 0.1);
+}
+
+.ss-addr-btn-secondary:hover {
+  background: #eaecef;
 }
 
 @media (max-width: 980px) {
