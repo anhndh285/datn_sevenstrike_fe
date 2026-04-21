@@ -7,21 +7,12 @@
 
       <header class="navbar px-4 sticky-top ss-header" style="height: 64px">
         <div class="container-fluid justify-content-end gap-3">
-          <button
-            type="button"
-            class="ss-theme-btn"
-            @click="batTatTheme"
-            :title="theme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối'"
-          >
-            <span class="material-icons ss-text-muted">
-              {{ theme === "dark" ? "light_mode" : "dark_mode" }}
-            </span>
-          </button>
+          <ThongBaoBell />
 
           <div ref="userWrapRef" class="ss-user-wrap ps-3">
             <button class="ss-user-btn" type="button" @click="toggleUserMenu">
               <span class="material-icons ss-text-muted">account_circle</span>
-              <span class="fw-bold small ss-text-muted d-none d-md-inline">
+              <span class="small ss-text-muted d-none d-md-inline">
                 {{ userName }}
               </span>
               <span class="material-icons small ss-text-muted">
@@ -32,14 +23,14 @@
             <div v-show="userMenuOpen" class="ss-user-menu shadow">
               <button class="ss-user-item" type="button" @click="handleProfile">
                 <span class="material-icons ss-user-ic">person</span>
-                <span class="small fw-bold">Thông tin cá nhân</span>
+                <span class="small">Thông tin cá nhân</span>
               </button>
 
               <div class="ss-user-divider"></div>
 
               <button class="ss-user-item ss-danger" type="button" @click="handleLogout">
                 <span class="material-icons ss-user-ic">logout</span>
-                <span class="small fw-bold">Đăng xuất</span>
+                <span class="small">Đăng xuất</span>
               </button>
             </div>
           </div>
@@ -65,9 +56,9 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Swal from "sweetalert2";
-import axios from "axios"; // Thêm axios để check thời gian thực
 
 import SidebarMenu from "@/components/layouts/SidebarMenu.vue";
+import ThongBaoBell from "@/components/common/ThongBaoBell.vue";
 import StaffChatWidget from "@/chatAI/components/StaffChatWidget.vue";
 import GiaoCa from "@/pages/lich_lam_viec/GiaoCa.vue";
 import { checkActiveCa } from "@/services/lich_lam_viec/giao_caService";
@@ -79,14 +70,13 @@ const ADMIN_ROLES = ["ADMIN", "NHAN_VIEN"];
 const route = useRoute();
 const router = useRouter();
 
-const { theme, khoiTaoTheme, batTatTheme } = useTheme();
+const { khoiTaoTheme } = useTheme();
 khoiTaoTheme();
 
 const userName = ref("Tài khoản");
 const userMenuOpen = ref(false);
 const userWrapRef = ref(null);
 const showGiaoCaModal = ref(false);
-let shiftTimer = null; // Biến lưu đồng hồ chạy ngầm
 
 const normalizeRole = (role) => {
   const r = String(role || "").trim().toUpperCase();
@@ -217,7 +207,6 @@ const getMinutes = (value) => {
   return Number(parts[0] || 0) * 60 + Number(parts[1] || 0);
 };
 
-// ĐÃ KHÔI PHỤC HÀM NÀY ĐỂ BẬT MODAL LÚC ĐĂNG NHẬP
 const kiemTraVaoCa = async () => {
   const user = getUser();
   const role = getUserRole();
@@ -317,76 +306,17 @@ const handleCaStarted = () => {
   });
 };
 
-// =========================================================
-// CHỨC NĂNG KHÓA MÀN HÌNH KHI HẾT GIỜ (Đồng hồ ngầm)
-// =========================================================
-const checkHetHanCa = async () => {
-  if (route.path === '/admin/giao-ca') return;
-
-  const user = getUser();
-  if (!user) return;
-  const idNv = user.id || user.idNhanVien;
-
-  try {
-    const res = await axios.get(`http://localhost:8080/api/admin/giao-ca/check-active/${idNv}`);
-    const ca = res.data;
-
-    if (ca && ca.id && ca.gioKetThucCa && ca.thoiGianNhanCa) {
-       const timeNhanCa = new Date(ca.thoiGianNhanCa);
-       const [hours, minutes] = ca.gioKetThucCa.split(':');
-       
-       const timeKetThuc = new Date(timeNhanCa);
-       timeKetThuc.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-       const [startH] = (ca.gioBatDauCa || "00:00").split(':');
-       if (parseInt(hours) < parseInt(startH)) {
-          timeKetThuc.setDate(timeKetThuc.getDate() + 1); 
-       }
-
-       const now = new Date();
-       
-       if (now > timeKetThuc) {
-          showGiaoCaModal.value = false; // Ẩn modal mở ca nếu nó đang kẹt
-          Swal.fire({
-             title: 'HẾT GIỜ LÀM VIỆC!',
-             text: 'Ca làm việc của bạn đã kết thúc. Vui lòng đóng ca để bàn giao két tiền!',
-             icon: 'warning',
-             backdrop: `rgba(220, 38, 38, 0.95)`,
-             allowOutsideClick: false,
-             allowEscapeKey: false,
-             showCancelButton: false,
-             confirmButtonText: 'ĐI ĐẾN TRANG ĐÓNG CA',
-             confirmButtonColor: '#111827'
-          }).then((result) => {
-             if (result.isConfirmed) {
-                router.push('/admin/giao-ca');
-             }
-          });
-       }
-    }
-  } catch (error) {
-    // Bỏ qua nếu không có ca
-  }
-};
-
 onMounted(async () => {
   const ok = requireAuthOrRedirect();
   if (!ok) return;
 
   syncUserName();
   document.addEventListener("click", onClickOutside);
-  
-  // Gọi hàm bật Modal của bạn
   await kiemTraVaoCa();
-
-  // Khởi động đồng hồ khóa màn hình
-  checkHetHanCa();
-  shiftTimer = setInterval(checkHetHanCa, 60000);
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", onClickOutside);
-  if (shiftTimer) clearInterval(shiftTimer);
 });
 </script>
 
@@ -438,6 +368,7 @@ onBeforeUnmount(() => {
   padding: 6px 6px;
   border-radius: 10px;
   cursor: pointer;
+  font-weight: 400;
 }
 
 .ss-user-btn:hover {
@@ -467,6 +398,7 @@ onBeforeUnmount(() => {
   text-align: left;
   cursor: pointer;
   color: var(--ss-text);
+  font-weight: 400;
 }
 
 .ss-user-item:hover {

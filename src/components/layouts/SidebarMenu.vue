@@ -1,8 +1,10 @@
+<!-- File: src/components/layouts/SidebarMenu.vue -->
 <template>
   <aside
     class="sidebar bg-white border-end d-flex flex-column position-fixed h-100 ss-sidebar"
     style="z-index: 1000"
   >
+    <!-- Logo -->
     <div class="ss-logo-wrap text-center">
       <img
         src="@/assets/images/logo/Logo_SevenStrike.png"
@@ -12,26 +14,33 @@
     </div>
 
     <nav class="nav flex-column px-3 py-0 gap-1 flex-grow-1">
+      <!-- Trang chủ: ADMIN + NHAN_VIEN -->
       <RouterLink class="ss-nav-link" to="/admin/trang-chu" title="Trang chủ">
         <span class="material-icons ss-ic">home</span>
         <span class="ss-nav-label">Trang chủ</span>
       </RouterLink>
 
+      <!-- Thống kê: chỉ ADMIN -->
       <RouterLink v-if="isAdmin" class="ss-nav-link" to="/admin/dashboard" title="Thống kê">
         <span class="material-icons ss-ic">grid_view</span>
         <span class="ss-nav-label">Thống kê</span>
       </RouterLink>
 
+      <!-- Bán hàng: ADMIN + NHAN_VIEN -->
       <RouterLink class="ss-nav-link" to="/admin/pos" title="Bán hàng">
         <span class="material-icons ss-ic">shopping_cart</span>
         <span class="ss-nav-label">Bán hàng</span>
       </RouterLink>
 
+      <!-- Hóa đơn: ADMIN + NHAN_VIEN -->
       <RouterLink class="ss-nav-link" to="/admin/hoa-don" title="Quản lý hóa đơn">
         <span class="material-icons ss-ic">receipt_long</span>
         <span class="ss-nav-label">Quản lý hóa đơn</span>
       </RouterLink>
 
+      <!-- Khách hàng:
+           - NHAN_VIEN: hiển thị dạng item riêng
+           - ADMIN: KHÔNG hiển thị (vì đã có trong Quản lý tài khoản) -->
       <RouterLink
         v-if="!isAdmin"
         class="ss-nav-link"
@@ -42,7 +51,9 @@
         <span class="ss-nav-label">Khách hàng</span>
       </RouterLink>
 
+      <!-- Các nhóm chỉ ADMIN -->
       <template v-if="isAdmin">
+        <!-- Quản lý sản phẩm -->
         <div class="ss-nav-group">
           <button
             class="ss-nav-toggle"
@@ -70,6 +81,7 @@
           </div>
         </div>
 
+        <!-- Danh sách thuộc tính -->
         <div class="ss-nav-group">
           <button
             class="ss-nav-toggle"
@@ -120,6 +132,7 @@
           </div>
         </div>
 
+        <!-- Quản lý giảm giá -->
         <div class="ss-nav-group">
           <button
             class="ss-nav-toggle"
@@ -146,6 +159,7 @@
           </div>
         </div>
 
+        <!-- Quản lý tài khoản -->
         <div class="ss-nav-group">
           <button
             class="ss-nav-toggle"
@@ -173,6 +187,7 @@
         </div>
       </template>
 
+      <!-- Lịch làm việc -->
       <div class="ss-nav-group">
         <button class="ss-nav-toggle" @click="toggle('work')" type="button" title="Lịch làm việc">
           <div class="ss-toggle-left">
@@ -189,14 +204,9 @@
             <span class="ss-sub-label">Lịch làm việc</span>
           </RouterLink>
 
-          <RouterLink v-if="isAdmin || hasShift" class="ss-sub-link" to="/admin/giao-ca" title="Giao ca">
+          <RouterLink v-if="!isAdmin" class="ss-sub-link" to="/admin/giao-ca" title="Giao ca">
             <span class="ss-sub-label">Giao ca</span>
           </RouterLink>
-
-          <div v-else class="ss-sub-link ss-locked-link" title="Bạn không có ca làm việc lúc này">
-            <span class="ss-sub-label">Giao ca</span>
-            <span class="material-icons ss-lock-icon">lock</span>
-          </div>
 
           <RouterLink v-if="isAdmin" class="ss-sub-link" to="/admin/lich-ca-lam" title="Lịch ca làm">
             <span class="ss-sub-label">Lịch ca làm</span>
@@ -213,6 +223,7 @@
         </div>
       </div>
 
+      <!-- Quản lý Chat -->
       <RouterLink class="ss-nav-link" to="/admin/chat" title="Quản lý Chat">
         <span class="material-icons ss-ic">chat</span>
         <span class="ss-nav-label">Quản lý Chat</span>
@@ -226,7 +237,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, watch, ref, onMounted, onUnmounted } from "vue";
+import { computed, reactive, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { useChatBadge } from "@/chatAI/services/useChatBadge.js";
 
@@ -314,23 +325,6 @@ const workPaths = [
   "/admin/lich-ca-lam",
   "/admin/lich-su-hoat-dong",
 ];
-
-// ✅ LOGIC KHÓA NÚT GIAO CA DỰA VÀO SESSION TRÌNH DUYỆT
-const hasShift = ref(true);
-let shiftTimer = null;
-
-onMounted(() => {
-  // Quét liên tục mỗi 1 giây để đồng bộ với tính năng check ca của AdminLayout
-  shiftTimer = setInterval(() => {
-    const status = sessionStorage.getItem("ss_has_active_shift");
-    // Nếu status trả về "false" -> Nhân viên không có ca -> Khóa nút lại
-    hasShift.value = status !== "false"; 
-  }, 1000);
-});
-
-onUnmounted(() => {
-  if (shiftTimer) clearInterval(shiftTimer);
-});
 
 watch(
   () => route.path,
@@ -510,25 +504,5 @@ watch(
   background: rgba(255, 77, 79, 0.1);
   color: #ff4d4f;
   border: 1px solid rgba(255, 77, 79, 0.22);
-}
-
-/* ✅ CSS CHO NÚT BỊ KHÓA */
-.ss-locked-link {
-  cursor: not-allowed !important;
-  opacity: 0.5;
-  background: transparent !important;
-  color: #9ca3af !important;
-}
-
-.ss-locked-link:hover {
-  background: transparent !important;
-  color: #9ca3af !important;
-  border: transparent !important;
-}
-
-.ss-lock-icon {
-  font-size: 14px;
-  margin-left: auto;
-  color: #9ca3af;
 }
 </style>

@@ -10,46 +10,93 @@ const unwrapJson = async (res) => {
   }
 };
 
+const getErrorMessageFromResponse = async (res, fallback) => {
+  const data = await unwrapJson(res);
+
+  if (typeof data === "string" && data.trim()) {
+    return `${fallback}: ${data}`;
+  }
+
+  if (data?.message) {
+    return `${fallback}: ${data.message}`;
+  }
+
+  if (data?.error) {
+    return `${fallback}: ${data.error}`;
+  }
+
+  return fallback;
+};
+
+const normalizeDiaChiPayload = (data = {}) => {
+  const idKhachHang = data?.idKhachHang ?? data?.id_khach_hang ?? null;
+
+  return {
+    ...data,
+    idKhachHang,
+    id_khach_hang: idKhachHang,
+  };
+};
+
+const getDiaChiKhachHangId = (item) => item?.idKhachHang ?? item?.id_khach_hang ?? null;
+
 export const getAllDiaChiKhachHang = async () => {
   const res = await fetch(API);
-  if (!res.ok) throw new Error("Load địa chỉ thất bại");
+  if (!res.ok) {
+    throw new Error(await getErrorMessageFromResponse(res, "Load địa chỉ thất bại"));
+  }
   return await unwrapJson(res);
 };
 
 export const getDiaChiByKhachHangId_FEFilter = async (idKhachHang) => {
   const all = await getAllDiaChiKhachHang();
   const arr = Array.isArray(all) ? all : [];
-  return arr.filter((x) => String(x?.idKhachHang) === String(idKhachHang) && !x?.xoaMem);
+
+  return arr.filter(
+    (x) => String(getDiaChiKhachHangId(x)) === String(idKhachHang) && !x?.xoaMem
+  );
 };
 
-// ✅ POST
 export const addDiaChiKhachHang = async (data) => {
+  const payload = normalizeDiaChiPayload(data);
+
   const res = await fetch(API, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error("Thêm địa chỉ thất bại: " + (await res.text()));
+
+  if (!res.ok) {
+    throw new Error(await getErrorMessageFromResponse(res, "Thêm địa chỉ thất bại"));
+  }
+
   return await unwrapJson(res);
 };
 
-// ✅ Alias để đúng tên import trong page (createDiaChiKhachHang)
 export const createDiaChiKhachHang = addDiaChiKhachHang;
 
-// ✅ PUT
 export const updateDiaChiKhachHang = async (id, data) => {
+  const payload = normalizeDiaChiPayload(data);
+
   const res = await fetch(`${API}/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error("Cập nhật địa chỉ thất bại: " + (await res.text()));
+
+  if (!res.ok) {
+    throw new Error(await getErrorMessageFromResponse(res, "Cập nhật địa chỉ thất bại"));
+  }
+
   return await unwrapJson(res);
 };
 
-// ✅ DELETE (soft delete bên BE)
 export const removeDiaChiKhachHang = async (id) => {
   const res = await fetch(`${API}/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("Xóa địa chỉ thất bại: " + (await res.text()));
+
+  if (!res.ok) {
+    throw new Error(await getErrorMessageFromResponse(res, "Xóa địa chỉ thất bại"));
+  }
+
   return true;
 };

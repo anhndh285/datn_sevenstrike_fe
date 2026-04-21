@@ -7,7 +7,6 @@
       </div>
     </div>
 
-    <!-- Bộ Lọc -->
     <section class="ss-card ss-border mb-4">
       <div class="p-4">
         <div class="d-flex align-items-center mb-3">
@@ -71,7 +70,6 @@
       </div>
     </section>
 
-    <!-- Danh Sách Hóa Đơn -->
     <div class="ss-card ss-border">
       <div class="p-4">
         <div class="d-flex align-items-center gap-3 mb-3">
@@ -84,17 +82,27 @@
           </div>
         </div>
 
-        <!-- Tabs trạng thái -->
         <div class="order-tabs mb-3">
+          <div class="order-tabs-left">
+            <button
+              v-for="tab in tabList"
+              :key="tab.value"
+              class="btn-tab"
+              :class="{ active: tabTrangThai === tab.value }"
+              type="button"
+              @click="locTheoTrangThai(tab.value)"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
+
           <button
-            v-for="tab in tabList"
-            :key="tab.value"
-            class="btn-tab"
-            :class="{ active: tabTrangThai === tab.value }"
+            class="btn-sort-global"
             type="button"
-            @click="locTheoTrangThai(tab.value)"
+            :title="sortAsc ? 'Đang sắp xếp cũ nhất đến mới nhất' : 'Đang sắp xếp mới nhất đến cũ nhất'"
+            @click="toggleSortHoaDon"
           >
-            {{ tab.label }}
+            <i :class="sortAsc ? 'bi bi-sort-down-alt' : 'bi bi-sort-up'"></i>
           </button>
         </div>
 
@@ -150,8 +158,8 @@
                       hd.loaiDonCode === 1
                         ? 'ss-pill-ship'
                         : hd.loaiDonCode === 2
-                        ? 'ss-pill-online'
-                        : 'ss-pill-store'
+                          ? 'ss-pill-online'
+                          : 'ss-pill-store'
                     "
                   >
                     {{ hd.loaiDonLabel }}
@@ -163,15 +171,9 @@
                 <td>
                   <span
                     class="ss-pill ss-pill-status"
-                    :style="getTrangThaiStyle(hd.trangThaiHienTai)"
+                    :style="getTrangThaiStyle(hd.trangThaiHienTai, hd.daHoanPhi)"
                   >
-                    {{
-                      tabTrangThai === TRANG_THAI.CAN_HOAN_PHI &&
-                      hd.trangThaiHienTai === TRANG_THAI.HUY_DON &&
-                      hd.daHoanPhi === false
-                        ? "Cần hoàn phí"
-                        : hienTrangThai(hd.trangThaiHienTai)
-                    }}
+                    {{ hienTrangThaiTrongBang(hd) }}
                   </span>
                 </td>
 
@@ -243,7 +245,6 @@
       </div>
     </div>
 
-    <!-- PAGINATION -->
     <div class="ss-pagination-bar" v-if="!loading && filteredHoaDon.length">
       <div class="ss-pagination">
         <button class="ss-pagebtn" :disabled="page <= 1" @click="page--" title="Trang trước">
@@ -255,7 +256,7 @@
           :key="`p-${p}`"
           class="ss-pagebtn"
           :class="{ active: p === page }"
-          :disabled="p === '...'"
+          :disabled="p === '.'"
           @click="goPage(p)"
         >
           {{ p }}
@@ -294,6 +295,7 @@ const filteredHoaDon = ref([]);
 const filterMaHD = ref("");
 const filterLoaiDon = ref("");
 const tabTrangThai = ref("ALL");
+const sortAsc = ref(false);
 
 const today = () => {
   const d = new Date();
@@ -400,7 +402,7 @@ const getCurrentNhanVienInfo = () => {
       u?.username ??
       u?.taiKhoan ??
       u?.account ??
-      ""
+      "",
   ).trim();
 
   return {
@@ -437,11 +439,11 @@ const canDoAdminAction = () => {
 
 /* ================== TRẠNG THÁI ================== */
 const TRANG_THAI = {
-  CHO_XAC_NHAN: 1,
-  CHO_GIAO_HANG: 2,
-  DANG_VAN_CHUYEN: 3,
-  DA_GIAO_HANG: 4,
-  HOAN_THANH: 5,
+  CHUA_XAC_NHAN: 1,
+  DA_XAC_NHAN: 2,
+  CHO_GIAO: 3,
+  DANG_GIAO: 4,
+  DA_HOAN_THANH: 5,
   HUY_DON: 6,
   YEU_CAU_HUY: 7,
   CAN_HOAN_PHI: "CAN_HOAN_PHI",
@@ -450,36 +452,51 @@ const TRANG_THAI = {
 const tabList = computed(() => {
   const base = [
     { label: "Tất cả", value: "ALL" },
-    { label: "Chờ xác nhận", value: TRANG_THAI.CHO_XAC_NHAN },
-    { label: "Chờ giao hàng", value: TRANG_THAI.CHO_GIAO_HANG },
-    { label: "Vận chuyển", value: TRANG_THAI.DANG_VAN_CHUYEN },
-    { label: "Đã giao hàng", value: TRANG_THAI.DA_GIAO_HANG },
-    { label: "Hoàn thành", value: TRANG_THAI.HOAN_THANH },
+    { label: "Chưa xác nhận", value: TRANG_THAI.CHUA_XAC_NHAN },
+    { label: "Đã xác nhận", value: TRANG_THAI.DA_XAC_NHAN },
+    { label: "Chờ giao", value: TRANG_THAI.CHO_GIAO },
+    { label: "Đang giao", value: TRANG_THAI.DANG_GIAO },
+    { label: "Đã hoàn thành", value: TRANG_THAI.DA_HOAN_THANH },
     { label: "Đã hủy", value: TRANG_THAI.HUY_DON },
-    { label: "⚠️ Yêu cầu hủy", value: TRANG_THAI.YEU_CAU_HUY },
+    { label: "Yêu cầu hủy", value: TRANG_THAI.YEU_CAU_HUY },
   ];
 
   if (laAdmin()) {
-    base.push({ label: "💰 Cần hoàn phí", value: TRANG_THAI.CAN_HOAN_PHI });
+    base.push({ label: "Cần hoàn phí", value: TRANG_THAI.CAN_HOAN_PHI });
   }
 
   return base;
 });
 
 const trangThaiMap = {
-  1: { label: "Chờ xác nhận", bg: "#fff7ed", color: "#c2410c" },
-  2: { label: "Chờ giao hàng", bg: "#eff6ff", color: "#1d4ed8" },
-  3: { label: "Đang vận chuyển", bg: "#fef3c7", color: "#92400e" },
-  4: { label: "Đã giao hàng", bg: "#ecfeff", color: "#0e7490" },
-  5: { label: "Hoàn thành", bg: "#dcfce7", color: "#15803d" },
+  1: { label: "Chưa xác nhận", bg: "#fff7ed", color: "#c2410c" },
+  2: { label: "Đã xác nhận", bg: "#eff6ff", color: "#1d4ed8" },
+  3: { label: "Chờ giao", bg: "#fef3c7", color: "#92400e" },
+  4: { label: "Đang giao", bg: "#ecfeff", color: "#0e7490" },
+  5: { label: "Đã hoàn thành", bg: "#dcfce7", color: "#15803d" },
   6: { label: "Đã hủy", bg: "#fee2e2", color: "#dc2626" },
   7: { label: "Yêu cầu hủy", bg: "#fff7ed", color: "#ea580c" },
 };
 
 const hienTrangThai = (code) => trangThaiMap[code]?.label || "Không xác định";
 
-const getTrangThaiStyle = (code) => {
-  const st = trangThaiMap[code];
+const hienTrangThaiTrongBang = (hd) => {
+  if (Number(hd.trangThaiHienTai) === TRANG_THAI.HUY_DON && hd.daHoanPhi === false) {
+    return "Cần hoàn phí";
+  }
+  return hienTrangThai(Number(hd.trangThaiHienTai));
+};
+
+const getTrangThaiStyle = (code, daHoanPhi) => {
+  if (Number(code) === TRANG_THAI.HUY_DON && daHoanPhi === false) {
+    return {
+      background: "#fff7ed",
+      color: "#ea580c",
+      border: "1px solid rgba(234, 88, 12, 0.2)",
+    };
+  }
+
+  const st = trangThaiMap[Number(code)];
   if (!st) {
     return {
       background: "#f3f4f6",
@@ -487,6 +504,7 @@ const getTrangThaiStyle = (code) => {
       border: "1px solid #d1d5db",
     };
   }
+
   return {
     background: st.bg,
     color: st.color,
@@ -503,43 +521,70 @@ function toLoaiDonLabel(code) {
   return "Tại quầy";
 }
 
+/* ================== HELPERS TIỀN ================== */
+function toMoneyNumber(val) {
+  const n = Number(val ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function tinhTongTienHienThi(hd) {
+  const tongTienSauGiam = toMoneyNumber(hd.tongTienSauGiam);
+  const tongTien = toMoneyNumber(hd.tongTien);
+
+  if (tongTienSauGiam > 0) return tongTienSauGiam;
+  return tongTien;
+}
+
+const getTimeValue = (hd) => {
+  const raw = hd?.ngayTaoRaw || hd?.ngayTao;
+  const time = new Date(raw).getTime();
+  return Number.isNaN(time) ? 0 : time;
+};
+
+const sortHoaDonData = (list) => {
+  const cloned = [...list];
+
+  cloned.sort((a, b) => {
+    const ta = getTimeValue(a);
+    const tb = getTimeValue(b);
+    return sortAsc.value ? ta - tb : tb - ta;
+  });
+
+  return cloned;
+};
+
+const toggleSortHoaDon = () => {
+  sortAsc.value = !sortAsc.value;
+};
+
 /* ================== LOAD DATA ================== */
 const loadHoaDon = async () => {
   loading.value = true;
   try {
     const res = await axios.get(API_HD);
 
-    hoaDonList.value = (res.data || [])
-      .map((hd) => {
-        const tongHang = Number(hd.tongTien ?? 0);
-        const giamGia = Number(hd.tongTienGiam ?? 0);
-        const phiShip = Number(hd.phiVanChuyen ?? 0);
+    hoaDonList.value = (res.data || []).map((hd) => {
+      const loaiDonCode = Number(hd.loaiDon ?? 0);
+      const ngayTaoRaw = hd.ngayTao ?? "";
+      const tongThanhToan = tinhTongTienHienThi(hd);
 
-        const tongThanhToan = tongHang - giamGia + phiShip;
-        const loaiDonCode = Number(hd.loaiDon ?? 0);
-        const ngayTaoRaw = hd.ngayTao ?? "";
+      return {
+        id: hd.id,
+        maHD: hd.maHoaDon,
+        khachHang: hd.tenKhachHang ?? "",
+        sdtKhachHang: hd.soDienThoaiKhachHang ?? "",
+        nhanVien: hd.tenNhanVien ?? "",
+        tongTien: tongThanhToan,
+        ngayTaoRaw,
+        ngayTao: ngayTaoRaw ? ngayTaoRaw.substring(0, 10) : "",
+        loaiDonCode,
+        loaiDonLabel: toLoaiDonLabel(loaiDonCode),
+        trangThaiHienTai: Number(hd.trangThaiHienTai),
+        daHoanPhi: hd.daHoanPhi,
+      };
+    });
 
-        return {
-          id: hd.id,
-          maHD: hd.maHoaDon,
-          khachHang: hd.tenKhachHang ?? "",
-          sdtKhachHang: hd.soDienThoaiKhachHang ?? "",
-          nhanVien: hd.tenNhanVien ?? "",
-          tongTien: tongThanhToan,
-          ngayTaoRaw,
-          ngayTao: ngayTaoRaw ? ngayTaoRaw.substring(0, 10) : "",
-          loaiDonCode,
-          loaiDonLabel: toLoaiDonLabel(loaiDonCode),
-          trangThaiHienTai: Number(hd.trangThaiHienTai),
-          daHoanPhi: hd.daHoanPhi,
-        };
-      })
-      .sort(
-        (a, b) =>
-          new Date(a.ngayTaoRaw || a.ngayTao) - new Date(b.ngayTaoRaw || b.ngayTao)
-      );
-
-    filteredHoaDon.value = [...hoaDonList.value];
+    filteredHoaDon.value = sortHoaDonData(hoaDonList.value);
   } finally {
     loading.value = false;
   }
@@ -547,7 +592,7 @@ const loadHoaDon = async () => {
 
 /* ================== FILTER CORE ================== */
 const apDungBoLoc = () => {
-  filteredHoaDon.value = hoaDonList.value.filter((hd) => {
+  const data = hoaDonList.value.filter((hd) => {
     const ma = filterMaHD.value
       ? (hd.maHD || "").toLowerCase().includes(filterMaHD.value.toLowerCase())
       : true;
@@ -564,21 +609,27 @@ const apDungBoLoc = () => {
       tabTrangThai.value === "ALL"
         ? true
         : tabTrangThai.value === TRANG_THAI.CAN_HOAN_PHI
-        ? hd.trangThaiHienTai === TRANG_THAI.HUY_DON && hd.daHoanPhi === false
-        : Number(hd.trangThaiHienTai) === Number(tabTrangThai.value);
+          ? Number(hd.trangThaiHienTai) === TRANG_THAI.HUY_DON && hd.daHoanPhi === false
+          : Number(hd.trangThaiHienTai) === Number(tabTrangThai.value);
 
     return ma && loai && bd && kt && trangThai;
   });
 
+  filteredHoaDon.value = sortHoaDonData(data);
   page.value = 1;
 };
 
-watch([filterMaHD, filterLoaiDon, filterNgayBD, filterNgayKT, tabTrangThai], () => {
-  if (hoaDonList.value.length) apDungBoLoc();
-});
+watch(
+  [filterMaHD, filterLoaiDon, filterNgayBD, filterNgayKT, tabTrangThai, sortAsc],
+  () => {
+    if (hoaDonList.value.length) apDungBoLoc();
+  },
+);
 
 /* ================== ACTION ================== */
-const locTheoTrangThai = (value) => (tabTrangThai.value = value);
+const locTheoTrangThai = (value) => {
+  tabTrangThai.value = value;
+};
 
 const lamMoi = async () => {
   filterMaHD.value = "";
@@ -586,12 +637,13 @@ const lamMoi = async () => {
   filterNgayBD.value = today();
   filterNgayKT.value = today();
   tabTrangThai.value = "ALL";
+  sortAsc.value = false;
   await loadHoaDon();
   apDungBoLoc();
 };
 
 const xuatFile = () => {
-  if (!filteredHoaDon.value.length) return alert("❌ Không có hóa đơn để xuất");
+  if (!filteredHoaDon.value.length) return alert("Không có hóa đơn để xuất");
 
   const data = filteredHoaDon.value.map((hd, i) => ({
     STT: i + 1,
@@ -601,10 +653,7 @@ const xuatFile = () => {
     "Tổng tiền": hd.tongTien,
     "Ngày tạo": hd.ngayTao,
     "Loại đơn": hd.loaiDonLabel,
-    "Trạng thái":
-      hd.trangThaiHienTai === TRANG_THAI.HUY_DON && hd.daHoanPhi === false
-        ? "Đã hủy - Chưa hoàn phí"
-        : hienTrangThai(hd.trangThaiHienTai),
+    "Trạng thái": hienTrangThaiTrongBang(hd),
     "Hoàn phí":
       hd.daHoanPhi === true ? "Đã hoàn" : hd.daHoanPhi === false ? "Chưa hoàn" : "",
   }));
@@ -630,7 +679,7 @@ const xacNhanHuyInList = async (hd) => {
     await axios.post(
       `${API_HD}/${hd.id}/xac-nhan-huy-theo-yeu-cau`,
       { nhanVienId: info?.idNhanVien || null },
-      taoConfigHeaderNhanVien()
+      taoConfigHeaderNhanVien(),
     );
 
     await loadHoaDon();
@@ -658,7 +707,7 @@ const tuChoiHuyInList = async (hd) => {
         nhanVienId: info?.idNhanVien || null,
         lyDo: lyDo || null,
       },
-      taoConfigHeaderNhanVien()
+      taoConfigHeaderNhanVien(),
     );
 
     await loadHoaDon();
@@ -686,7 +735,7 @@ const xacNhanHoanPhiInList = async (hd) => {
       {
         nhanVienId: info?.idNhanVien || null,
       },
-      taoConfigHeaderNhanVien()
+      taoConfigHeaderNhanVien(),
     );
 
     await loadHoaDon();
@@ -703,7 +752,7 @@ const page = ref(1);
 const pageSize = ref(10);
 
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil((filteredHoaDon.value.length || 0) / pageSize.value))
+  Math.max(1, Math.ceil((filteredHoaDon.value.length || 0) / pageSize.value)),
 );
 
 const pagedHoaDon = computed(() => {
@@ -715,7 +764,7 @@ watch(
   () => filteredHoaDon.value.length,
   () => {
     if (page.value > totalPages.value) page.value = totalPages.value;
-  }
+  },
 );
 
 const pageButtons = computed(() => {
@@ -728,20 +777,20 @@ const pageButtons = computed(() => {
   const push = (x) => arr.push(x);
 
   push(1);
-  if (p > 3) push("...");
+  if (p > 3) push(".");
 
   const start = Math.max(2, p - 1);
   const end = Math.min(tp - 1, p + 1);
   for (let i = start; i <= end; i++) push(i);
 
-  if (p < tp - 2) push("...");
+  if (p < tp - 2) push(".");
   push(tp);
 
   return arr;
 });
 
 function goPage(p) {
-  if (p === "..." || typeof p !== "number") return;
+  if (p === "." || typeof p !== "number") return;
   page.value = p;
 }
 
@@ -869,11 +918,21 @@ onMounted(async () => {
 
 .order-tabs {
   display: flex;
-  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-  overflow-x: auto;
 }
+
+.order-tabs-left {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  align-items: center;
+  flex: 1;
+}
+
 .btn-tab {
   background: #fff;
   border: 1px solid rgba(17, 24, 39, 0.12);
@@ -894,6 +953,30 @@ onMounted(async () => {
   color: #fff;
   border-color: transparent;
   background: linear-gradient(90deg, #ff4d4f 0%, #111827 100%);
+}
+
+.btn-sort-global {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: #fff;
+  color: rgba(17, 24, 39, 0.72);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+  flex: 0 0 auto;
+}
+
+.btn-sort-global:hover {
+  background: rgba(17, 24, 39, 0.04);
+  border-color: rgba(17, 24, 39, 0.18);
+}
+
+.btn-sort-global i {
+  font-size: 15px;
+  line-height: 1;
 }
 
 .ss-table-wrap {

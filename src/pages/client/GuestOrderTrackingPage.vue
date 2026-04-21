@@ -62,7 +62,7 @@
                   <h5 class="mb-0 fw-bold">Đơn hàng {{ selectedOrder.maHoaDon }}</h5>
                   <small class="text-muted">{{ formatDate(selectedOrder.ngayTao) }}</small>
                 </div>
-                <span class="badge rounded-pill px-3 py-2" :class="getStatusBadgeClass(selectedOrder.trangThai)">
+                <span class="badge rounded-pill px-3 py-2" :style="getTrangThaiStyle(selectedOrder.trangThaiHienTai)">
                   {{ selectedOrder.trangThai }}
                 </span>
               </div>
@@ -122,8 +122,9 @@
                   <thead class="bg-light text-secondary small text-uppercase">
                     <tr>
                       <th class="border-0 py-3 ps-3">#</th>
+                      <th class="border-0 py-3 text-center">Mã CTSP</th>
                       <th class="border-0 py-3">Sản phẩm</th>
-                      <th class="border-0 py-3 text-end">Đơn giá</th>
+                      <th class="border-0 py-3 text-center">Đơn giá</th>
                       <th class="border-0 py-3 text-center">Số lượng</th>
                       <th class="border-0 py-3 text-end pe-3">Thành tiền</th>
                     </tr>
@@ -132,6 +133,7 @@
                     <template v-for="(item, index) in selectedOrder.items" :key="index">
                       <tr>
                         <td class="ps-3 fw-bold text-muted">{{ index + 1 }}</td>
+                        <td class="text-center fw-bold">{{ item.maChiTietSanPham || '—' }}</td>
                         <td>
                           <div class="d-flex align-items-center">
                             <img :src="item.anhDaiDien || 'https://placehold.co/60x60'" class="rounded border me-3" width="60" height="60" style="object-fit: cover;">
@@ -141,13 +143,13 @@
                             </div>
                           </div>
                         </td>
-                        <td class="text-end fw-bold">{{ formatCurrency(item.donGia) }}</td>
+                        <td class="text-center fw-bold">{{ formatCurrency(item.donGia) }}</td>
                         <td class="text-center">{{ item.soLuong }}</td>
                         <td class="text-end fw-bold pe-3" style="color: var(--ss-accent);">{{ formatCurrency(item.donGia * item.soLuong) }}</td>
                       </tr>
                       <!-- Dòng vàng thay đổi giá -->
                       <tr v-if="item.donGiaCu && item.donGia !== item.donGiaCu" style="background-color: #fff3cd;">
-                        <td colspan="5" class="py-1 ps-3 small" style="color: #856404;">
+                        <td colspan="6" class="py-1 ps-3 small" style="color: #856404;">
                           <i class="bi bi-exclamation-triangle-fill me-1"></i>
                           Giá trong đơn: <strong>{{ formatCurrency(item.donGia) }}</strong> — Giá hiện tại: <strong>{{ formatCurrency(item.donGiaCu) }}</strong>
                         </td>
@@ -192,7 +194,7 @@
                 <span class="fw-bold">{{ order.maHoaDon }}</span>
                 <span class="text-muted small">{{ formatDate(order.ngayTao) }}</span>
               </div>
-              <span class="badge rounded-pill px-3 py-1" :class="getStatusBadgeClass(order.trangThai)">
+              <span class="badge rounded-pill px-3 py-1" :style="getTrangThaiStyle(order.trangThaiHienTai)">
                 {{ order.trangThai }}
               </span>
             </div>
@@ -680,6 +682,7 @@
                 <div class="flex-grow-1">
                   <div class="fw-semibold small">{{ item.tenSanPham }}</div>
                   <div class="text-muted small">{{ item.phanLoai }}</div>
+                  <div v-if="item.maChiTietSanPham" class="text-muted" style="font-size:0.75rem;">Mã: {{ item.maChiTietSanPham }}</div>
                   <div v-if="isGiaDaThayDoi(item)" class="small text-warning fw-bold" style="color: #f97316 !important;">
                     <i class="bi bi-exclamation-circle-fill me-1"></i>
                     Giá đã thay đổi: {{ formatCurrency(item.giaBanLuc) }} → {{ formatCurrency(item.giaBanHienTai) }}
@@ -794,17 +797,17 @@ const actionOrderData = computed(() => {
 
 const steps = [
   { code: 1, label: 'Chờ xác nhận',    icon: 'bi bi-clipboard' },
-  { code: 2, label: 'Chờ giao hàng',   icon: 'bi bi-box-seam' },
-  { code: 3, label: 'Đang vận chuyển', icon: 'bi bi-truck' },
-  { code: 4, label: 'Đã giao hàng',    icon: 'bi bi-truck-front' },
+  { code: 2, label: 'Đã xác nhận',     icon: 'bi bi-check2-circle' },
+  { code: 3, label: 'Chờ giao hàng',   icon: 'bi bi-box-seam' },
+  { code: 4, label: 'Đang giao hàng',  icon: 'bi bi-truck' },
   { code: 5, label: 'Hoàn thành',      icon: 'bi bi-check-circle' },
 ];
 
 // Helpers for custom 5-step timeline
 const calcProgressWidth = (o) => {
-  const st = o?.trangThaiHienTai || 1;
-  if (st >= 6) return 0;
-  return Math.max(0, (st - 1) / 4 * 100);
+  let st = o?.trangThaiHienTai || 1;
+  if (st >= 6) st = 1;
+  return st >= 5 ? 100 : (2 * st - 1) / (2 * 5) * 100;
 };
 const isStepActive = (o, code) => {
   const st = o?.trangThaiHienTai || 1;
@@ -840,20 +843,23 @@ const editItemsSubTotal = computed(() =>
 );
 
 const getStatusName = (code) => {
-  const map = { 1: 'Chờ xác nhận', 2: 'Chờ giao hàng', 3: 'Đang vận chuyển', 4: 'Đã giao hàng', 5: 'Hoàn thành', 6: 'Đã hủy', 7: 'Yêu cầu hủy' };
+  const map = { 1: 'Chờ xác nhận', 2: 'Đã xác nhận', 3: 'Chờ giao hàng', 4: 'Đang giao hàng', 5: 'Hoàn thành', 6: 'Đã hủy', 7: 'Yêu cầu hủy' };
   return map[code] || 'Không xác định';
 };
 
-const getStatusBadgeClass = (status) => {
-  if (!status) return 'bg-secondary text-white';
-  const s = status.toLowerCase();
-  if (s.includes('hoàn thành')) return 'bg-dark text-white';
-  if (s.includes('đã giao')) return 'bg-dark text-white';
-  if (s.includes('đang') || s.includes('vận chuyển')) return 'bg-danger text-white';
-  if (s.includes('chờ giao')) return 'bg-secondary text-white';
-  if (s.includes('chờ xác nhận')) return 'bg-secondary text-white';
-  if (s.includes('hủy') || s.includes('thất bại')) return 'bg-danger text-white';
-  return 'bg-secondary text-white';
+const trangThaiMap = {
+  1: { bg: "#fff7ed", color: "#c2410c" },
+  2: { bg: "#eff6ff", color: "#1d4ed8" },
+  3: { bg: "#fef3c7", color: "#92400e" },
+  4: { bg: "#ecfeff", color: "#0e7490" },
+  5: { bg: "#dcfce7", color: "#15803d" },
+  6: { bg: "#fee2e2", color: "#dc2626" },
+  7: { bg: "#fff7ed", color: "#ea580c" },
+};
+const getTrangThaiStyle = (code) => {
+  const st = trangThaiMap[code];
+  if (!st) return { background: "#f3f4f6", color: "#374151", border: "1px solid #d1d5db" };
+  return { background: st.bg, color: st.color, border: `1px solid ${st.color}33` };
 };
 
 const formatCurrency = (v) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v || 0);

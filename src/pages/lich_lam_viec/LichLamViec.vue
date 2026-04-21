@@ -760,7 +760,7 @@ const downloadTemplate = async () => {
   try {
     const [nvRes, caRes] = await Promise.all([getAllNhanVien(), getAllCaLam()]);
 
-    const freshNhanVien = toArray(nvRes); // Đã xóa filter để lấy cả Admin
+    const freshNhanVien = toArray(nvRes).filter((nv) => nv.idQuyenHan !== 1);
     const freshCa = toArray(caRes);
 
     const workbook = new ExcelJS.Workbook();
@@ -1133,7 +1133,8 @@ const filteredNhanVienList = computed(() => {
         .toLowerCase()
         .includes(searchNv.value.toLowerCase());
 
-    return nhanVienSearch; // Đã xóa điều kiện chặn Admin
+    const koPhaiAdmin = nv.idQuyenHan !== 1;
+    return nhanVienSearch && koPhaiAdmin;
   });
 });
 
@@ -1145,7 +1146,8 @@ const filteredNvModal = computed(() => {
       (nv.tenNhanVien || "").toLowerCase().includes(q) ||
       (nv.maNhanVien || "").toLowerCase().includes(q);
 
-    return nhanVienSearch; // Đã xóa điều kiện chặn Admin
+    const koPhaiAdmin = nv.idQuyenHan !== 1;
+    return nhanVienSearch && koPhaiAdmin;
   });
 });
 
