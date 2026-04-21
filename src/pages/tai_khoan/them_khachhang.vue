@@ -309,6 +309,20 @@ const validate = () => {
     return { type: "customer", msg: "Số điện thoại không đúng định dạng (10 số)" };
   }
 
+  // ✅ VALIDATE KHÁCH HÀNG ĐỦ 16 TUỔI
+  if (form.value.ngaySinh) {
+    const birthDate = new Date(form.value.ngaySinh);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    if (age < 16) {
+      return { type: "customer", msg: "Khách hàng phải từ đủ 16 tuổi trở lên!" };
+    }
+  }
+
   if (!addresses.value.length) {
     return { type: "address", msg: "Vui lòng thêm ít nhất 1 địa chỉ" };
   }

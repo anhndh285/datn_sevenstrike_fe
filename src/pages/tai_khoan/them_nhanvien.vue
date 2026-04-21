@@ -415,8 +415,20 @@ const validate = () => {
     return "Số điện thoại không được để trống và phải đúng định dạng (10 số, bắt đầu bằng 03, 05, 07, 08, 09)";
   }
 
+  // ✅ VALIDATE NHÂN VIÊN ĐỦ 18 TUỔI
   if (!form.value.ngaySinh) {
     return "Ngày sinh không được để trống";
+  } else {
+    const birthDate = new Date(form.value.ngaySinh);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--; // Chưa qua sinh nhật năm nay thì trừ đi 1 tuổi
+    }
+    if (age < 18) {
+      return "Nhân viên phải từ đủ 18 tuổi trở lên!";
+    }
   }
 
   if (!form.value.idQuyenHan) {

@@ -7,7 +7,6 @@
     </div>
 
     <div class="row g-4">
-      <!-- FORM PHIẾU -->
       <div class="col-12" :class="{ 'locked-content': isLocked }">
         <div class="card border-0 shadow-sm rounded-4 p-4" :class="{ 'bg-light': isLocked }">
           <VoucherForm v-model="form" v-model:isUnlimited="isUnlimited" :disabled="isLocked" />
@@ -24,7 +23,6 @@
               </button>
             </div>
 
-            <!-- ✅ Nếu là phiếu công khai: nút nằm dưới form (phiếu cá nhân sẽ đưa xuống dưới bảng KH) -->
             <div v-if="!form.loaiPhieuGiamGia" class="d-flex gap-2">
               <button @click="goBack" class="btn ss-btn-outline px-4 rounded-3" type="button" :disabled="isSaving">
                 Hủy
@@ -48,15 +46,12 @@
         </div>
       </div>
 
-      <!-- CHỌN KHÁCH HÀNG (CÁ NHÂN) - NẰM DƯỚI FORM -->
       <div v-if="form.loaiPhieuGiamGia" class="col-12" :class="{ 'locked-content': isLocked }">
         <div class="card border-0 shadow-sm rounded-4 p-4" :class="{ 'bg-light': isLocked }">
-          <!-- DÒNG TRẠNG THÁI -->
           <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <div class="ss-muted">Đã chọn: {{ normalizeCustomerIds(selectedCustomerIds).length }} khách hàng</div>
           </div>
 
-          <!-- FILTER BAR -->
           <div class="ss-kh-filter d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2">
             <div class="d-flex flex-wrap gap-2 align-items-center">
               <button
@@ -107,7 +102,6 @@
             </div>
           </div>
 
-          <!-- TABLE -->
           <div class="table-responsive ss-kh-table-wrap">
             <table class="table table-hover align-middle mb-0 ss-kh-table">
               <colgroup>
@@ -195,7 +189,6 @@
             </table>
           </div>
 
-          <!-- FOOTER: RANGE + PAGINATION -->
           <div class="d-flex flex-wrap justify-content-between align-items-center mt-2">
             <div class="ss-muted" style="font-size: 13px">
               Hiển thị {{ startIndex }} - {{ endIndex }} trong {{ totalItems }} khách hàng
@@ -225,7 +218,6 @@
             </nav>
           </div>
 
-          <!-- SELECTED LIST -->
           <div class="mt-4">
             <div class="ss-selected-title">Chọn khách hàng từ bảng trên</div>
 
@@ -276,8 +268,7 @@
           </div>
         </div>
       </div>
-      <!-- /CHỌN KHÁCH HÀNG -->
-    </div>
+      </div>
   </div>
 </template>
 
@@ -317,8 +308,8 @@ const form = ref({
   maPhieuGiamGia: "",
   tenPhieuGiamGia: "",
   moTa: "",
-  loaiPhieuGiamGia: false, // false = công khai, true = cá nhân
-  hinhThucGiam: false,     // false = VND, true = %
+  loaiPhieuGiamGia: false, // UI hiểu: false = công khai, true = cá nhân
+  hinhThucGiam: false,     // UI hiểu: false = VND, true = %
   giaTriGiamGia: 0,
   soTienGiamToiDa: null,
   soLuongSuDung: 0,
@@ -570,17 +561,14 @@ const loadData = async () => {
     const vRes = await axios.get(`${API_BASE}/phieu-giam-gia/${id}`);
     const data = vRes.data || {};
 
-    const loaiCaNhan = data.loaiPhieuGiamGia === true || Number(data.loaiPhieuGiamGia) === 1;
-    const isPercent = data.soTienGiamToiDa !== null && data.soTienGiamToiDa !== undefined;
-
     form.value = {
       ...form.value,
       ...data,
       id: Number(data.id || id),
-      loaiPhieuGiamGia: loaiCaNhan,
-      hinhThucGiam: isPercent,
+      loaiPhieuGiamGia: data.loaiPhieuGiamGia === true, 
+      hinhThucGiam: data.hinhThucGiam === true,         
       giaTriGiamGia: Number(data.giaTriGiamGia || 0),
-      soTienGiamToiDa: isPercent ? Number(data.soTienGiamToiDa || 0) : null,
+      soTienGiamToiDa: data.hinhThucGiam ? Number(data.soTienGiamToiDa || 0) : null,
       soLuongSuDung: Number(data.soLuongSuDung || 0),
       hoaDonToiThieu: Number(data.hoaDonToiThieu || 0),
       trangThai: data.trangThai === true || Number(data.trangThai) === 1,
@@ -630,19 +618,28 @@ const handleSave = async () => {
     const payload = {
       tenPhieuGiamGia: (form.value.tenPhieuGiamGia || "").trim(),
       moTa: (form.value.moTa || "").trim(),
-      loaiPhieuGiamGia: !!form.value.loaiPhieuGiamGia,
+      
+      // ✅ "THÔNG DỊCH VIÊN" MAPPING DỮ LIỆU
+      // Backend: loaiPhieuGiamGia (true = VNĐ, false = %)
+      // Frontend: hinhThucGiam (false = VNĐ, true = %)
+      loaiPhieuGiamGia: !form.value.hinhThucGiam, 
+
       giaTriGiamGia: Number(form.value.giaTriGiamGia || 0),
       soTienGiamToiDa: form.value.hinhThucGiam ? Number(form.value.soTienGiamToiDa || 0) : null,
       hoaDonToiThieu: Number(form.value.hoaDonToiThieu || 0),
+      
       soLuongSuDung: form.value.loaiPhieuGiamGia
         ? uniqueCustomerIds.length
         : isUnlimited.value
           ? 999999
           : Number(form.value.soLuongSuDung || 0),
+          
       ngayBatDau: form.value.ngayBatDau,
       ngayKetThuc: form.value.ngayKetThuc,
       trangThai: !!form.value.trangThai,
-      ...(form.value.loaiPhieuGiamGia ? { idKhachHangs: uniqueCustomerIds } : {}),
+      
+      // Gửi rỗng nếu là Công khai, gửi ID nếu là Cá nhân (Đúng logic DB)
+      idKhachHangs: form.value.loaiPhieuGiamGia ? uniqueCustomerIds : [],
     };
 
     let savedId = Number(form.value.id || 0);
