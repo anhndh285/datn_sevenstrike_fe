@@ -96,43 +96,24 @@
     </div>
 
     <div class="row g-4 mb-4">
-      <div class="col-md-3">
+      <div class="col-md-4">
         <div class="card border-0 shadow-sm p-3 h-100 stat-card text-center">
           <div class="text-muted small mb-2">Tổng đơn hàng</div>
           <div class="fs-4 text-dark">{{ totalOrders }}</div>
         </div>
       </div>
 
-      <div class="col-md-3">
+      <div class="col-md-4">
         <div class="card border-0 shadow-sm p-3 h-100 stat-card text-center">
           <div class="text-muted small mb-2">Tổng doanh thu</div>
           <div class="fs-4 text-dark">{{ formatMoney(totalRevenue) }}</div>
         </div>
       </div>
 
-      <div class="col-md-3">
+      <div class="col-md-4">
         <div class="card border-0 shadow-sm p-3 h-100 stat-card text-center">
           <div class="text-muted small mb-2">Doanh thu thực tế</div>
           <div class="fs-4 text-dark">{{ formatMoney(realRevenue) }}</div>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3 h-100 stat-card text-center">
-          <div class="text-muted small mb-2">Doanh thu dự kiến</div>
-          <div class="fs-4 text-dark">{{ formatMoney(expectedRevenue) }}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row g-3 mb-4">
-      <div class="col-md-3" v-for="(card, index) in miniCards" :key="index">
-        <div class="card border-0 shadow-sm p-3 mini-card text-center">
-          <div class="text-muted small mb-1">{{ card.label }}</div>
-          <div class="fs-5 mb-1 text-dark">{{ formatMoney(card.revenue) }}</div>
-          <div class="small text-muted">
-            Sản phẩm: {{ card.totalProducts }} | Đơn: {{ card.totalOrders }}
-          </div>
         </div>
       </div>
     </div>
@@ -339,7 +320,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(item, index) in filteredInventory" :key="index">
+                <tr v-for="(item, index) in paginatedInventory" :key="index">
                   <td style="padding: 1rem 0.5rem">
                     {{ item.productDetailCode }}
                   </td>
@@ -389,7 +370,7 @@
                   </td>
                   <td class="text-center" style="padding: 1rem 0.5rem">
                     {{ item.importQuarter }} / {{ item.soldQuarter }} /
-                    <span class="text-danger">{{
+                    <span class="text-danger fw-bold">{{
                       item.stockQuantity
                     }}</span>
                   </td>
@@ -415,11 +396,55 @@
                     >
                   </td>
                 </tr>
+                <tr v-if="paginatedInventory.length === 0">
+                  <td colspan="6" class="text-center text-muted py-4">
+                    Không có dữ liệu tồn kho phù hợp
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
+
+          <div class="mt-3" v-if="filteredAndSortedInventory.length > 0">
+            <span class="text-muted" style="font-size: 13px;">
+              Hiển thị {{ paginatedInventory.length }} sản phẩm
+            </span>
+          </div>
+
+        </div> <div class="d-flex justify-content-center align-items-center mt-4 mb-2" v-if="totalPagesInventory > 0">
+          <div class="d-flex gap-2 align-items-center">
+            <button
+              class="custom-page-btn"
+              :disabled="inventoryCurrentPage === 1"
+              @click="inventoryCurrentPage--"
+            >
+              <i class="bi bi-chevron-left" style="font-size: 12px;"></i>
+            </button>
+
+            <button
+              v-for="page in totalPagesInventory"
+              :key="page"
+              class="custom-page-btn"
+              :class="{ 'active': inventoryCurrentPage === page }"
+              @click="inventoryCurrentPage = page"
+            >
+              {{ page }}
+            </button>
+
+            <button
+              class="custom-page-btn"
+              :disabled="inventoryCurrentPage === totalPagesInventory"
+              @click="inventoryCurrentPage++"
+            >
+              <i class="bi bi-chevron-right" style="font-size: 12px;"></i>
+            </button>
+          </div>
+
+          <span class="text-muted ms-3" style="font-size: 14px;">
+            Trang <span class="fw-medium text-dark">{{ inventoryCurrentPage }}</span> / {{ totalPagesInventory }}
+          </span>
         </div>
-      </div>
+        </div>
     </div>
   </div>
 
@@ -469,7 +494,6 @@ const reportType = ref("");
 const revenueChart = ref([]);
 const orderStatus = ref([]);
 const topProducts = ref([]);
-const miniCards = ref([]);
 const detailTable = ref([]);
 
 const filterType = ref("TODAY");
@@ -477,8 +501,6 @@ const fromDate = ref("");
 const toDate = ref("");
 
 const today = ref(new Date());
-
-const expectedRevenue = ref(0);
 
 const chartType = ref("line");
 
@@ -490,6 +512,10 @@ const statusFilter = ref("");
 
 const brands = ref([]);
 const surfaces = ref([]);
+
+// State phân trang tồn kho
+const inventoryCurrentPage = ref(1);
+const inventoryItemsPerPage = 5;
 
 const getFullImageUrl = (path) => {
   if (!path) return "https://via.placeholder.com/50";
@@ -540,8 +566,8 @@ const loadInventoryStatus = async () => {
   }
 };
 
-const filteredInventory = computed(() => {
-  return inventoryStatus.value.filter((item) => {
+const filteredAndSortedInventory = computed(() => {
+  let filtered = inventoryStatus.value.filter((item) => {
     const brandMatch =
       !brandFilter.value || item.productName.includes(brandFilter.value);
 
@@ -559,6 +585,26 @@ const filteredInventory = computed(() => {
 
     return brandMatch && surfaceMatch && statusMatch;
   });
+
+  // Sắp xếp theo số lượng tồn kho (ít nhất lên đầu)
+  return filtered.sort((a, b) => a.stockQuantity - b.stockQuantity);
+});
+
+// Computed để tính toán số trang
+const totalPagesInventory = computed(() => {
+  return Math.ceil(filteredAndSortedInventory.value.length / inventoryItemsPerPage) || 1;
+});
+
+// Computed để lấy danh sách hiển thị trên trang hiện tại
+const paginatedInventory = computed(() => {
+  const start = (inventoryCurrentPage.value - 1) * inventoryItemsPerPage;
+  const end = start + inventoryItemsPerPage;
+  return filteredAndSortedInventory.value.slice(start, end);
+});
+
+// Reset về trang 1 khi người dùng đổi filter
+watch([brandFilter, surfaceFilter, statusFilter], () => {
+  inventoryCurrentPage.value = 1;
 });
 
 const confirmSendReport = async () => {
@@ -650,7 +696,6 @@ const loadStatistics = async () => {
       ordersRes,
       revenueRes,
       realRevenueRes,
-      expectedRevenueRes,
       chartRes,
       statusRes,
     ] = await Promise.all([
@@ -659,9 +704,6 @@ const loadStatistics = async () => {
         params,
       }),
       axios.get("http://localhost:8080/api/statistic/real-revenue", { params }),
-      axios.get("http://localhost:8080/api/statistic/expected-revenue", {
-        params,
-      }),
       axios.get("http://localhost:8080/api/statistic/revenue-chart", {
         params,
       }),
@@ -671,7 +713,6 @@ const loadStatistics = async () => {
     totalOrders.value = ordersRes.data || 0;
     totalRevenue.value = revenueRes.data || 0;
     realRevenue.value = realRevenueRes.data || 0;
-    expectedRevenue.value = expectedRevenueRes.data || 0;
     revenueChart.value = chartRes.data || [];
     orderStatus.value = statusRes.data || [];
 
@@ -692,12 +733,6 @@ const loadStatistics = async () => {
       { params },
     );
     detailTable.value = detailRes.data || [];
-
-    const miniCardRes = await axios.get(
-      "http://localhost:8080/api/statistic/mini-cards",
-      { params },
-    );
-    miniCards.value = miniCardRes.data || [];
   } catch (error) {
     console.error("Lỗi load thống kê:", error);
   }
@@ -759,10 +794,6 @@ onMounted(() => {
   padding: 0 10px;
 }
 
-.btn i {
-  /* Margin-right mặc định của class me-1 */
-}
-
 .btn:hover {
   border: 1px solid #555555 !important; /* Hover viền đậm hơn */
 }
@@ -774,7 +805,6 @@ onMounted(() => {
   border-radius: 8px; 
   font-weight: normal;
   transition: all 0.2s ease-in-out;
-  /* Xóa dòng border: transparent ở đây */
 }
 .btn-pastel-red:hover {
   background-color: #f7d5d5; 
@@ -838,5 +868,40 @@ onMounted(() => {
   color: #15803d;
   background-color: transparent;
   border: 1px solid #22c55e;
+}
+
+/* CSS CHO PHÂN TRANG CUSTOM GIỐNG ẢNH */
+.custom-page-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #64748b;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.custom-page-btn:hover:not(:disabled) {
+  border-color: #fca5a5;
+  color: #a13c3c;
+}
+
+.custom-page-btn.active {
+  background-color: #fdebeb;
+  border-color: #fca5a5;
+  color: #a13c3c;
+  font-weight: 500;
+}
+
+.custom-page-btn:disabled {
+  background-color: #f8f9fa;
+  color: #cbd5e1;
+  cursor: not-allowed;
 }
 </style>
