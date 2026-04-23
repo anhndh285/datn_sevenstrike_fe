@@ -1,4 +1,3 @@
-<!-- File: src/pages/tai_khoan/khach_hang/them_khachhang.vue -->
 <template>
   <div class="taikhoan-form ss-page ss-font">
     <div class="toolbar">
@@ -61,7 +60,6 @@
         </div>
       </div>
 
-      <!-- ĐỊA CHỈ -->
       <div class="block">
         <div class="block-head">
           <div class="block-title">Địa chỉ (có thể thêm nhiều) <span class="req">*</span></div>
@@ -95,14 +93,14 @@
             </div>
 
             <div class="col">
-              <label class="label">Số nhà / Đường</label>
+              <label class="label">Số nhà / Đường <span class="req">*</span></label>
               <input class="input" v-model.trim="a.diaChiCuThe" placeholder="Ví dụ: 12A Nguyễn Trãi" />
             </div>
           </div>
 
           <div class="row">
             <div class="col">
-              <label class="label">Tỉnh/Thành</label>
+              <label class="label">Tỉnh/Thành <span class="req">*</span></label>
               <select class="input" v-model="a.tinhCode" @change="onTinhChange(a)">
                 <option value="">-- Chọn tỉnh/thành --</option>
                 <option v-for="p in provinces" :key="p.code" :value="p.code">{{ p.name }}</option>
@@ -110,7 +108,7 @@
             </div>
 
             <div class="col">
-              <label class="label">Quận/Huyện</label>
+              <label class="label">Quận/Huyện <span class="req">*</span></label>
               <select class="input" v-model="a.huyenCode" @change="onHuyenChange(a)" :disabled="!a.tinhCode">
                 <option value="">-- Chọn quận/huyện --</option>
                 <option v-for="d in a.districts" :key="d.code" :value="d.code">{{ d.name }}</option>
@@ -120,7 +118,7 @@
 
           <div class="row">
             <div class="col">
-              <label class="label">Phường/Xã</label>
+              <label class="label">Phường/Xã <span class="req">*</span></label>
               <select class="input" v-model="a.xaCode" :disabled="!a.huyenCode">
                 <option value="">-- Chọn phường/xã --</option>
                 <option v-for="w in a.wards" :key="w.code" :value="w.code">{{ w.name }}</option>
@@ -135,7 +133,7 @@
         </div>
 
         <div class="hint mt">
-          * Theo DB: chỉ bắt buộc <span class="hint-plain">Tên địa chỉ</span>. Các phần Tỉnh/Huyện/Xã/Số nhà có thể để trống (null).
+          * Vui lòng điền đầy đủ thông tin địa chỉ để thuận tiện cho việc giao hàng sau này.
         </div>
       </div>
 
@@ -309,7 +307,6 @@ const validate = () => {
     return { type: "customer", msg: "Số điện thoại không đúng định dạng (10 số)" };
   }
 
-  // ✅ VALIDATE KHÁCH HÀNG ĐỦ 16 TUỔI
   if (form.value.ngaySinh) {
     const birthDate = new Date(form.value.ngaySinh);
     const today = new Date();
@@ -334,13 +331,26 @@ const validate = () => {
   for (let i = 0; i < addresses.value.length; i++) {
     const a = addresses.value[i];
     const tenDiaChi = String(a.tenDiaChi || "").trim();
+    const diaChiCuThe = String(a.diaChiCuThe || "").trim();
 
     if (!tenDiaChi) {
       return { type: "address", msg: `Địa chỉ thứ ${i + 1}: Vui lòng nhập Tên địa chỉ` };
     }
-
     if (tenDiaChi.length > 255) {
       return { type: "address", msg: `Địa chỉ thứ ${i + 1}: Tên địa chỉ không được vượt quá 255 ký tự` };
+    }
+
+    if (!diaChiCuThe) {
+      return { type: "address", msg: `Địa chỉ thứ ${i + 1}: Vui lòng nhập Số nhà / Đường` };
+    }
+    if (!a.tinhCode) {
+      return { type: "address", msg: `Địa chỉ thứ ${i + 1}: Vui lòng chọn Tỉnh/Thành phố` };
+    }
+    if (!a.huyenCode) {
+      return { type: "address", msg: `Địa chỉ thứ ${i + 1}: Vui lòng chọn Quận/Huyện` };
+    }
+    if (!a.xaCode) {
+      return { type: "address", msg: `Địa chỉ thứ ${i + 1}: Vui lòng chọn Phường/Xã` };
     }
   }
 
